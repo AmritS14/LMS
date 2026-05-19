@@ -1,6 +1,6 @@
 import Foundation
 
-// MARK: - User
+// MARK: - User (identity common to every role)
 
 public enum UserRole: String, Codable, Sendable, CaseIterable {
     case borrower
@@ -9,17 +9,12 @@ public enum UserRole: String, Codable, Sendable, CaseIterable {
     case admin
 }
 
-public enum KYCStatus: String, Codable, Sendable {
-    case pending, submitted, verified, rejected
-}
-
 public struct User: Identifiable, Codable, Sendable, Hashable {
     public let id: UUID
     public var fullName: String
     public var email: String
     public var phone: String
     public var role: UserRole
-    public var kycStatus: KYCStatus
     public var createdAt: Date
 
     public init(
@@ -28,7 +23,6 @@ public struct User: Identifiable, Codable, Sendable, Hashable {
         email: String,
         phone: String,
         role: UserRole,
-        kycStatus: KYCStatus = .pending,
         createdAt: Date = .now
     ) {
         self.id = id
@@ -36,8 +30,100 @@ public struct User: Identifiable, Codable, Sendable, Hashable {
         self.email = email
         self.phone = phone
         self.role = role
-        self.kycStatus = kycStatus
         self.createdAt = createdAt
+    }
+}
+
+// MARK: - Borrower-only profile (KYC, credit, personal details)
+
+public enum KYCStatus: String, Codable, Sendable {
+    case pending, submitted, verified, rejected
+}
+
+public enum EmploymentType: String, Codable, Sendable, CaseIterable {
+    case salaried, selfEmployed, business, retired, unemployed
+}
+
+public struct PostalAddress: Codable, Sendable, Hashable {
+    public var line1: String
+    public var line2: String?
+    public var city: String
+    public var state: String
+    public var pinCode: Int
+    public var country: String
+
+    public init(
+        line1: String,
+        line2: String? = nil,
+        city: String,
+        state: String,
+        postalCode: Int,
+        country: String
+    ) {
+        self.line1 = line1
+        self.line2 = line2
+        self.city = city
+        self.state = state
+        self.pinCode = postalCode
+        self.country = country
+    }
+}
+
+public struct BorrowerProfile: Identifiable, Codable, Sendable, Hashable {
+    public let id: UUID            // matches User.id
+    public var dateOfBirth: Date
+    public var address: PostalAddress?
+    public var panNumber: String?
+    public var aadhaarLast4: String?
+    public var employmentType: EmploymentType?
+    public var monthlyIncome: Decimal?
+    public var kycStatus: KYCStatus
+    public var creditScore: Int?
+
+    public init(
+        id: UUID,
+        dateOfBirth: Date,
+        address: PostalAddress? = nil,
+        panNumber: String? = nil,
+        aadhaarLast4: String? = nil,
+        employmentType: EmploymentType? = nil,
+        monthlyIncome: Decimal? = nil,
+        kycStatus: KYCStatus = .pending,
+        creditScore: Int? = nil
+    ) {
+        self.id = id
+        self.dateOfBirth = dateOfBirth
+        self.address = address
+        self.panNumber = panNumber
+        self.aadhaarLast4 = aadhaarLast4
+        self.employmentType = employmentType
+        self.monthlyIncome = monthlyIncome
+        self.kycStatus = kycStatus
+        self.creditScore = creditScore
+    }
+}
+
+// MARK: - Staff-only profile (Officer, Manager, Admin)
+
+public struct StaffProfile: Identifiable, Codable, Sendable, Hashable {
+    public let id: UUID            // matches User.id
+    public var employeeID: String
+    public var branchID: UUID?
+    public var department: String?
+    public var reportsToID: UUID?
+
+    public init(
+        id: UUID,
+        employeeID: String,
+        branchID: UUID? = nil,
+        department: String? = nil,
+        reportsToID: UUID? = nil
+    ) {
+        self.id = id
+        self.employeeID = employeeID
+        self.branchID = branchID
+        self.department = department
+        self.reportsToID = reportsToID
     }
 }
 
@@ -191,7 +277,6 @@ public struct LoanDocument: Identifiable, Codable, Sendable, Hashable {
     public var ownerID: UUID
     public var kind: DocumentKind
     public var fileName: String
-    public var mimeType: String
     public var remoteURL: URL?
     public var status: DocumentVerificationStatus
     public var uploadedAt: Date
@@ -201,7 +286,6 @@ public struct LoanDocument: Identifiable, Codable, Sendable, Hashable {
         ownerID: UUID,
         kind: DocumentKind,
         fileName: String,
-        mimeType: String,
         remoteURL: URL? = nil,
         status: DocumentVerificationStatus = .pending,
         uploadedAt: Date = .now
@@ -210,7 +294,6 @@ public struct LoanDocument: Identifiable, Codable, Sendable, Hashable {
         self.ownerID = ownerID
         self.kind = kind
         self.fileName = fileName
-        self.mimeType = mimeType
         self.remoteURL = remoteURL
         self.status = status
         self.uploadedAt = uploadedAt

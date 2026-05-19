@@ -14,11 +14,14 @@ struct BorrowerProfileView: View {
                     LabeledContent("Phone", value: session.currentUser?.phone ?? "—")
                 }
                 Section("KYC") {
-                    LabeledContent("Status", value: session.currentUser?.kycStatus.rawValue.capitalized ?? "—")
+                    LabeledContent("Status", value: session.borrowerProfile?.kycStatus.rawValue.capitalized ?? "—")
                     NavigationLink("Manage KYC") { KYCView() }
                 }
                 Section("Credit") {
-                    LabeledContent("Credit Score", value: "—")
+                    LabeledContent(
+                        "Credit Score",
+                        value: session.borrowerProfile?.creditScore.map(String.init) ?? "—"
+                    )
                 }
                 Section {
                     Button("Sign Out", role: .destructive) {
