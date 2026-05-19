@@ -1,5 +1,4 @@
 import SwiftUI
-import LMSCore
 
 struct OfficerTabView: View {
     var body: some View {

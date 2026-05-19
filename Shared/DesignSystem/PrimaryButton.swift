@@ -1,17 +1,17 @@
 import SwiftUI
 
-public struct PrimaryButton: View {
+struct PrimaryButton: View {
     private let title: String
     private let isLoading: Bool
     private let action: () -> Void
 
-    public init(_ title: String, isLoading: Bool = false, action: @escaping () -> Void) {
+    init(_ title: String, isLoading: Bool = false, action: @escaping () -> Void) {
         self.title = title
         self.isLoading = isLoading
         self.action = action
     }
 
-    public var body: some View {
+    var body: some View {
         Button(action: action) {
             HStack {
                 if isLoading { ProgressView().controlSize(.small) }

@@ -1,5 +1,4 @@
 import SwiftUI
-import LMSCore
 
 struct StaffProfileView: View {
     @Environment(SessionStore.self) private var session

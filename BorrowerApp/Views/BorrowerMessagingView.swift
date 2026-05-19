@@ -1,5 +1,4 @@
 import SwiftUI
-import LMSCore
 
 struct BorrowerMessagingView: View {
     var body: some View {

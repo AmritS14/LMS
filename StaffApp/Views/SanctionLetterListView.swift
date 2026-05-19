@@ -1,5 +1,4 @@
 import SwiftUI
-import LMSCore
 
 struct SanctionLetterListView: View {
     var body: some View {

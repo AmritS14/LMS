@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol NotificationService: Sendable {
+protocol NotificationService: Sendable {
     func registerDeviceToken(_ token: Data) async throws
     func requestAuthorization() async throws -> Bool
     func subscribe(to topic: NotificationTopic) async throws

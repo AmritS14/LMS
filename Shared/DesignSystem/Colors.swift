@@ -3,7 +3,7 @@ import SwiftUI
 import UIKit
 #endif
 
-public extension Color {
+extension Color {
     static let lmsPrimary = Color.accentColor
     static let lmsAccent = Color.blue
     static let lmsDanger = Color.red

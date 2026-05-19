@@ -1,6 +1,4 @@
 import SwiftUI
-import LMSCore
-import LMSDesignSystem
 
 struct AuditTrailView: View {
     var body: some View {

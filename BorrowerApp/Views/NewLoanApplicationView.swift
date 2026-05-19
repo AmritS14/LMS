@@ -1,6 +1,4 @@
 import SwiftUI
-import LMSCore
-import LMSDesignSystem
 
 struct NewLoanApplicationView: View {
     @State private var loanType: LoanType = .personal

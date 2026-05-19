@@ -1,5 +1,4 @@
 import SwiftUI
-import LMSCore
 
 struct RootView: View {
     @Environment(SessionStore.self) private var session

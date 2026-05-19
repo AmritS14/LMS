@@ -1,6 +1,4 @@
 import SwiftUI
-import LMSCore
-import LMSDesignSystem
 
 struct CreditAssessmentView: View {
     var body: some View {

@@ -1,6 +1,4 @@
 import SwiftUI
-import LMSCore
-import LMSDesignSystem
 
 struct StaffLoginView: View {
     @State private var email: String = ""

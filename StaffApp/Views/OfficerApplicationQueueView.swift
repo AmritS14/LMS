@@ -1,6 +1,4 @@
 import SwiftUI
-import LMSCore
-import LMSDesignSystem
 
 struct OfficerApplicationQueueView: View {
     var body: some View {

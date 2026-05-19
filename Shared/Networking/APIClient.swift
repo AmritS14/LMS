@@ -1,17 +1,17 @@
 import Foundation
 
-public enum HTTPMethod: String, Sendable {
+enum HTTPMethod: String, Sendable {
     case get = "GET", post = "POST", put = "PUT", patch = "PATCH", delete = "DELETE"
 }
 
-public struct APIRequest: Sendable {
-    public var path: String
-    public var method: HTTPMethod
-    public var query: [String: String]
-    public var headers: [String: String]
-    public var body: Data?
+struct APIRequest: Sendable {
+    var path: String
+    var method: HTTPMethod
+    var query: [String: String]
+    var headers: [String: String]
+    var body: Data?
 
-    public init(
+    init(
         path: String,
         method: HTTPMethod = .get,
         query: [String: String] = [:],
@@ -26,7 +26,7 @@ public struct APIRequest: Sendable {
     }
 }
 
-public enum APIError: Error, Sendable {
+enum APIError: Error, Sendable {
     case invalidResponse
     case status(Int, Data?)
     case decoding(Error)
@@ -34,7 +34,7 @@ public enum APIError: Error, Sendable {
     case unauthorized
 }
 
-public protocol APIClient: Sendable {
+protocol APIClient: Sendable {
     func send<T: Decodable & Sendable>(_ request: APIRequest, as type: T.Type) async throws -> T
     func sendVoid(_ request: APIRequest) async throws
 }

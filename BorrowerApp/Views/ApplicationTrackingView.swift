@@ -1,6 +1,4 @@
 import SwiftUI
-import LMSCore
-import LMSDesignSystem
 
 struct ApplicationTrackingView: View {
     var body: some View {

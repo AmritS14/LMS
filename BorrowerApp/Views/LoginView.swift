@@ -1,6 +1,4 @@
 import SwiftUI
-import LMSCore
-import LMSDesignSystem
 
 struct LoginView: View {
     @State private var identifier: String = ""

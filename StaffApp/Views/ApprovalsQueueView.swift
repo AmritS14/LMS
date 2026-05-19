@@ -1,6 +1,4 @@
 import SwiftUI
-import LMSCore
-import LMSDesignSystem
 
 struct ApprovalsQueueView: View {
     var body: some View {

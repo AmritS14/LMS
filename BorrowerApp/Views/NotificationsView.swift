@@ -1,5 +1,4 @@
 import SwiftUI
-import LMSCore
 
 struct NotificationsView: View {
     var body: some View {

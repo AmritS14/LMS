@@ -1,6 +1,4 @@
 import SwiftUI
-import LMSCore
-import LMSDesignSystem
 
 struct EMICalculatorView: View {
     @State private var principal: Decimal = 500_000

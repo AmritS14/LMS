@@ -1,5 +1,4 @@
 import SwiftUI
-import LMSCore
 
 struct StaffMessagingView: View {
     var body: some View {

@@ -26,11 +26,6 @@ xcuserdata/
 *.dSYM.zip
 *.dSYM
 
-# Swift Package Manager
-.build/
-.swiftpm/
-Package.resolved
-
 # Code injection
 iOSInjectionProject/
 

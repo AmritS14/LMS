@@ -1,6 +1,4 @@
 import SwiftUI
-import LMSCore
-import LMSDesignSystem
 
 struct BorrowerProfileView: View {
     @Environment(SessionStore.self) private var session

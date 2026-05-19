@@ -6,14 +6,15 @@ Two-app SwiftUI scaffold for the LMS described in `SRS Loan Management System.pd
 
 - **BorrowerApp** — customer-facing app for borrowers (apply, track, EMI dashboard, KYC, messaging).
 - **StaffApp** — internal app with role-based UI for Loan Officer, Manager, and Admin.
-- **Shared** — local Swift Package containing `LMSCore` (models, services, networking, persistence) and `LMSDesignSystem` (tokens, components).
+
+Both targets compile the same files from `Shared/` directly — there is no separate framework or Swift Package.
 
 ## Architecture
 
 - SwiftUI + MVVM with Swift Concurrency
 - iOS 26+, Swift 6 with strict concurrency
 - `@Observable` view models, `@Environment` for dependency injection
-- Service layer defined as protocols in `LMSCore/Services` — provide live/mock implementations at app bootstrap
+- Service layer defined as protocols in `Shared/Services/` — provide live/mock implementations at app bootstrap
 - Designed for Passkeys, role-based access, and GDPR compliance per the SRS
 
 ## Opening the project
@@ -22,9 +23,7 @@ Two-app SwiftUI scaffold for the LMS described in `SRS Loan Management System.pd
 open LMS.xcodeproj
 ```
 
-`LMS.xcodeproj` is committed to source control. Add/move/delete files through Xcode (drag into the navigator, ⌥⌘A, etc.) so `project.pbxproj` stays in sync.
-
-The two app targets (`BorrowerApp`, `StaffApp`) depend on the local Swift Package at `Shared/`. Xcode resolves it automatically on open.
+`LMS.xcodeproj` is committed. Add/move/delete files through Xcode so `project.pbxproj` stays in sync.
 
 ## File structure
 
@@ -32,55 +31,20 @@ The two app targets (`BorrowerApp`, `StaffApp`) depend on the local Swift Packag
 LMS/
 ├── LMS.xcodeproj                    # Xcode project (committed)
 ├── BorrowerApp/
-│   ├── App/
-│   │   ├── BorrowerApp.swift        # @main entry
-│   │   └── RootView.swift           # Tab container
+│   ├── App/                         # @main entry + RootView
 │   ├── Views/                       # one file per screen
-│   │   ├── LoginView.swift
-│   │   ├── HomeDashboardView.swift
-│   │   ├── KYCView.swift
-│   │   ├── NewLoanApplicationView.swift
-│   │   ├── ApplicationTrackingView.swift
-│   │   ├── EMICalculatorView.swift
-│   │   ├── RepaymentDashboardView.swift
-│   │   ├── NotificationsView.swift
-│   │   ├── BorrowerMessagingView.swift
-│   │   └── BorrowerProfileView.swift
 │   └── ViewModels/
-│       ├── AuthViewModel.swift
-│       └── LoanApplicationViewModel.swift
 ├── StaffApp/
-│   ├── App/
-│   │   ├── StaffApp.swift           # @main entry
-│   │   └── StaffRootView.swift      # role-aware router
+│   ├── App/                         # @main entry + role-aware root
 │   └── Views/                       # one file per screen
-│       ├── StaffLoginView.swift
-│       ├── RoleTabViews.swift       # OfficerTabView / ManagerTabView / AdminTabView
-│       ├── OfficerApplicationQueueView.swift
-│       ├── CreditAssessmentView.swift
-│       ├── SanctionLetterListView.swift
-│       ├── PortfolioDashboardView.swift
-│       ├── ApprovalsQueueView.swift
-│       ├── ReportsView.swift
-│       ├── ProductConfigView.swift
-│       ├── UserManagementView.swift
-│       ├── SystemSettingsView.swift
-│       ├── AuditTrailView.swift
-│       ├── StaffMessagingView.swift
-│       └── StaffProfileView.swift
-└── Shared/
-    ├── Package.swift
-    └── Sources/
-        ├── LMSCore/
-        │   ├── Models.swift         # ALL data models in one file
-        │   ├── Services/            # Auth, Loan, Document, Notification, Messaging, Admin, Keychain protocols
-        │   ├── Networking/          # APIClient + Endpoints
-        │   ├── Persistence/         # PersistenceController protocol
-        │   ├── Concurrency/         # AppEnvironment, SessionStore
-        │   └── Utilities/           # EMICalculator, Validators, Formatting
-        └── LMSDesignSystem/
-            ├── Tokens/              # Colors, Typography, Spacing
-            └── Components/          # PrimaryButton, StatusBadge, SectionCard
+└── Shared/                          # compiled into BOTH targets
+    ├── Models.swift                 # every data model in one file
+    ├── SessionStore.swift
+    ├── AppEnvironment.swift
+    ├── Services/                    # protocol-only definitions
+    ├── Networking/
+    ├── Utilities/
+    └── DesignSystem/                # tokens + components
 ```
 
 ## Next steps

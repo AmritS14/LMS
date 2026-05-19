@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol LoanService: Sendable {
+protocol LoanService: Sendable {
     func createApplication(_ draft: LoanApplication) async throws -> LoanApplication
     func submitApplication(id: UUID) async throws -> LoanApplication
     func fetchApplications(for borrowerID: UUID) async throws -> [LoanApplication]

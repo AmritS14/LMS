@@ -1,16 +1,16 @@
 import Foundation
 
-public enum EMICalculator {
-    public struct Result: Sendable, Hashable {
-        public let monthlyInstallment: Decimal
-        public let totalInterest: Decimal
-        public let totalPayable: Decimal
-        public let schedule: [EMI]
+enum EMICalculator {
+    struct Result: Sendable, Hashable {
+        let monthlyInstallment: Decimal
+        let totalInterest: Decimal
+        let totalPayable: Decimal
+        let schedule: [EMI]
     }
 
     /// Standard reducing-balance EMI. Inputs: principal, annual interest %, tenure in months.
     /// TODO: implement amortisation schedule.
-    public static func calculate(
+    static func calculate(
         principal: Decimal,
         annualInterestRate: Double,
         tenureMonths: Int,

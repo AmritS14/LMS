@@ -1,17 +1,17 @@
 import SwiftUI
 
-public struct StatusBadge: View {
-    public enum Tone { case neutral, info, success, warning, danger }
+struct StatusBadge: View {
+    enum Tone { case neutral, info, success, warning, danger }
 
     private let text: String
     private let tone: Tone
 
-    public init(_ text: String, tone: Tone = .neutral) {
+    init(_ text: String, tone: Tone = .neutral) {
         self.text = text
         self.tone = tone
     }
 
-    public var body: some View {
+    var body: some View {
         Text(text)
             .font(.lmsCaption.weight(.semibold))
             .padding(.horizontal, Spacing.s)
