@@ -151,7 +151,6 @@ struct LoanDocument: Identifiable, Codable, Sendable, Hashable {
     var ownerID: UUID
     var kind: DocumentKind
     var fileName: String
-    var mimeType: String
     var remoteURL: URL?
     var status: DocumentVerificationStatus = .pending
     var uploadedAt: Date = .now
