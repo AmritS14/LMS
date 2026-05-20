@@ -36,4 +36,5 @@ struct AdminTabView: View {
 
 #Preview {
     OfficerTabView()
+        .environment(SessionStore())
 }
