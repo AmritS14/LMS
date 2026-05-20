@@ -90,6 +90,13 @@
 		F7F7B90D792B9760F95CE95A /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F43612DC9CA160255FFC33 /* Colors.swift */; };
 		F872AD1A8550E9CF19A04C1D /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E121B25741BC258047859E /* PrimaryButton.swift */; };
 		FE5E0902A300F4E68D4F8455 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5311FB36A8266E69CFD93D54 /* Models.swift */; };
+		F0282000000000000000A001 /* ApplicationReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0282000000000000000B001 /* ApplicationReviewView.swift */; };
+		F0282000000000000000A002 /* ApproveModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0282000000000000000B002 /* ApproveModalView.swift */; };
+		F0282000000000000000A003 /* ManagerApplicationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0282000000000000000B003 /* ManagerApplicationsView.swift */; };
+		F0282000000000000000A004 /* ManagerDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0282000000000000000B004 /* ManagerDashboardView.swift */; };
+		F0282000000000000000A005 /* RejectModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0282000000000000000B005 /* RejectModalView.swift */; };
+		F0282000000000000000A006 /* SendBackModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0282000000000000000B006 /* SendBackModalView.swift */; };
+		F0282000000000000000A007 /* SuccessStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0282000000000000000B007 /* SuccessStateView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -156,6 +163,13 @@
 		F315B139415D3EC19DB81164 /* PortfolioDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioDashboardView.swift; sourceTree = "<group>"; };
 		F582C8AB54B323AD8E169865 /* EMICalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EMICalculator.swift; sourceTree = "<group>"; };
 		FEE98171A238045C22C2F9E8 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
+		F0282000000000000000B001 /* ApplicationReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationReviewView.swift; sourceTree = "<group>"; };
+		F0282000000000000000B002 /* ApproveModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApproveModalView.swift; sourceTree = "<group>"; };
+		F0282000000000000000B003 /* ManagerApplicationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagerApplicationsView.swift; sourceTree = "<group>"; };
+		F0282000000000000000B004 /* ManagerDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagerDashboardView.swift; sourceTree = "<group>"; };
+		F0282000000000000000B005 /* RejectModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RejectModalView.swift; sourceTree = "<group>"; };
+		F0282000000000000000B006 /* SendBackModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendBackModalView.swift; sourceTree = "<group>"; };
+		F0282000000000000000B007 /* SuccessStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuccessStateView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -311,9 +325,24 @@
 			path = StaffApp;
 			sourceTree = "<group>";
 		};
+		F0282000000000000000C001 /* Manager_Ui */ = {
+			isa = PBXGroup;
+			children = (
+				F0282000000000000000B001 /* ApplicationReviewView.swift */,
+				F0282000000000000000B002 /* ApproveModalView.swift */,
+				F0282000000000000000B003 /* ManagerApplicationsView.swift */,
+				F0282000000000000000B004 /* ManagerDashboardView.swift */,
+				F0282000000000000000B005 /* RejectModalView.swift */,
+				F0282000000000000000B006 /* SendBackModalView.swift */,
+				F0282000000000000000B007 /* SuccessStateView.swift */,
+			);
+			path = Manager_Ui;
+			sourceTree = "<group>";
+		};
 		F6F490D0A977221B84CBB8A5 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				F0282000000000000000C001 /* Manager_Ui */,
 				F01817BF2FBD7B0800603D20 /* LOApplicationDetailView.swift */,
 				F01817C02FBD7B0800603D20 /* LOApplicationsListView.swift */,
 				F01817C12FBD7B0800603D20 /* LOClarificationRequestView.swift */,
@@ -487,6 +516,13 @@
 				6BF172A4557A4C897195B14C /* AdminService.swift in Sources */,
 				972A0DCF4680DB0FF2F6082A /* AppEnvironment.swift in Sources */,
 				62427A7828BA3684E38C037D /* ApprovalsQueueView.swift in Sources */,
+				F0282000000000000000A001 /* ApplicationReviewView.swift in Sources */,
+				F0282000000000000000A002 /* ApproveModalView.swift in Sources */,
+				F0282000000000000000A003 /* ManagerApplicationsView.swift in Sources */,
+				F0282000000000000000A004 /* ManagerDashboardView.swift in Sources */,
+				F0282000000000000000A005 /* RejectModalView.swift in Sources */,
+				F0282000000000000000A006 /* SendBackModalView.swift in Sources */,
+				F0282000000000000000A007 /* SuccessStateView.swift in Sources */,
 				B655352FA07FEC2F784BB434 /* AuditTrailView.swift in Sources */,
 				F01817C62FBD7B0800603D20 /* LODocumentReviewSheet.swift in Sources */,
 				F01817C72FBD7B0800603D20 /* LOSuccessConfirmationView.swift in Sources */,

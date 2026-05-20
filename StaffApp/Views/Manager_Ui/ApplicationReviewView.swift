@@ -313,3 +313,7 @@ struct ApplicationReviewView_Previews: PreviewProvider {
         ApplicationReviewView()
     }
 }
+
+#Preview {
+    ApplicationReviewView()
+}
