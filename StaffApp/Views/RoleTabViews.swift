@@ -23,18 +23,9 @@ struct ManagerTabView: View {
     }
 }
 
-struct AdminTabView: View {
-    var body: some View {
-        TabView {
-            Tab("Users", systemImage: "person.3") { UserManagementView() }
-            Tab("Settings", systemImage: "gearshape.2") { SystemSettingsView() }
-            Tab("Audit", systemImage: "list.clipboard") { AuditTrailView() }
-            Tab("Profile", systemImage: "person.crop.circle") { StaffProfileView() }
-        }
-    }
-}
+
 
 #Preview {
-    OfficerTabView()
+    AdminTabView()
         .environment(SessionStore())
 }

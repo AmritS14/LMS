@@ -17,7 +17,7 @@ struct LOApplicationsListView: View {
                 .padding(Spacing.m)
                 
                 if selectedFilter == 2 {
-                    EmptyStateView(
+                    LOEmptyStateView(
                         icon: "checkmark.seal",
                         title: "All Caught Up!",
                         message: "You have no processed applications at the moment."
@@ -51,7 +51,7 @@ struct LOApplicationsListView: View {
     }
 }
 
-struct EmptyStateView: View {
+struct LOEmptyStateView: View {
     let icon: String
     let title: String
     let message: String

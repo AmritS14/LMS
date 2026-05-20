@@ -158,6 +158,14 @@
 		FEE98171A238045C22C2F9E8 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		5686669C2FBE239900DE54FA /* Admin */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Admin;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXGroup section */
 		097291B36B00BB6BE6770696 /* Resources */ = {
 			isa = PBXGroup;
@@ -314,6 +322,7 @@
 		F6F490D0A977221B84CBB8A5 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				5686669C2FBE239900DE54FA /* Admin */,
 				F01817BF2FBD7B0800603D20 /* LOApplicationDetailView.swift */,
 				F01817C02FBD7B0800603D20 /* LOApplicationsListView.swift */,
 				F01817C12FBD7B0800603D20 /* LOClarificationRequestView.swift */,
@@ -361,6 +370,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				5686669C2FBE239900DE54FA /* Admin */,
 			);
 			name = StaffApp;
 			packageProductDependencies = (

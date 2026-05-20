@@ -2,11 +2,22 @@ import Foundation
 
 // MARK: - User (identity common to every role)
 
-enum UserRole: String, Codable, Sendable, CaseIterable {
+enum UserRole: String, Codable, Sendable, CaseIterable, Identifiable {
     case borrower
     case loanOfficer
     case manager
     case admin
+    
+    var id: String { rawValue }
+    
+    var systemImage: String {
+        switch self {
+        case .admin: return "shield.checkered"
+        case .manager: return "person.badge.key"
+        case .loanOfficer: return "briefcase"
+        case .borrower: return "person"
+        }
+    }
 }
 
 struct User: Identifiable, Codable, Sendable, Hashable {
@@ -49,6 +60,17 @@ struct BorrowerProfile: Identifiable, Codable, Sendable, Hashable {
     var creditScore: Int?
 }
 
+// MARK: - Permissions Enum
+
+enum Permission: String, CaseIterable, Identifiable, Codable, Sendable {
+    case manageUsers = "Manage Users"
+    case manageLoans = "Manage Loans"
+    case manageTemplates = "Manage Templates"
+    case processLoans = "Process Loans"
+    
+    var id: String { rawValue }
+}
+
 // MARK: - Staff-only profile (Officer, Manager, Admin)
 
 struct StaffProfile: Identifiable, Codable, Sendable, Hashable {
@@ -57,6 +79,7 @@ struct StaffProfile: Identifiable, Codable, Sendable, Hashable {
     var branchID: UUID?
     var department: String?
     var reportsToID: UUID?
+    var permissions: Set<Permission> = []
 }
 
 // MARK: - Loan Application
