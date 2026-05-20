@@ -3,10 +3,9 @@ import SwiftUI
 struct OfficerTabView: View {
     var body: some View {
         TabView {
-            Tab("Queue", systemImage: "tray.full") { OfficerApplicationQueueView() }
-            Tab("Credit", systemImage: "chart.line.uptrend.xyaxis") { CreditAssessmentView() }
-            Tab("Letters", systemImage: "doc.richtext") { SanctionLetterListView() }
-            Tab("Messages", systemImage: "bubble.left.and.bubble.right") { StaffMessagingView() }
+            Tab("Dashboard", systemImage: "squareshape.2x2") { LODashboardView() }
+            Tab("Queue", systemImage: "tray.full") { LOApplicationsListView() }
+            Tab("Alerts", systemImage: "bell") { LONotificationsView() }
             Tab("Profile", systemImage: "person.crop.circle") { StaffProfileView() }
         }
     }
@@ -33,4 +32,8 @@ struct AdminTabView: View {
             Tab("Profile", systemImage: "person.crop.circle") { StaffProfileView() }
         }
     }
+}
+
+#Preview {
+    OfficerTabView()
 }

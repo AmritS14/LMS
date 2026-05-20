@@ -9,6 +9,7 @@ extension Color {
     static let lmsDanger = Color.red
     static let lmsSuccess = Color.green
     static let lmsWarning = Color.orange
+    static let lmsNavyBlue = Color("NavyBlue")
 
     #if canImport(UIKit)
     static let lmsSurface = Color(uiColor: .systemBackground)
