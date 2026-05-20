@@ -6,8 +6,8 @@ import Supabase
 /// rather than using a singleton, but this is a convenient starting point.
 public let supabase: SupabaseClient = {
     // TODO: Replace with your actual Supabase URL and Anon Key
-    let supabaseURL = URL(string: "https://your-project.supabase.co")!
-    let supabaseKey = "your-anon-key"
+    let supabaseURL = URL(string: "https://kezcsrprvhzysftopjqd.supabase.co")!
+    let supabaseKey = "sb_publishable_kVi_Wh86_lesAuTm6f7kxw_8xshrFgQ"
     
     // Customize the client if needed (e.g., using snake_case decoding)
     var options = SupabaseClientOptions(
