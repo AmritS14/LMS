@@ -109,6 +109,15 @@ struct EMI: Identifiable, Codable, Sendable, Hashable {
     var paidAt: Date?
 }
 
+enum LoanStatus: String, Codable, Sendable {
+    case active        // disbursed, EMIs being paid on schedule
+    case overdue       // one or more EMIs missed but recoverable
+    case defaulted     // non-performing asset (NPA)
+    case foreclosed    // closed early by full prepayment
+    case settled       // closed via negotiated settlement (less than full repayment)
+    case closed        // fully repaid on schedule
+}
+
 struct Loan: Identifiable, Codable, Sendable, Hashable {
     var id: UUID = UUID()
     var applicationID: UUID
@@ -118,6 +127,7 @@ struct Loan: Identifiable, Codable, Sendable, Hashable {
     var tenureMonths: Int
     var disbursementDate: Date
     var outstandingBalance: Decimal
+    var status: LoanStatus = .active
     var emiSchedule: [EMI] = []
 }
 
