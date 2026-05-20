@@ -361,6 +361,7 @@
 			);
 			name = BorrowerApp;
 			packageProductDependencies = (
+				F0D69ABD2FBE2EF2004D16AF /* Supabase */,
 			);
 			productName = BorrowerApp;
 			productReference = 2C0817FF4EFCC1827F3C20E5 /* BorrowerApp.app */;
@@ -374,8 +375,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = E4CC6372170BE6DC84316F52 /* Build configuration list for PBXProject "LMS" */;
 			developmentRegion = en;
@@ -386,6 +385,9 @@
 			);
 			mainGroup = E8184548C4C890C6EAF1D245;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				F0D69ABC2FBE2EF2004D16AF /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3C83BCA67B2DF25CC483E810 /* Products */;
 			projectDirPath = "";
@@ -740,6 +742,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F0D69ABC2FBE2EF2004D16AF /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F0D69ABD2FBE2EF2004D16AF /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F0D69ABC2FBE2EF2004D16AF /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1BDA123E2A496A75607E73E8 /* Project object */;
 }
