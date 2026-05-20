@@ -90,6 +90,8 @@
 		F7F7B90D792B9760F95CE95A /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F43612DC9CA160255FFC33 /* Colors.swift */; };
 		F872AD1A8550E9CF19A04C1D /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E121B25741BC258047859E /* PrimaryButton.swift */; };
 		FE5E0902A300F4E68D4F8455 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5311FB36A8266E69CFD93D54 /* Models.swift */; };
+		AA0011110000000000000001 /* MockServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0011110000000000000002 /* MockServices.swift */; };
+		AA0011110000000000000003 /* LOCollectionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0011110000000000000004 /* LOCollectionsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -156,6 +158,8 @@
 		F315B139415D3EC19DB81164 /* PortfolioDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioDashboardView.swift; sourceTree = "<group>"; };
 		F582C8AB54B323AD8E169865 /* EMICalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EMICalculator.swift; sourceTree = "<group>"; };
 		FEE98171A238045C22C2F9E8 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
+		AA0011110000000000000002 /* MockServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockServices.swift; sourceTree = "<group>"; };
+		AA0011110000000000000004 /* LOCollectionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LOCollectionsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -236,6 +240,7 @@
 				A661E2C59635EFD0C144B906 /* LoanService.swift */,
 				3D006F72DB84815CA65BE6A7 /* MessagingService.swift */,
 				780758255E8A8257BB032094 /* NotificationService.swift */,
+				AA0011110000000000000002 /* MockServices.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -321,6 +326,7 @@
 				F01817C32FBD7B0800603D20 /* LODocumentReviewSheet.swift */,
 				F01817C42FBD7B0800603D20 /* LONotificationsView.swift */,
 				F01817C52FBD7B0800603D20 /* LOSuccessConfirmationView.swift */,
+				AA0011110000000000000004 /* LOCollectionsView.swift */,
 				172D1DB847A5C43509A7293B /* ApprovalsQueueView.swift */,
 				395C6FD33D73365EF60206F5 /* AuditTrailView.swift */,
 				53A1B1F768825A5C85AC58BB /* CreditAssessmentView.swift */,
@@ -528,6 +534,8 @@
 				06D2003DAE7684963CD1D12A /* Typography.swift in Sources */,
 				45F82F6E3A6153EADFAFD8E9 /* UserManagementView.swift in Sources */,
 				4A8DE59307A0DE54F7ACF0CB /* Validators.swift in Sources */,
+				AA0011110000000000000001 /* MockServices.swift in Sources */,
+				AA0011110000000000000003 /* LOCollectionsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

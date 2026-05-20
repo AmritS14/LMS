@@ -1,12 +1,20 @@
 import SwiftUI
 
+struct RoleTabViews_Preview: PreviewProvider {
+    static var previews: some View {
+        OfficerTabView()
+    }
+}
+
 struct OfficerTabView: View {
     var body: some View {
         TabView {
-            Tab("Dashboard", systemImage: "squareshape.2x2") { LODashboardView() }
-            Tab("Queue", systemImage: "tray.full") { LOApplicationsListView() }
-            Tab("Alerts", systemImage: "bell") { LONotificationsView() }
-            Tab("Profile", systemImage: "person.crop.circle") { StaffProfileView() }
+            Tab("Dashboard", systemImage: "squareshape.2x2.fill") { LODashboardView() }
+            Tab("Queue", systemImage: "tray.full.fill") { LOApplicationsListView() }
+            Tab("Collections", systemImage: "exclamationmark.arrow.circlepath") { LOCollectionsView() }
+            Tab("Messages", systemImage: "bubble.left.and.bubble.right.fill") { StaffMessagingView() }
+            Tab("Alerts", systemImage: "bell.fill") { LONotificationsView() }
+            Tab("Profile", systemImage: "person.crop.circle.fill") { StaffProfileView() }
         }
     }
 }
