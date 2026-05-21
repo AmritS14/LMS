@@ -255,7 +255,7 @@ enum MockData {
             startDate: Calendar.current.date(byAdding: .month, value: -14, to: .now)!
         )
         return Loan(
-            id: UUID(uuidString: "L4444444-0000-0000-0000-000000000004")!,
+            id: UUID(),
             applicationID: appDaniel.id,
             borrowerID: borrowerDaniel.id,
             principal: 700_000,
@@ -330,7 +330,7 @@ enum MockData {
     // MARK: Messages
 
     static let thread1 = MessageThread(
-        id: UUID(uuidString: "T1111111-0000-0000-0000-000000000001")!,
+        id: UUID(),
         participantIDs: [loanOfficerUser.id, borrowerJane.id],
         applicationID: appJane.id,
         lastMessagePreview: "Please re-upload your income statement.",
@@ -338,7 +338,7 @@ enum MockData {
     )
 
     static let thread2 = MessageThread(
-        id: UUID(uuidString: "T2222222-0000-0000-0000-000000000002")!,
+        id: UUID(),
         participantIDs: [loanOfficerUser.id, borrowerRobert.id],
         applicationID: appRobert.id,
         lastMessagePreview: "I can clarify the discrepancy tomorrow.",
@@ -346,7 +346,7 @@ enum MockData {
     )
 
     static let thread3 = MessageThread(
-        id: UUID(uuidString: "T3333333-0000-0000-0000-000000000003")!,
+        id: UUID(),
         participantIDs: [loanOfficerUser.id, borrowerAmelie.id],
         applicationID: appAmelie.id,
         lastMessagePreview: "Documents have been submitted successfully.",

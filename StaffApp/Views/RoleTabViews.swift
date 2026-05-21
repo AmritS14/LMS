@@ -1,11 +1,5 @@
 import SwiftUI
 
-struct RoleTabViews_Preview: PreviewProvider {
-    static var previews: some View {
-        OfficerTabView()
-    }
-}
-
 struct OfficerTabView: View {
     var body: some View {
         TabView {
