@@ -1,9 +1,7 @@
 import SwiftUI
 
 public struct SendBackModalView: View {
-    @Environment(\.presentationMode) var presentationMode
-    let navyBlue = Color(red: 0.05, green: 0.12, blue: 0.25)
-    let bgLight = Color(red: 0.96, green: 0.97, blue: 0.98)
+    @Environment(\.dismiss) var dismiss
     
     @State private var selectedReasons: Set<String> = []
     @State private var assignee = "Marcus Reed"
@@ -26,127 +24,122 @@ public struct SendBackModalView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Button(action: { presentationMode.wrappedValue.dismiss() }) {
+                Button(action: { dismiss() }) {
                     HStack(spacing: 4) {
                         Image(systemName: "chevron.left")
                         Text("Back")
                     }
-                    .font(.subheadline)
-                    .foregroundColor(navyBlue)
+                    .font(.lmsHeadline)
+                    .foregroundColor(.primary)
                 }
                 Spacer()
             }
-            .padding()
+            .padding(Spacing.m)
             
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Send Back")
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .foregroundColor(navyBlue)
+                        .font(.lmsTitle)
+                        .foregroundColor(.primary)
                     Text("Application")
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .foregroundColor(navyBlue)
+                        .font(.lmsTitle)
+                        .foregroundColor(.primary)
                 }
                 Spacer()
                 Image(systemName: "person.circle.fill")
                     .resizable()
-                    .frame(width: 48, height: 48)
+                    .frame(width: 40, height: 40)
                     .foregroundColor(.gray)
             }
-            .padding(.horizontal)
+            .padding(.horizontal, Spacing.m)
             
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: Spacing.l) {
                     
                     Text("Select reasons for returning this application to the loan officer.")
-                        .font(.subheadline)
-                        .foregroundColor(Color.black.opacity(0.7))
-                        .padding(.top, 8)
+                        .font(.lmsSubheadline)
+                        .foregroundColor(.primary)
+                        .padding(.top, Spacing.s)
                     
                     // Reasons List
-                    VStack(spacing: 0) {
-                        ForEach(reasons, id: \.self) { reason in
-                            Button(action: {
-                                if selectedReasons.contains(reason) {
-                                    selectedReasons.remove(reason)
-                                } else {
-                                    selectedReasons.insert(reason)
+                    SectionCard {
+                        VStack(spacing: 0) {
+                            ForEach(reasons, id: \.self) { reason in
+                                Button(action: {
+                                    if selectedReasons.contains(reason) {
+                                        selectedReasons.remove(reason)
+                                    } else {
+                                        selectedReasons.insert(reason)
+                                    }
+                                }) {
+                                    HStack {
+                                        Text(reason)
+                                            .font(.lmsSubheadline)
+                                            .foregroundColor(.primary)
+                                        Spacer()
+                                        Circle()
+                                            .stroke(Color.gray.opacity(0.5), lineWidth: 1.5)
+                                            .frame(width: 20, height: 20)
+                                            .overlay(
+                                                Circle()
+                                                    .fill(selectedReasons.contains(reason) ? Color.lmsNavyBlue : Color.clear)
+                                                    .frame(width: 12, height: 12)
+                                            )
+                                    }
+                                    .padding(.vertical, Spacing.m)
                                 }
-                            }) {
-                                HStack {
-                                    Text(reason)
-                                        .foregroundColor(Color.black.opacity(0.8))
-                                    Spacer()
-                                    Circle()
-                                        .stroke(Color.gray.opacity(0.5), lineWidth: 1.5)
-                                        .frame(width: 20, height: 20)
-                                        .overlay(
-                                            Circle()
-                                                .fill(selectedReasons.contains(reason) ? navyBlue : Color.clear)
-                                                .frame(width: 12, height: 12)
-                                        )
+                                if reason != reasons.last {
+                                    Divider()
                                 }
-                                .padding(.vertical, 16)
-                            }
-                            if reason != reasons.last {
-                                Divider()
                             }
                         }
                     }
-                    .padding(.horizontal)
-                    .background(Color.white)
-                    .cornerRadius(12)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                    )
                     
                     // Assignee
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: Spacing.s) {
                         Text("Assign to Loan Officer")
-                            .font(.caption)
+                            .font(.lmsCaption)
                             .foregroundColor(.gray)
                         
                         HStack {
                             Text(assignee)
-                                .foregroundColor(.black)
+                                .font(.lmsSubheadline)
+                                .foregroundColor(.primary)
                             Spacer()
                             Image(systemName: "chevron.down")
                                 .foregroundColor(.gray)
                         }
-                        .padding()
+                        .padding(Spacing.m)
                         .background(Color.white)
-                        .cornerRadius(8)
+                        .cornerRadius(CornerRadius.small)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 8)
+                            RoundedRectangle(cornerRadius: CornerRadius.small)
                                 .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                         )
                     }
                     
                     // Remarks
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: Spacing.s) {
                         Text("Additional Remarks")
-                            .font(.caption)
+                            .font(.lmsCaption)
                             .foregroundColor(.gray)
                         
                         ZStack(alignment: .topLeading) {
                             TextEditor(text: $remarks)
                                 .frame(height: 100)
-                                .padding(8)
+                                .padding(Spacing.s)
                                 .background(Color.white)
-                                .cornerRadius(8)
+                                .cornerRadius(CornerRadius.small)
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
+                                    RoundedRectangle(cornerRadius: CornerRadius.small)
                                         .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                                 )
                             
                             if remarks.isEmpty {
                                 Text("Provide specific details about the required changes...")
                                     .foregroundColor(.gray)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 16)
+                                    .padding(.horizontal, Spacing.m)
+                                    .padding(.vertical, Spacing.m)
                                     .allowsHitTesting(false)
                             }
                         }
@@ -154,28 +147,27 @@ public struct SendBackModalView: View {
                     
                     // Submit Button
                     Button(action: { 
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                         onComplete()
                     }) {
                         HStack {
                             Image(systemName: "paperplane.fill")
                             Text("Send Back to Officer")
                         }
-                        .font(.headline)
+                        .font(.lmsHeadline)
                         .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(navyBlue)
-                        .cornerRadius(10)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .background(Color.lmsNavyBlue)
+                        .clipShape(Capsule())
                     }
-                    .padding(.top, 10)
+                    .padding(.top, Spacing.s)
                     
                 }
-                .padding()
+                .padding(Spacing.m)
             }
             
         }
-        .background(bgLight.ignoresSafeArea())
+        .background(Color.lmsSurface.ignoresSafeArea())
     }
 }
 

@@ -17,10 +17,15 @@ struct PrimaryButton: View {
                 if isLoading { ProgressView().controlSize(.small) }
                 Text(title).font(.lmsHeadline)
             }
-            .frame(maxWidth: .infinity, minHeight: 48)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .foregroundColor(.white)
+            .background(Color.lmsNavyBlue)
+            .clipShape(Capsule())
         }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
         .disabled(isLoading)
     }
+}
+
+#Preview {
+    PrimaryButton("Test") {}
 }

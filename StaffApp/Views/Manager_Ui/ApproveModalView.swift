@@ -1,9 +1,7 @@
 import SwiftUI
 
 public struct ApproveModalView: View {
-    @Environment(\.presentationMode) var presentationMode
-    let navyBlue = Color(red: 0.0, green: 0.2, blue: 0.4)
-    let successGreen = Color(red: 0.0, green: 0.5, blue: 0.2)
+    @Environment(\.dismiss) var dismiss
     
     @State private var remarks = "Excellent credit profile, approved for full amount"
     @State private var notifyBorrower = true
@@ -15,91 +13,77 @@ public struct ApproveModalView: View {
     }
     
     public var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: Spacing.l) {
             // Handle
             Capsule()
                 .fill(Color.gray.opacity(0.3))
                 .frame(width: 40, height: 4)
-                .padding(.top, 16)
+                .padding(.top, Spacing.m)
             
             // Header
-            VStack(spacing: 8) {
+            VStack(spacing: Spacing.s) {
                 Text("Approve Application")
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .font(.lmsTitle)
                 
                 Text("Reviewing LN-90210 for Sarah Jenkins")
-                    .font(.subheadline)
+                    .font(.lmsSubheadline)
                     .foregroundColor(.gray)
             }
             
             // Remarks
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: Spacing.s) {
                 Text("Remarks")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(Color.black.opacity(0.8))
+                    .font(.lmsSubheadline)
+                    .foregroundColor(.primary)
                 
                 TextEditor(text: $remarks)
                     .frame(height: 100)
-                    .padding(8)
-                    .background(Color(red: 0.96, green: 0.96, blue: 0.98))
-                    .cornerRadius(8)
+                    .padding(Spacing.s)
+                    .background(Color.lmsSurface)
+                    .cornerRadius(CornerRadius.small)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: CornerRadius.small)
                             .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                     )
             }
-            .padding(.horizontal)
+            .padding(.horizontal, Spacing.m)
             
             // Notify Borrower Toggle
-            HStack {
-                Image(systemName: "bell")
-                    .foregroundColor(navyBlue)
-                Text("Notify Borrower")
-                    .font(.headline)
-                Spacer()
-                Toggle("", isOn: $notifyBorrower)
-                    .labelsHidden()
-                    .tint(successGreen)
+            SectionCard {
+                HStack {
+                    Image(systemName: "bell")
+                        .foregroundColor(.primary)
+                    Text("Notify Borrower")
+                        .font(.lmsHeadline)
+                    Spacer()
+                    Toggle("", isOn: $notifyBorrower)
+                        .labelsHidden()
+                        .tint(.lmsSuccess)
+                }
             }
-            .padding()
-            .background(Color(red: 0.98, green: 0.98, blue: 0.99))
-            .cornerRadius(12)
-            .padding(.horizontal)
+            .padding(.horizontal, Spacing.m)
             
             // Actions
-            VStack(spacing: 16) {
-                Button(action: {
-                    presentationMode.wrappedValue.dismiss()
+            VStack(spacing: Spacing.m) {
+                PrimaryButton("Confirm Approval") {
+                    dismiss()
                     onComplete()
-                }) {
-                    HStack {
-                        Image(systemName: "checkmark.circle")
-                        Text("Confirm Approval")
-                    }
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(navyBlue)
-                    .cornerRadius(10)
                 }
                 
                 Button(action: {
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 }) {
                     Text("Cancel")
-                        .font(.subheadline)
+                        .font(.lmsSubheadline)
                         .foregroundColor(.gray)
                 }
             }
-            .padding(.horizontal)
-            .padding(.bottom, 24)
+            .padding(.horizontal, Spacing.m)
+            .padding(.bottom, Spacing.l)
             
             Spacer()
         }
-        .background(Color.white)
+        .background(Color.lmsSurface)
     }
 }
 

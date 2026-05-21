@@ -16,6 +16,7 @@ struct SectionCard<Content: View>: View {
             }
             content
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Spacing.m)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
     }

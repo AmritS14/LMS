@@ -1,51 +1,33 @@
 import SwiftUI
 
 public struct ApplicationReviewView: View {
-    let navyBlue = Color(red: 0.05, green: 0.12, blue: 0.25)
+    let navyBlue = Color.blue
     let bgLight = Color(red: 0.96, green: 0.97, blue: 0.98)
     let cardBg = Color.white
     let successGreen = Color(red: 0.13, green: 0.77, blue: 0.36)
     
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) var dismiss
     @State private var showingApprove = false
     @State private var showingReject = false
     @State private var showingSendBack = false
     @State private var showSuccess = false
     @State private var completedAction: ApplicationActionType = .approve
+    @State private var navigateToProfile = false
+    @State private var navigateToNotifications = false
+    
+    // Dynamic Document Verification State
+    @State private var verifiedGovID = true
+    @State private var verifiedTaxReturns = true
+    @State private var verifiedCollateral = true
+    
+    var verifiedCount: Int {
+        [verifiedGovID, verifiedTaxReturns, verifiedCollateral].filter { $0 }.count
+    }
     
     public init() {}
     
     public var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack {
-                Button(action: { presentationMode.wrappedValue.dismiss() }) {
-                    Image(systemName: "arrow.left")
-                        .foregroundColor(navyBlue)
-                        .font(.system(size: 18, weight: .medium))
-                }
-                
-                Text("Review Application")
-                    .font(.headline)
-                    .foregroundColor(navyBlue)
-                    .padding(.leading, 8)
-                
-                Spacer()
-                
-                Button(action: {}) {
-                    Image(systemName: "bell")
-                        .foregroundColor(navyBlue)
-                }
-                
-                Image(systemName: "person.circle.fill")
-                    .resizable()
-                    .frame(width: 32, height: 32)
-                    .foregroundColor(.gray)
-                    .padding(.leading, 8)
-            }
-            .padding()
-            .background(Color.white)
-            
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
                     
@@ -55,7 +37,7 @@ public struct ApplicationReviewView: View {
                             Text("Borrower Profile")
                                 .font(.title3)
                                 .fontWeight(.bold)
-                                .foregroundColor(navyBlue)
+                                .foregroundColor(.primary)
                             Spacer()
                             Image(systemName: "checkmark.shield")
                                 .foregroundColor(.gray)
@@ -86,7 +68,7 @@ public struct ApplicationReviewView: View {
                                 Text("₹1,85,000")
                                     .font(.headline)
                                     .fontWeight(.bold)
-                                    .foregroundColor(navyBlue)
+                                    .foregroundColor(.primary)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding()
@@ -101,7 +83,7 @@ public struct ApplicationReviewView: View {
                                 Text("12 Years")
                                     .font(.headline)
                                     .fontWeight(.bold)
-                                    .foregroundColor(navyBlue)
+                                    .foregroundColor(.primary)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding()
@@ -118,7 +100,7 @@ public struct ApplicationReviewView: View {
                         Text("Loan Configuration")
                             .font(.title3)
                             .fontWeight(.bold)
-                            .foregroundColor(navyBlue)
+                            .foregroundColor(.primary)
                         
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Requested Amount")
@@ -127,7 +109,7 @@ public struct ApplicationReviewView: View {
                             Text("₹1,20,000")
                                 .font(.title)
                                 .fontWeight(.bold)
-                                .foregroundColor(navyBlue)
+                                .foregroundColor(.primary)
                         }
                         
                         VStack(alignment: .leading, spacing: 4) {
@@ -140,7 +122,7 @@ public struct ApplicationReviewView: View {
                                 Text("15 Years")
                                     .font(.headline)
                                     .fontWeight(.bold)
-                                    .foregroundColor(navyBlue)
+                                    .foregroundColor(.primary)
                             }
                         }
                         
@@ -154,7 +136,7 @@ public struct ApplicationReviewView: View {
                                 Text("Business Expansion")
                                     .font(.headline)
                                     .fontWeight(.bold)
-                                    .foregroundColor(navyBlue)
+                                    .foregroundColor(.primary)
                             }
                         }
                     }
@@ -169,23 +151,23 @@ public struct ApplicationReviewView: View {
                             Text("Verified Documents")
                                 .font(.title3)
                                 .fontWeight(.bold)
-                                .foregroundColor(navyBlue)
+                                .foregroundColor(.primary)
                             
                             Spacer()
                             
-                            Text("3 of 3 Verified")
+                            Text("\(verifiedCount) of 3 Verified")
                                 .font(.caption)
                                 .fontWeight(.bold)
-                                .foregroundColor(successGreen)
+                                .foregroundColor(verifiedCount == 3 ? successGreen : .orange)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(successGreen.opacity(0.1))
+                                .background(verifiedCount == 3 ? successGreen.opacity(0.1) : Color.orange.opacity(0.1))
                                 .cornerRadius(4)
                         }
                         
-                        documentRow(icon: "person.text.rectangle", title: "Government ID")
-                        documentRow(icon: "doc.text", title: "Tax Returns (3 yrs)")
-                        documentRow(icon: "building.columns", title: "Collateral Proof")
+                        documentRow(icon: "person.text.rectangle", title: "Government ID", isVerified: $verifiedGovID)
+                        documentRow(icon: "doc.text", title: "Tax Returns (3 yrs)", isVerified: $verifiedTaxReturns)
+                        documentRow(icon: "building.columns", title: "Collateral Proof", isVerified: $verifiedCollateral)
                     }
                     .padding()
                     .background(cardBg)
@@ -196,7 +178,7 @@ public struct ApplicationReviewView: View {
                         Text("Officer Evaluation")
                             .font(.title3)
                             .fontWeight(.bold)
-                            .foregroundColor(navyBlue)
+                            .foregroundColor(.primary)
                         
                         HStack(alignment: .top, spacing: 12) {
                             Image(systemName: "quote.opening")
@@ -231,7 +213,7 @@ public struct ApplicationReviewView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.red.opacity(0.15))
-                        .cornerRadius(10)
+                        .clipShape(Capsule())
                     }
                     
                     Button(action: { showingSendBack = true }) {
@@ -244,7 +226,7 @@ public struct ApplicationReviewView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.orange.opacity(0.2))
-                        .cornerRadius(10)
+                        .clipShape(Capsule())
                     }
                 }
                 
@@ -258,7 +240,7 @@ public struct ApplicationReviewView: View {
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(navyBlue)
-                    .cornerRadius(10)
+                    .clipShape(Capsule())
                 }
             }
             .padding()
@@ -266,6 +248,34 @@ public struct ApplicationReviewView: View {
             .shadow(color: Color.black.opacity(0.05), radius: 5, y: -5)
         }
         .edgesIgnoringSafeArea(.bottom)
+        .navigationTitle("Review Application")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.primary)
+                }
+            }
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                Button(action: { navigateToNotifications = true }) {
+                    Image(systemName: "bell")
+                        .foregroundColor(.primary)
+                }
+                Button(action: { navigateToProfile = true }) {
+                    Image(systemName: "person.circle.fill")
+                        .foregroundColor(.gray)
+                }
+            }
+        }
+        .navigationDestination(isPresented: $navigateToProfile) {
+            StaffProfileView()
+        }
+        .navigationDestination(isPresented: $navigateToNotifications) {
+            LONotificationsView()
+        }
         .sheet(isPresented: $showingApprove) {
             ApproveModalView(onComplete: { 
                 completedAction = .approve
@@ -290,30 +300,42 @@ public struct ApplicationReviewView: View {
         }
     }
     
-    private func documentRow(icon: String, title: String) -> some View {
-        HStack {
-            Image(systemName: icon)
-                .foregroundColor(navyBlue)
-                .frame(width: 24)
-            Text(title)
-                .font(.subheadline)
-                .foregroundColor(.black.opacity(0.8))
-            Spacer()
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundColor(successGreen)
+    private func documentRow(icon: String, title: String, isVerified: Binding<Bool>) -> some View {
+        Button(action: {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                isVerified.wrappedValue.toggle()
+            }
+        }) {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundColor(navyBlue)
+                    .frame(width: 24)
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundColor(.black.opacity(0.8))
+                Spacer()
+                Image(systemName: isVerified.wrappedValue ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(isVerified.wrappedValue ? successGreen : .gray.opacity(0.5))
+                    .font(.system(size: 20))
+            }
+            .padding()
+            .background(Color.gray.opacity(0.05))
+            .cornerRadius(8)
         }
-        .padding()
-        .background(Color.gray.opacity(0.05))
-        .cornerRadius(8)
+        .buttonStyle(.plain)
     }
 }
 
 struct ApplicationReviewView_Previews: PreviewProvider {
     static var previews: some View {
         ApplicationReviewView()
+            .environment(SessionStore())
     }
 }
 
 #Preview {
-    ApplicationReviewView()
+    NavigationStack {
+        ApplicationReviewView()
+            .environment(SessionStore())
+    }
 }
