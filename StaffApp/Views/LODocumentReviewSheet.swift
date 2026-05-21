@@ -1,73 +1,165 @@
 import SwiftUI
 
 struct LODocumentReviewSheet: View {
-    let documentName: String
-    @Environment(\.dismiss) var dismiss
-    @State private var isFlagged = false
+    let document: LoanDocument
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var verificationStatus: DocumentVerificationStatus
     @State private var resolutionNotes = ""
-    
+    @State private var saved = false
+
+    init(document: LoanDocument) {
+        self.document = document
+        _verificationStatus = State(initialValue: document.status)
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: Spacing.m) {
-                // Mock Document Viewer
+
+                // Mock Document Preview
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.secondary.opacity(0.1))
-                    
-                    VStack {
-                        Image(systemName: "photo")
-                            .font(.system(size: 48))
-                            .foregroundColor(.secondary)
-                        Text("Document Preview: \(documentName)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                    RoundedRectangle(cornerRadius: CornerRadius.medium)
+                        .fill(Color.secondary.opacity(0.08))
+
+                    VStack(spacing: Spacing.m) {
+                        Image(systemName: documentIcon)
+                            .font(.system(size: 56))
+                            .foregroundStyle(statusColor)
+                        Text(document.fileName)
+                            .font(.lmsHeadline)
+                            .multilineTextAlignment(.center)
+                        Text(document.kind.displayName)
+                            .font(.lmsCaption)
+                            .foregroundStyle(.secondary)
+                        StatusBadge(document.status.displayName, tone: statusTone(document.status))
                     }
+                    .padding()
                 }
-                .frame(maxHeight: 250)
-                
-                VStack(spacing: Spacing.s) {
-                    Toggle("Flag as Irregular", isOn: $isFlagged.animation())
-                        .tint(.lmsWarning)
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(isFlagged ? Color.lmsWarning.opacity(0.1) : Color.lmsSurface)
-                        )
-                    
-                    if isFlagged {
-                        VStack(alignment: .leading) {
-                            Text("Resolution Notes")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            
-                            TextEditor(text: $resolutionNotes)
-                                .frame(height: 100)
-                                .padding(4)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .strokeBorder(Color.secondary.opacity(0.3))
-                                )
+                .frame(maxHeight: 220)
+                .padding(.horizontal, Spacing.m)
+
+                // Action Picker
+                VStack(alignment: .leading, spacing: Spacing.s) {
+                    Text("Update Verification Status")
+                        .font(.lmsHeadline)
+                        .padding(.horizontal, Spacing.m)
+
+                    HStack(spacing: Spacing.s) {
+                        StatusPillButton(label: "Verified", color: .lmsSuccess, isSelected: verificationStatus == .verified) {
+                            withAnimation { verificationStatus = .verified }
                         }
-                        .transition(.opacity.combined(with: .move(edge: .top)))
+                        StatusPillButton(label: "Needs Review", color: .lmsWarning, isSelected: verificationStatus == .pending) {
+                            withAnimation { verificationStatus = .pending }
+                        }
+                        StatusPillButton(label: "Rejected / Flagged", color: .lmsDanger, isSelected: verificationStatus == .rejected) {
+                            withAnimation { verificationStatus = .rejected }
+                        }
+                    }
+                    .padding(.horizontal, Spacing.m)
+                }
+
+                // Resolution notes (shown when pending or rejected)
+                if verificationStatus != .verified {
+                    VStack(alignment: .leading, spacing: Spacing.s) {
+                        Text(verificationStatus == .rejected ? "Rejection Reason" : "Review Notes")
+                            .font(.lmsHeadline)
+                        TextEditor(text: $resolutionNotes)
+                            .frame(minHeight: 100)
+                            .padding(Spacing.s)
+                            .background(
+                                RoundedRectangle(cornerRadius: CornerRadius.small)
+                                    .strokeBorder(Color.secondary.opacity(0.3))
+                            )
+                            .overlay(alignment: .topLeading) {
+                                if resolutionNotes.isEmpty {
+                                    Text("Describe the issue clearly for the borrower…")
+                                        .font(.lmsBody)
+                                        .foregroundStyle(.tertiary)
+                                        .padding(12)
+                                        .allowsHitTesting(false)
+                                }
+                            }
+                    }
+                    .padding(.horizontal, Spacing.m)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
+                Spacer()
+
+                PrimaryButton("Save Review", isLoading: saved) {
+                    saved = true
+                    Task {
+                        try? await MockData.sharedDocumentService.updateStatus(documentID: document.id, status: verificationStatus)
+                        try? await Task.sleep(for: .milliseconds(500))
+                        dismiss()
                     }
                 }
-                
-                Spacer()
-                
-                PrimaryButton("Save Review") {
-                    dismiss()
-                }
+                .padding(Spacing.m)
             }
-            .padding()
+            .padding(.top, Spacing.m)
             .navigationTitle("Review Document")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
                 }
             }
         }
     }
+
+    private var documentIcon: String {
+        switch document.kind {
+        case .identityProof, .addressProof: return "creditcard.and.123"
+        case .incomeProof, .bankStatement: return "banknote"
+        case .collateral: return "house.fill"
+        default: return "doc.fill"
+        }
+    }
+
+    private var statusColor: Color {
+        switch verificationStatus {
+        case .verified: return .lmsSuccess
+        case .rejected: return .lmsDanger
+        case .pending: return .lmsWarning
+        }
+    }
+
+    private func statusTone(_ status: DocumentVerificationStatus) -> StatusBadge.Tone {
+        switch status {
+        case .verified: return .success
+        case .rejected: return .danger
+        case .pending: return .warning
+        }
+    }
+}
+
+struct StatusPillButton: View {
+    let label: String
+    let color: Color
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(label)
+                .font(.lmsCaption.weight(isSelected ? .bold : .medium))
+                .foregroundStyle(isSelected ? .white : color)
+                .padding(.horizontal, Spacing.s)
+                .padding(.vertical, Spacing.xs)
+                .frame(maxWidth: .infinity)
+                .background(
+                    isSelected
+                        ? AnyShapeStyle(color)
+                        : AnyShapeStyle(color.opacity(0.12))
+                    , in: Capsule()
+                )
+                .overlay(Capsule().strokeBorder(color.opacity(0.3), lineWidth: isSelected ? 0 : 1))
+        }
+        .animation(.easeInOut(duration: 0.2), value: isSelected)
+    }
+}
+
+#Preview {
+    LODocumentReviewSheet(document: MockData.janeDocuments[0])
 }
