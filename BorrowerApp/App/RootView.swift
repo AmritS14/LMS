@@ -2,10 +2,19 @@ import SwiftUI
 
 struct RootView: View {
     @Environment(SessionStore.self) private var session
+    @Environment(\.appEnvironment) private var env
 
     var body: some View {
         if session.isAuthenticated {
             BorrowerTabView()
+                .task {
+                    if let env = env {
+                        _ = try? await env.notifications.requestAuthorization()
+                        if let deviceToken = "mock_device_token".data(using: .utf8) {
+                            try? await env.notifications.registerDeviceToken(deviceToken)
+                        }
+                    }
+                }
         } else {
             LoginView()
         }
@@ -15,20 +24,11 @@ struct RootView: View {
 struct BorrowerTabView: View {
     var body: some View {
         TabView {
-            Tab("Home", systemImage: "house") {
+            Tab("Dashboard", systemImage: "house") {
                 HomeDashboardView()
             }
-            Tab("Apply", systemImage: "plus.app") {
+            Tab("Apply", systemImage: "plus.circle") {
                 NewLoanApplicationView()
-            }
-            Tab("EMI", systemImage: "calendar") {
-                RepaymentDashboardView()
-            }
-            Tab("Messages", systemImage: "bubble.left.and.bubble.right") {
-                BorrowerMessagingView()
-            }
-            Tab("Profile", systemImage: "person.crop.circle") {
-                BorrowerProfileView()
             }
         }
     }
@@ -36,5 +36,16 @@ struct BorrowerTabView: View {
 
 #Preview {
     BorrowerTabView()
-        .environment(SessionStore())
+        .environment(SessionStore(
+            currentUser: MockAuthService.seedBorrower,
+            borrowerProfile: MockAuthService.seedBorrowerProfile
+        ))
+        .environment(\.appEnvironment, AppEnvironment(
+            auth: MockAuthService(),
+            loans: MockLoanService(),
+            documents: MockDocumentService(),
+            notifications: MockNotificationService(),
+            messaging: MockMessagingService(),
+            keychain: MockKeychainService()
+        ))
 }

@@ -109,16 +109,22 @@ struct EMI: Identifiable, Codable, Sendable, Hashable {
     var paidAt: Date?
 }
 
+enum LoanStatus: String, Codable, Sendable {
+    case active, settled, defaulted
+}
+
 struct Loan: Identifiable, Codable, Sendable, Hashable {
     var id: UUID = UUID()
     var applicationID: UUID
     var borrowerID: UUID
+    var loanType: LoanType = .personal
     var principal: Decimal
     var interestRate: Double
     var tenureMonths: Int
     var disbursementDate: Date
     var outstandingBalance: Decimal
     var emiSchedule: [EMI] = []
+    var status: LoanStatus = .active
 }
 
 // MARK: - Documents

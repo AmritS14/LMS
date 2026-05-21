@@ -13,10 +13,10 @@ struct EMICalculatorView: View {
                 Stepper("Tenure: \(tenureMonths) months", value: $tenureMonths, in: 6...360, step: 6)
             }
             Section("Result") {
-                // TODO: live calculation from EMICalculator
-                LabeledContent("Monthly EMI", value: "—")
-                LabeledContent("Total Interest", value: "—")
-                LabeledContent("Total Payable", value: "—")
+                let result = EMICalculator.calculate(principal: principal, annualInterestRate: rate, tenureMonths: tenureMonths, startDate: .now)
+                LabeledContent("Monthly EMI", value: Formatting.currency(result.monthlyInstallment))
+                LabeledContent("Total Interest", value: Formatting.currency(result.totalInterest))
+                LabeledContent("Total Payable", value: Formatting.currency(result.totalPayable))
             }
         }
         .navigationTitle("EMI Calculator")

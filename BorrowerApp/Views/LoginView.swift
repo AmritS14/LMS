@@ -1,9 +1,10 @@
 import SwiftUI
 
 struct LoginView: View {
-    @State private var identifier: String = ""
-    @State private var otp: String = ""
-    @State private var otpRequested: Bool = false
+    @Environment(SessionStore.self) private var session
+    @Environment(\.appEnvironment) private var env
+    
+    @State private var viewModel = AuthViewModel()
 
     var body: some View {
         NavigationStack {
@@ -12,18 +13,39 @@ struct LoginView: View {
                 Text("Sign in with mobile number or email").font(.lmsBody).foregroundStyle(.secondary)
 
                 SectionCard {
-                    TextField("Mobile or Email", text: $identifier)
+                    TextField("Mobile or Email", text: $viewModel.identifier)
                         .textFieldStyle(.roundedBorder)
                         .textContentType(.username)
-                    if otpRequested {
-                        TextField("OTP", text: $otp)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .disabled(viewModel.showOTPField)
+                        
+                    if viewModel.showOTPField {
+                        TextField("OTP", text: $viewModel.otp)
                             .textFieldStyle(.roundedBorder)
                             .textContentType(.oneTimeCode)
                             .keyboardType(.numberPad)
                     }
-                    PrimaryButton(otpRequested ? "Verify" : "Send OTP") {
-                        // TODO: call AuthService
-                        otpRequested = true
+                    
+                    if let errorMessage = viewModel.errorMessage {
+                        Text(errorMessage)
+                            .font(.lmsCaption)
+                            .foregroundStyle(Color.lmsDanger)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                    PrimaryButton(viewModel.showOTPField ? "Verify" : "Send OTP", isLoading: viewModel.isBusy) {
+                        guard let auth = env?.auth else { return }
+                        Task {
+                            if viewModel.showOTPField {
+                                if let user = await viewModel.verifyOTP(authService: auth) {
+                                    session.currentUser = user
+                                    // Normally we would fetch borrower profile as well
+                                }
+                            } else {
+                                await viewModel.requestOTP(authService: auth)
+                            }
+                        }
                     }
                 }
                 Spacer()
@@ -35,5 +57,7 @@ struct LoginView: View {
 }
 
 #Preview {
+    // Requires mock environment
     LoginView()
+        .environment(SessionStore())
 }
