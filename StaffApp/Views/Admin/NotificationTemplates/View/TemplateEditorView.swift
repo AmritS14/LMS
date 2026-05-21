@@ -17,23 +17,29 @@ struct TemplateEditorView: View {
     @Bindable var viewModel: TemplateViewModel
 
     var body: some View {
-        Form {
-            // Template metadata
-            metadataSection
+        ScrollView {
+            VStack(spacing: AdminSpacing.sectionGap) {
+                // Template metadata
+                metadataSection
 
-            // Body text editor
-            editorSection
+                // Body text editor
+                editorSection
 
-            // Channels selection
-            channelsSection
+                // Channels selection
+                channelsSection
 
-            // Borrower-facing preview
-            previewSection
+                // Borrower-facing preview
+                previewSection
 
-            // Save button
-            saveSection
+                // Save button
+                saveSection
+            }
+            .padding(.horizontal, AdminSpacing.cardRowHorizontalInset)
+            .padding(.top, AdminSpacing.cardRowVerticalInset)
+            .padding(.bottom, Spacing.xl)
         }
-        .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .background(AdminColor.background)
         .navigationTitle("Edit Template")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Template Saved", isPresented: $viewModel.showSaveAlert) {
@@ -57,82 +63,132 @@ struct TemplateEditorView: View {
 
     /// Shows the template title and trigger event.
     private var metadataSection: some View {
-        Section {
-            HStack {
-                Label("Title", systemImage: "textformat")
-                    .foregroundStyle(.secondary)
-                Spacer()
-                TextField("Template Title", text: $viewModel.editingTitle)
-                    .multilineTextAlignment(.trailing)
-                    .onChange(of: viewModel.editingTitle) { _, _ in
-                        viewModel.markDirty()
-                    }
-            }
+        VStack(alignment: .leading, spacing: AdminSpacing.headerToCardGap) {
+            SectionHeaderView(title: "Template Info", systemImage: "info.circle")
 
-            if let template = viewModel.selectedTemplate {
+            VStack(spacing: Spacing.s) {
                 HStack {
-                    Label("Trigger", systemImage: template.triggerEvent.systemImage)
+                    Label("Title", systemImage: "textformat")
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Text(template.triggerEvent.rawValue)
-                        .foregroundStyle(.primary)
+                    TextField("Template Title", text: $viewModel.editingTitle)
+                        .multilineTextAlignment(.trailing)
+                        .onChange(of: viewModel.editingTitle) { _, _ in
+                            viewModel.markDirty()
+                        }
+                }
+
+                if viewModel.selectedTemplate != nil {
+                    Divider()
+                }
+
+                if let template = viewModel.selectedTemplate {
+                    HStack {
+                        Label("Trigger", systemImage: template.triggerEvent.systemImage)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(template.triggerEvent.rawValue)
+                            .foregroundStyle(.primary)
+                    }
                 }
             }
-        } header: {
-            SectionHeaderView(title: "Template Info", systemImage: "info.circle")
+            .padding(AdminSpacing.cardPadding)
+            .background(
+                AdminColor.cardBackground,
+                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
         }
     }
 
     /// TextEditor for modifying the notification body text.
     private var editorSection: some View {
-        Section {
-            TextEditor(text: $viewModel.editingBodyText)
-                .font(.system(.body, design: .monospaced))
-                .frame(minHeight: 200)
-                .scrollContentBackground(.hidden)
-                .onChange(of: viewModel.editingBodyText) { _, _ in
-                    viewModel.markDirty()
-                }
-
-            // Placeholder tokens reference
-            placeholderHint
-        } header: {
+        VStack(alignment: .leading, spacing: AdminSpacing.headerToCardGap) {
             SectionHeaderView(title: "Message Body", systemImage: "text.alignleft")
+
+            VStack(spacing: Spacing.s) {
+                TextEditor(text: $viewModel.editingBodyText)
+                    .font(.system(.body, design: .monospaced))
+                    .frame(minHeight: 200)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.clear)
+                    .onChange(of: viewModel.editingBodyText) { _, _ in
+                        viewModel.markDirty()
+                    }
+
+                Divider()
+
+                // Placeholder tokens reference
+                placeholderHint
+            }
+            .padding(AdminSpacing.cardPadding)
+            .background(
+                AdminColor.cardBackground,
+                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
         }
     }
     
     /// Channels Selection Section
     private var channelsSection: some View {
-        Section {
-            ForEach(NotificationChannel.allCases) { channel in
-                Toggle(isOn: Binding(
-                    get: { viewModel.editingChannels.contains(channel) },
-                    set: { isEnabled in
-                        if isEnabled {
-                            viewModel.editingChannels.insert(channel)
-                        } else {
-                            viewModel.editingChannels.remove(channel)
+        VStack(alignment: .leading, spacing: AdminSpacing.headerToCardGap) {
+            SectionHeaderView(title: "Delivery Channels", systemImage: "paperplane.fill")
+
+            VStack(spacing: Spacing.s) {
+                ForEach(NotificationChannel.allCases.indices, id: \.self) { index in
+                    let channel = NotificationChannel.allCases[index]
+                    Toggle(isOn: Binding(
+                        get: { viewModel.editingChannels.contains(channel) },
+                        set: { isEnabled in
+                            if isEnabled {
+                                viewModel.editingChannels.insert(channel)
+                            } else {
+                                viewModel.editingChannels.remove(channel)
+                            }
+                            viewModel.markDirty()
                         }
-                        viewModel.markDirty()
+                    )) {
+                        Label(channel.rawValue, systemImage: channel.systemImage)
                     }
-                )) {
-                    Label(channel.rawValue, systemImage: channel.systemImage)
+
+                    if index < NotificationChannel.allCases.count - 1 {
+                        Divider()
+                    }
                 }
             }
-        } header: {
-            SectionHeaderView(title: "Delivery Channels", systemImage: "paperplane.fill")
+            .padding(AdminSpacing.cardPadding)
+            .background(
+                AdminColor.cardBackground,
+                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
         }
     }
 
     /// Shows the borrower-facing preview with placeholders resolved.
     private var previewSection: some View {
-        Section {
+        VStack(alignment: .leading, spacing: AdminSpacing.headerToCardGap) {
+            SectionHeaderView(title: "Borrower Preview", systemImage: "eye")
+
             VStack(alignment: .leading, spacing: 12) {
                 // Simulated notification header
                 HStack(spacing: 10) {
                     Image(systemName: "bell.fill")
                         .font(.title3)
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(AdminColor.accent)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(viewModel.editingTitle)
@@ -153,24 +209,27 @@ struct TemplateEditorView: View {
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.vertical, 4)
-        } header: {
-            SectionHeaderView(title: "Borrower Preview", systemImage: "eye")
+            .padding(AdminSpacing.cardPadding)
+            .background(
+                AdminColor.cardBackground,
+                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
         }
     }
 
     /// Prominent save button.
     private var saveSection: some View {
-        Section {
-            PrimaryButton("Save Template", isLoading: viewModel.isSaving) {
-                Task {
-                    await viewModel.updateTemplate()
-                }
+        AdminPrimaryButton("Save Template", isLoading: viewModel.isSaving) {
+            Task {
+                await viewModel.updateTemplate()
             }
-            .disabled(!viewModel.hasUnsavedChanges)
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
         }
+        .disabled(!viewModel.hasUnsavedChanges)
     }
 
     // MARK: - Subviews
@@ -202,7 +261,7 @@ struct TemplateEditorView: View {
         HStack {
             Text(token)
                 .font(.system(.caption, design: .monospaced))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(AdminColor.accent)
             Spacer()
             Text(description)
                 .font(.caption2)

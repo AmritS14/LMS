@@ -34,7 +34,7 @@ struct UserRowView: View {
             Spacer()
             
             VStack(alignment: .trailing, spacing: Spacing.s) {
-                StatusBadge(user.role.rawValue, tone: roleBadgeTone)
+                StatusBadge(user.role.displayName, tone: roleBadgeTone)
                 
                 if let empId = profile?.employeeID {
                     Text(empId)
@@ -43,12 +43,16 @@ struct UserRowView: View {
                 }
             }
         }
-        .padding(Spacing.m)
+        .padding(AdminSpacing.cardPadding)
         .background(
-            Color(UIColor.systemBackground),
-            in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous)
+            AdminColor.cardBackground,
+            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
         )
-        .shadow(color: .black.opacity(0.02), radius: 5, y: 2)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.02), radius: 4, y: 2)
     }
 
     private var initialsAvatar: some View {
@@ -60,7 +64,7 @@ struct UserRowView: View {
             .joined()
 
         return Text(initials)
-            .font(.system(.title3, design: .rounded, weight: .bold))
+            .font(.system(.title3, design: .default, weight: .bold))
             .foregroundStyle(.white)
             .frame(width: 50, height: 50)
             .background(avatarColor.gradient, in: Circle())
@@ -129,6 +133,9 @@ struct UserDetailsView: View {
                 .disabled(user.role == .admin)
             }
         }
+        .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .background(AdminColor.background)
         .navigationTitle("Manage User")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Success", isPresented: $viewModel.showSuccessAlert) {

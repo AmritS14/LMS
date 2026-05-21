@@ -18,6 +18,15 @@ enum UserRole: String, Codable, Sendable, CaseIterable, Identifiable {
         case .borrower: return "person"
         }
     }
+
+    var displayName: String {
+        switch self {
+        case .borrower: return "Borrower"
+        case .loanOfficer: return "Loan Officer"
+        case .manager: return "Manager"
+        case .admin: return "Admin"
+        }
+    }
 }
 
 struct User: Identifiable, Codable, Sendable, Hashable {

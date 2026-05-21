@@ -7,6 +7,14 @@
 
 import Foundation
 
+enum TenureUnit: String, CaseIterable, Identifiable, Codable {
+    case days = "Days"
+    case months = "Months"
+    case years = "Years"
+    
+    var id: String { rawValue }
+}
+
 // MARK: - Loan Product Model
 
 /// Represents a configurable loan product in the system.
@@ -18,7 +26,8 @@ struct LoanProduct: Identifiable, Hashable, Codable {
     var minAmount: Double
     var maxAmount: Double
     var interestRate: Double
-    var maxTenure: Int // in months
+    var maxTenure: Int
+    var tenureUnit: TenureUnit
 
     init(
         id: UUID = UUID(),
@@ -26,7 +35,8 @@ struct LoanProduct: Identifiable, Hashable, Codable {
         minAmount: Double,
         maxAmount: Double,
         interestRate: Double,
-        maxTenure: Int
+        maxTenure: Int,
+        tenureUnit: TenureUnit = .months
     ) {
         self.id = id
         self.name = name
@@ -34,6 +44,7 @@ struct LoanProduct: Identifiable, Hashable, Codable {
         self.maxAmount = maxAmount
         self.interestRate = interestRate
         self.maxTenure = maxTenure
+        self.tenureUnit = tenureUnit
     }
 }
 

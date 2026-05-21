@@ -11,27 +11,28 @@ import SwiftUI
 
 struct DashboardView: View {
     @Bindable var viewModel: DashboardViewModel
+    @State private var isAmountVisible: Bool = true
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Spacing.l) {
+            VStack(spacing: AdminSpacing.sectionGap) {
                 // Total Distribution Card
                 distributionCard
 
                 // Recent Applications List
-                VStack(alignment: .leading, spacing: Spacing.m) {
+                VStack(alignment: .leading, spacing: AdminSpacing.headerToCardGap) {
                     Text("Recent Application")
                         .font(.lmsTitle2)
                         .foregroundStyle(.primary)
 
-                    recentApplicationsCard
+                    recentApplicationsList
                 }
             }
             .padding(.horizontal, Spacing.m)
             .padding(.top, Spacing.m)
             .padding(.bottom, Spacing.xl)
         }
-        .background(Color(.systemGroupedBackground))
+        .background(AdminColor.background)
         .navigationTitle("Dashboard")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -51,47 +52,64 @@ struct DashboardView: View {
     /// Card for Total Distribution
     private var distributionCard: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                Text("TOTAL DISTRIBUTION")
-                    .font(.lmsSubheadline)
-                    .foregroundStyle(.secondary)
-                Text(viewModel.snapshot.stats.totalAmount)
-                    .font(.lmsTitle)
-                    .foregroundStyle(Color.lmsAccent)
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text("TOTAL DISTRIBUTION")
+                        .font(.lmsSubheadline)
+                        .foregroundStyle(.white.opacity(0.8))
+                    Text(isAmountVisible ? viewModel.snapshot.stats.totalAmount : "••••••")
+                        .font(.lmsTitle)
+                        .foregroundStyle(.white)
+                }
+                
+                Spacer()
+                
+                Button {
+                    isAmountVisible.toggle()
+                } label: {
+                    Image(systemName: isAmountVisible ? "eye" : "eye.slash")
+                        .font(.title2)
+                        .foregroundStyle(.white)
+                }
             }
             
             HStack(spacing: 0) {
                 statColumn(title: "Total user", value: "\(viewModel.snapshot.stats.totalUser)")
-                Divider().frame(height: 40)
+                Divider()
+                    .frame(height: 40)
+                    .background(Color.white.opacity(0.25))
                 statColumn(title: "Active Loans", value: "\(viewModel.snapshot.stats.activeLoans)")
-                Divider().frame(height: 40)
+                Divider()
+                    .frame(height: 40)
+                    .background(Color.white.opacity(0.25))
                 statColumn(title: "Application", value: "\(viewModel.snapshot.stats.applications)")
             }
         }
         .padding(Spacing.m)
         .background(
-            Color(UIColor.systemBackground),
+            AdminColor.accentGradient,
             in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
         )
+        .shadow(color: AdminColor.accent.opacity(0.25), radius: 10, x: 0, y: 5)
     }
     
     private func statColumn(title: String, value: String) -> some View {
         VStack(spacing: Spacing.s) {
             Text(title)
                 .font(.lmsCaption)
-                .foregroundStyle(Color.lmsAccent)
+                .foregroundStyle(.white.opacity(0.85))
             Text(value)
                 .font(.lmsTitle2)
-                .foregroundStyle(.primary)
+                .foregroundStyle(.white)
         }
         .frame(maxWidth: .infinity)
     }
 
-    /// Card for Recent Applications
-    private var recentApplicationsCard: some View {
-        VStack(spacing: 0) {
-            ForEach(Array(viewModel.snapshot.recentApplications.enumerated()), id: \.element.id) { index, app in
-                HStack(alignment: .top) {
+    /// List of separate Recent Application cards
+    private var recentApplicationsList: some View {
+        VStack(spacing: AdminSpacing.cardGap) {
+            ForEach(viewModel.snapshot.recentApplications) { app in
+                HStack(alignment: .center) {
                     VStack(alignment: .leading, spacing: Spacing.xs) {
                         Text(app.name)
                             .font(.lmsHeadline)
@@ -114,20 +132,18 @@ struct DashboardView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .padding(.vertical, Spacing.s)
-                .padding(.horizontal, Spacing.m)
-                
-                if index < viewModel.snapshot.recentApplications.count - 1 {
-                    Divider()
-                        .padding(.horizontal, Spacing.m)
-                }
+                .padding(AdminSpacing.cardPadding)
+                .background(
+                    AdminColor.cardBackground,
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                )
+                .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
             }
         }
-        .padding(.vertical, Spacing.s)
-        .background(
-            Color(UIColor.systemBackground),
-            in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-        )
     }
 }
 

@@ -16,11 +16,9 @@ struct SectionHeaderView: View {
     let systemImage: String
 
     var body: some View {
-        Label(title, systemImage: systemImage)
-            .font(.subheadline)
-            .fontWeight(.semibold)
-            .foregroundStyle(.secondary)
-            .textCase(.uppercase)
+        Text(title)
+            .font(.lmsTitle2)
+            .foregroundStyle(.primary)
     }
 }
 

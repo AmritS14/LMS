@@ -26,6 +26,7 @@ struct TemplateRowView: View {
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .lineLimit(1)
+                    .foregroundStyle(.primary)
 
                 Text(template.triggerEvent.rawValue)
                     .font(.caption)
@@ -33,13 +34,27 @@ struct TemplateRowView: View {
 
                 Text(template.bodyText)
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
 
             Spacer()
+
+            // Trailing chevron inside the card
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
         }
-        .padding(.vertical, 4)
+        .padding(AdminSpacing.cardPadding)
+        .background(
+            AdminColor.cardBackground,
+            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
         .contentShape(Rectangle())
     }
 

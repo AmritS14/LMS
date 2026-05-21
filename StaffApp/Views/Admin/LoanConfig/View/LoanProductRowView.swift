@@ -30,7 +30,7 @@ struct LoanProductRowView: View {
                         Text("\(product.interestRate, specifier: "%.2f")%")
                             .foregroundStyle(.secondary)
                         
-                        Text("\(product.maxTenure) months")
+                        Text("\(product.maxTenure) \(product.tenureUnit.rawValue.lowercased())")
                             .foregroundStyle(.secondary)
                     }
                     .font(.subheadline)
@@ -43,7 +43,16 @@ struct LoanProductRowView: View {
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }
-            .padding(.vertical, 8)
+            .padding(AdminSpacing.cardPadding)
+            .background(
+                AdminColor.cardBackground,
+                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -57,73 +66,158 @@ struct LoanProductEditorSheet: View {
     @Binding var product: LoanProduct
     let onSave: () -> Void
 
-    /// Currency formatter for amount fields.
-    private let currencyFormatter: NumberFormatter = {
+    /// Clean number formatter for editable amount fields (only numbers, no symbol inside text field).
+    private let numberFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "INR"
-        formatter.currencySymbol = "₹"
+        formatter.numberStyle = .none
         formatter.maximumFractionDigits = 0
         return formatter
     }    ()
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Loan Name") {
-                    TextField("Name", text: $product.name)
-                }
-                
-                Section("Amounts") {
-                    HStack {
-                        Label("Min Amount", systemImage: "arrow.down.circle")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        TextField("Min", value: $product.minAmount, formatter: currencyFormatter)
-                            .textFieldStyle(.roundedBorder)
-                            .keyboardType(.numberPad)
-                            .frame(width: 150)
-                            .multilineTextAlignment(.trailing)
+            ScrollView {
+                VStack(spacing: AdminSpacing.sectionGap) {
+                    // Section: Loan Name
+                    VStack(alignment: .leading, spacing: AdminSpacing.headerToCardGap) {
+                        SectionHeaderView(title: "Loan Name", systemImage: "tag")
+                        
+                        VStack(spacing: Spacing.s) {
+                            TextField("Name", text: $product.name)
+                                .textFieldStyle(.roundedBorder)
+                        }
+                        .padding(AdminSpacing.cardPadding)
+                        .background(
+                            AdminColor.cardBackground,
+                            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                        )
+                        .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
+                    }
+                    
+                    // Section: Amounts
+                    VStack(alignment: .leading, spacing: AdminSpacing.headerToCardGap) {
+                        SectionHeaderView(title: "Amounts", systemImage: "indianrupeesign.circle")
+                        
+                        VStack(spacing: Spacing.s) {
+                            HStack {
+                                Text("Min Amount")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                HStack(spacing: 4) {
+                                    Text("₹")
+                                        .font(.body)
+                                        .foregroundStyle(.primary)
+                                    TextField("Min", value: $product.minAmount, formatter: numberFormatter)
+                                        .textFieldStyle(.roundedBorder)
+                                        .keyboardType(.numberPad)
+                                        .frame(width: 120)
+                                        .multilineTextAlignment(.trailing)
+                                }
+                            }
+                            
+                            Divider()
+
+                            HStack {
+                                Text("Max Amount")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                HStack(spacing: 4) {
+                                    Text("₹")
+                                        .font(.body)
+                                        .foregroundStyle(.primary)
+                                    TextField("Max", value: $product.maxAmount, formatter: numberFormatter)
+                                        .textFieldStyle(.roundedBorder)
+                                        .keyboardType(.numberPad)
+                                        .frame(width: 120)
+                                        .multilineTextAlignment(.trailing)
+                                }
+                            }
+                        }
+                        .padding(AdminSpacing.cardPadding)
+                        .background(
+                            AdminColor.cardBackground,
+                            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                        )
+                        .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
                     }
 
-                    HStack {
-                        Label("Max Amount", systemImage: "arrow.up.circle")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        TextField("Max", value: $product.maxAmount, formatter: currencyFormatter)
-                            .textFieldStyle(.roundedBorder)
-                            .keyboardType(.numberPad)
-                            .frame(width: 150)
-                            .multilineTextAlignment(.trailing)
+                    // Section: Interest Rate
+                    VStack(alignment: .leading, spacing: AdminSpacing.headerToCardGap) {
+                        SectionHeaderView(title: "Interest Rate", systemImage: "percent")
+                        
+                        VStack(spacing: Spacing.s) {
+                            HStack {
+                                Text("Rate")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Text("\(product.interestRate, specifier: "%.2f")%")
+                                    .font(.system(.subheadline, design: .monospaced, weight: .semibold))
+                                    .foregroundStyle(AdminColor.accent)
+                            }
+                            Slider(value: $product.interestRate, in: 1...30, step: 0.25)
+                                .tint(AdminColor.accent)
+                        }
+                        .padding(AdminSpacing.cardPadding)
+                        .background(
+                            AdminColor.cardBackground,
+                            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                        )
+                        .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
                     }
-                }
 
-                Section("Interest Rate") {
-                    HStack {
-                        Label("Rate", systemImage: "percent")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Text("\(product.interestRate, specifier: "%.2f")%")
-                            .font(.system(.subheadline, design: .monospaced, weight: .semibold))
-                            .foregroundStyle(Color.accentColor)
+                    // Section: Tenure
+                    VStack(alignment: .leading, spacing: AdminSpacing.headerToCardGap) {
+                        SectionHeaderView(title: "Tenure", systemImage: "calendar.badge.clock")
+                        
+                        VStack(spacing: Spacing.s) {
+                            HStack {
+                                Text("Max Tenure")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Stepper("\(product.maxTenure) \(product.tenureUnit.rawValue.lowercased())", value: $product.maxTenure, in: 1...1000, step: 1)
+                            }
+                            
+                            Divider()
+                            
+                            Picker("Tenure Unit", selection: $product.tenureUnit) {
+                                ForEach(TenureUnit.allCases) { unit in
+                                    Text(unit.rawValue).tag(unit)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                        }
+                        .padding(AdminSpacing.cardPadding)
+                        .background(
+                            AdminColor.cardBackground,
+                            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                        )
+                        .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
                     }
-                    Slider(value: $product.interestRate, in: 1...30, step: 0.25)
-                        .tint(Color.accentColor)
                 }
-
-                Section("Tenure") {
-                    HStack {
-                        Label("Max Tenure", systemImage: "calendar.badge.clock")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Stepper("\(product.maxTenure) months", value: $product.maxTenure, in: 6...480, step: 6)
-                    }
-                }
+                .padding(.horizontal, AdminSpacing.cardRowHorizontalInset)
+                .padding(.vertical, AdminSpacing.cardRowHorizontalInset)
             }
+            .background(AdminColor.background)
             .navigationTitle("Edit Product")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -131,11 +225,13 @@ struct LoanProductEditorSheet: View {
                     Button("Cancel") {
                         onSave()
                     }
+                    .tint(AdminColor.accent)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         onSave()
                     }
+                    .tint(AdminColor.accent)
                 }
             }
         }

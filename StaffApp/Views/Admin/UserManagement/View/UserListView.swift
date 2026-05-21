@@ -16,12 +16,12 @@ struct UserListView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: Spacing.m) {
+            VStack(spacing: AdminSpacing.headerToCardGap) {
                 // Horizontal filter pills
                 filterPills
 
                 // User list section
-                LazyVStack(spacing: Spacing.s) {
+                LazyVStack(spacing: AdminSpacing.cardGap) {
                     if viewModel.filteredUsers.isEmpty {
                         EmptyStateView(
                             title: "No Users Found",
@@ -42,7 +42,7 @@ struct UserListView: View {
             }
             .padding(.vertical, Spacing.m)
         }
-        .background(Color(.systemGroupedBackground))
+        .background(AdminColor.background)
         .searchable(
             text: $viewModel.searchText,
             placement: .navigationBarDrawer(displayMode: .always),
@@ -75,7 +75,7 @@ struct UserListView: View {
                 }
 
                 ForEach(UserRole.allCases) { role in
-                    filterPill(title: role.rawValue, isSelected: viewModel.currentFilter == .role(role)) {
+                    filterPill(title: role.displayName, isSelected: viewModel.currentFilter == .role(role)) {
                         viewModel.currentFilter = .role(role)
                     }
                 }
@@ -93,7 +93,7 @@ struct UserListView: View {
                 .padding(.vertical, Spacing.s)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .background(
-                    isSelected ? Color.lmsAccent : Color(.systemBackground),
+                    isSelected ? AdminColor.accent : Color(.systemBackground),
                     in: Capsule()
                 )
                 .overlay(

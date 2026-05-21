@@ -24,9 +24,9 @@ struct TemplateListView: View {
             // Template list grouped by trigger category
             templatesSection
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.plain)
         .scrollContentBackground(.hidden)
-        .background(Color(.systemGroupedBackground))
+        .background(AdminColor.background)
         .searchable(
             text: $viewModel.searchText,
             placement: .navigationBarDrawer(displayMode: .always),
@@ -75,12 +75,25 @@ struct TemplateListView: View {
     private var templatesSection: some View {
         Section {
             ForEach(viewModel.filteredTemplates) { template in
-                NavigationLink(value: template) {
+                ZStack {
+                    NavigationLink(value: template) {
+                        EmptyView()
+                    }
+                    .opacity(0)
+
                     TemplateRowView(
                         template: template,
                         isSelected: viewModel.selectedTemplate?.id == template.id
                     )
                 }
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(
+                    top: AdminSpacing.cardRowVerticalInset,
+                    leading: AdminSpacing.cardRowHorizontalInset,
+                    bottom: AdminSpacing.cardRowVerticalInset,
+                    trailing: AdminSpacing.cardRowHorizontalInset
+                ))
             }
             .onDelete { offsets in
                 viewModel.deleteTemplates(at: offsets)

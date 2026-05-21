@@ -22,16 +22,52 @@ struct LoanConfigFormView: View {
     @State private var selectedProduct: LoanProduct? = nil
 
     var body: some View {
-        Form {
+        List {
             // Product sections grouped by category
             ForEach(viewModel.activeCategories) { category in
-                categorySection(for: category)
+                // Category Header Row
+                SectionHeaderView(
+                    title: category.rawValue,
+                    systemImage: category.systemImage
+                )
+                .listRowInsets(EdgeInsets(
+                    top: AdminSpacing.headerTopInset,
+                    leading: AdminSpacing.cardRowHorizontalInset,
+                    bottom: AdminSpacing.headerBottomInset,
+                    trailing: AdminSpacing.cardRowHorizontalInset
+                ))
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                
+                // Category Products Rows
+                if let products = viewModel.productsByCategory[category] {
+                    ForEach(products) { product in
+                        LoanProductRowView(
+                            product: product,
+                            action: {
+                                selectedProduct = product
+                            }
+                        )
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(
+                            top: AdminSpacing.cardRowVerticalInset,
+                            leading: AdminSpacing.cardRowHorizontalInset,
+                            bottom: AdminSpacing.cardRowVerticalInset,
+                            trailing: AdminSpacing.cardRowHorizontalInset
+                        ))
+                    }
+                    .onDelete { offsets in
+                        viewModel.deleteLoans(category: category, at: offsets)
+                    }
+                }
             }
 
-            // Save button
             saveSection
         }
-        .formStyle(.grouped)
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(AdminColor.background)
         .sheet(item: $selectedProduct) { product in
             if let binding = viewModel.binding(for: product.id) {
                 LoanProductEditorSheet(product: binding) {
@@ -87,44 +123,24 @@ struct LoanConfigFormView: View {
         }
     }
 
-    // MARK: - Sections
-
-    /// A section for a specific loan category containing its products.
-    private func categorySection(for category: LoanCategory) -> some View {
-        Section {
-            if let products = viewModel.productsByCategory[category] {
-                ForEach(products) { product in
-                    LoanProductRowView(
-                        product: product,
-                        action: {
-                            selectedProduct = product
-                        }
-                    )
-                }
-                .onDelete { offsets in
-                    viewModel.deleteLoans(category: category, at: offsets)
-                }
-            }
-        } header: {
-            SectionHeaderView(
-                title: category.rawValue,
-                systemImage: category.systemImage
-            )
-        }
-    }
+    // MARK: - Save Section
 
     /// Prominent save button at the bottom of the form.
     private var saveSection: some View {
-        Section {
-            PrimaryButton("Save Configuration", isLoading: viewModel.isSaving) {
-                Task {
-                    await viewModel.saveConfiguration()
-                }
+        AdminPrimaryButton("Save Configuration", isLoading: viewModel.isSaving) {
+            Task {
+                await viewModel.saveConfiguration()
             }
-            .disabled(!viewModel.hasUnsavedChanges)
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
         }
+        .disabled(!viewModel.hasUnsavedChanges)
+        .listRowInsets(EdgeInsets(
+            top: AdminSpacing.headerTopInset,
+            leading: AdminSpacing.cardRowHorizontalInset,
+            bottom: AdminSpacing.headerTopInset,
+            trailing: AdminSpacing.cardRowHorizontalInset
+        ))
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
     }
 }
 

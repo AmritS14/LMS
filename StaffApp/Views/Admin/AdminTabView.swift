@@ -48,6 +48,8 @@ struct AdminTabView: View {
                 NavigationStack {
                     DashboardView(viewModel: dashboardVM)
                 }
+                .tint(AdminColor.accent)
+                .accentColor(AdminColor.accent)
             }
 
             // MARK: - Users Tab
@@ -55,6 +57,8 @@ struct AdminTabView: View {
                 NavigationStack {
                     UserListView(viewModel: userVM)
                 }
+                .tint(AdminColor.accent)
+                .accentColor(AdminColor.accent)
             }
 
             // MARK: - Loans Tab
@@ -62,6 +66,8 @@ struct AdminTabView: View {
                 NavigationStack {
                     LoanConfigFormView(viewModel: loanConfigVM)
                 }
+                .tint(AdminColor.accent)
+                .accentColor(AdminColor.accent)
             }
 
             // MARK: - Templates Tab
@@ -75,8 +81,12 @@ struct AdminTabView: View {
                                 }
                         }
                 }
+                .tint(AdminColor.accent)
+                .accentColor(AdminColor.accent)
             }
         }
+        .tint(AdminColor.accent)
+        .accentColor(AdminColor.accent)
     }
 }
 
