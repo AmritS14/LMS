@@ -59,6 +59,8 @@
 		9073C990A1687625410E1BD8 /* StaffApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECD8C28C6EE6908B66DD7AC /* StaffApp.swift */; };
 		972A0DCF4680DB0FF2F6082A /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE98171A238045C22C2F9E8 /* AppEnvironment.swift */; };
 		A4ED0715F1E93A3369607DDF /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88B914FAC311966CF0312454 /* StatusBadge.swift */; };
+		AA0011110000000000000001 /* MockServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0011110000000000000002 /* MockServices.swift */; };
+		AA0011110000000000000003 /* LOCollectionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0011110000000000000004 /* LOCollectionsView.swift */; };
 		AC2433330FD509FFA6D35559 /* SystemSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50240F0BA8981C4CD1360F4B /* SystemSettingsView.swift */; };
 		AEC46A6B6FC8863AC7B09AEE /* LoanApplicationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67CE1BB7A83A622F16249215 /* LoanApplicationViewModel.swift */; };
 		AF6096782C4A1998ACE43AED /* ApplicationTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378FE18EBDE8ED6EAC15B43F /* ApplicationTrackingView.swift */; };
@@ -90,8 +92,6 @@
 		F7F7B90D792B9760F95CE95A /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F43612DC9CA160255FFC33 /* Colors.swift */; };
 		F872AD1A8550E9CF19A04C1D /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E121B25741BC258047859E /* PrimaryButton.swift */; };
 		FE5E0902A300F4E68D4F8455 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5311FB36A8266E69CFD93D54 /* Models.swift */; };
-		AA0011110000000000000001 /* MockServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0011110000000000000002 /* MockServices.swift */; };
-		AA0011110000000000000003 /* LOCollectionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0011110000000000000004 /* LOCollectionsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -139,6 +139,8 @@
 		9AA2A2DE47232F5AA8A071B1 /* DocumentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentService.swift; sourceTree = "<group>"; };
 		9FCA06D6DA2270CD267813E0 /* ProductConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductConfigView.swift; sourceTree = "<group>"; };
 		A661E2C59635EFD0C144B906 /* LoanService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoanService.swift; sourceTree = "<group>"; };
+		AA0011110000000000000002 /* MockServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockServices.swift; sourceTree = "<group>"; };
+		AA0011110000000000000004 /* LOCollectionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LOCollectionsView.swift; sourceTree = "<group>"; };
 		B07AD9174280E67995096E93 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		B1F43612DC9CA160255FFC33 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
 		BBECFA398FAD4F385E80C23D /* NotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsView.swift; sourceTree = "<group>"; };
@@ -158,8 +160,6 @@
 		F315B139415D3EC19DB81164 /* PortfolioDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioDashboardView.swift; sourceTree = "<group>"; };
 		F582C8AB54B323AD8E169865 /* EMICalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EMICalculator.swift; sourceTree = "<group>"; };
 		FEE98171A238045C22C2F9E8 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
-		AA0011110000000000000002 /* MockServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockServices.swift; sourceTree = "<group>"; };
-		AA0011110000000000000004 /* LOCollectionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LOCollectionsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -207,8 +207,8 @@
 		57B8ACBE479C502EBB0019B6 /* App */ = {
 			isa = PBXGroup;
 			children = (
-				EECD8C28C6EE6908B66DD7AC /* StaffApp.swift */,
 				92084DACBFEC7A60525C2925 /* StaffRootView.swift */,
+				EECD8C28C6EE6908B66DD7AC /* StaffApp.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";

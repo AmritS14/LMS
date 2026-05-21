@@ -5,7 +5,7 @@ import SwiftUI
 struct LODashboardView: View {
     @Environment(SessionStore.self) private var session
     @State private var applications: [LoanApplication] = []
-    @State private var fieldVisits: [FieldVisit] = FieldVisit.mockVisits
+//    @State private var fieldVisits: [FieldVisit] = FieldVisit.mockVisits
     @State private var isLoading = true
 
     private var officerName: String {
@@ -35,17 +35,21 @@ struct LODashboardView: View {
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
+                        NavigationLink(destination: LONotificationsView()){
                         // Notification badge indicator
-                        ZStack(alignment: .topTrailing) {
-                            Image(systemName: "bell.fill")
-                                .font(.title2)
-                                .foregroundStyle(Color.lmsNavyBlue)
-                            Circle()
-                                .fill(Color.lmsDanger)
-                                .frame(width: 10, height: 10)
-                                .offset(x: 4, y: -4)
+                            ZStack(alignment: .topTrailing) {
+                                Image(systemName: "bell.fill")
+                                
+                                    .font(.title2)
+                                    .foregroundStyle(Color.lmsNavyBlue)
+                                Circle()
+                                    .fill(Color.lmsDanger)
+                                    .frame(width: 10, height: 10)
+                                    .offset(x: 4, y: -4)
+                            }
                         }
                     }
+                    
                     .padding(.horizontal, Spacing.m)
                     .padding(.top, Spacing.s)
 
@@ -57,14 +61,14 @@ struct LODashboardView: View {
                     }
                     .padding(.horizontal, Spacing.m)
 
-                    // Fraud Alert Banner (if any flagged app)
-                    if let flagged = applications.first(where: { MockData.fraudFlagged($0) }) {
-                        FraudAlertBanner(application: flagged)
-                            .padding(.horizontal, Spacing.m)
-                    }
+//                    // Fraud Alert Banner (if any flagged app)
+//                    if let flagged = applications.first(where: { MockData.fraudFlagged($0) }) {
+//                        FraudAlertBanner(application: flagged)
+//                            .padding(.horizontal, Spacing.m)
+//                    }
 
-                    // Priority Queue
-                    DashboardSection(title: "Priority Queue") {
+                    //Applications
+                    DashboardSection(title: "Applications") {
                         if isLoading {
                             ProgressView()
                                 .frame(maxWidth: .infinity)
@@ -85,18 +89,18 @@ struct LODashboardView: View {
                     }
 
                     // Upcoming Field Visits
-                    DashboardSection(title: "Upcoming Field Visits") {
-                        if fieldVisits.isEmpty {
-                            Text("No visits scheduled.")
-                                .font(.lmsBody)
-                                .foregroundStyle(.secondary)
-                                .padding()
-                        } else {
-                            ForEach(fieldVisits) { visit in
-                                FieldVisitCard(visit: visit)
-                            }
-                        }
-                    }
+//                    DashboardSection(title: "Upcoming Field Visits") {
+//                        if fieldVisits.isEmpty {
+//                            Text("No visits scheduled.")
+//                                .font(.lmsBody)
+//                                .foregroundStyle(.secondary)
+//                                .padding()
+//                        } else {
+//                            ForEach(fieldVisits) { visit in
+//                                FieldVisitCard(visit: visit)
+//                            }
+//                        }
+//                    }
 
                     Spacer(minLength: Spacing.xxl)
                 }
@@ -153,41 +157,13 @@ struct KPICard: View {
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity,maxHeight: .infinity, alignment: .leading)
         .padding(Spacing.m)
         .background(.background, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
         .shadow(color: .black.opacity(0.06), radius: 6, x: 0, y: 2)
     }
 }
 
-struct FraudAlertBanner: View {
-    let application: LoanApplication
-
-    private var borrowerName: String {
-        MockData.borrowerUser(for: application.borrowerID)?.fullName ?? "Unknown"
-    }
-
-    var body: some View {
-        HStack(spacing: Spacing.m) {
-            Image(systemName: "exclamationmark.shield.fill")
-                .font(.title2)
-                .foregroundStyle(.white)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Fraud Risk Alert")
-                    .font(.lmsHeadline)
-                    .foregroundStyle(.white)
-                Text("\(borrowerName)'s income statement flagged as potentially tampered.")
-                    .font(.lmsCaption)
-                    .foregroundStyle(.white.opacity(0.9))
-                    .lineLimit(2)
-            }
-            Spacer()
-        }
-        .padding(Spacing.m)
-        .background(Color.lmsDanger, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
-    }
-}
 
 struct DashboardSection<Content: View>: View {
     let title: String
@@ -286,66 +262,66 @@ struct PriorityCard: View {
 
 // MARK: - Field Visit Card
 
-struct FieldVisitCard: View {
-    let visit: FieldVisit
-
-    var body: some View {
-        HStack(spacing: Spacing.m) {
-            VStack(spacing: 4) {
-                Image(systemName: "calendar.badge.clock")
-                    .font(.title3)
-                    .foregroundStyle(Color.lmsPrimary)
-                Text(visit.dateLabel)
-                    .font(.lmsCaption.weight(.semibold))
-                    .foregroundStyle(Color.lmsPrimary)
-            }
-            .frame(width: 64)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(visit.borrowerName).font(.lmsHeadline)
-                Text(visit.purpose).font(.lmsCaption).foregroundStyle(.secondary)
-                Text(visit.address).font(.caption2).foregroundStyle(.tertiary)
-            }
-
-            Spacer()
-
-            StatusBadge(visit.status, tone: visit.statusTone)
-        }
-        .padding(Spacing.m)
-        .background(.background, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
-        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 1)
-        .padding(.horizontal, Spacing.m)
-    }
-}
-
-// MARK: - Field Visit Model
-
-struct FieldVisit: Identifiable {
-    var id: UUID = UUID()
-    var borrowerName: String
-    var purpose: String
-    var address: String
-    var date: Date
-    var status: String
-    var statusTone: StatusBadge.Tone
-
-    var dateLabel: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd MMM"
-        return formatter.string(from: date)
-    }
-
-    static let mockVisits: [FieldVisit] = [
-        FieldVisit(borrowerName: "Jane Doe", purpose: "Property Verification",
-                   address: "12 Maple Ave, Mumbai",
-                   date: Calendar.current.date(byAdding: .day, value: 2, to: .now)!,
-                   status: "Scheduled", statusTone: .info),
-        FieldVisit(borrowerName: "Robert King", purpose: "Address Verification",
-                   address: "45 Industrial Road, Pune",
-                   date: Calendar.current.date(byAdding: .day, value: 4, to: .now)!,
-                   status: "Pending", statusTone: .warning)
-    ]
-}
+//struct FieldVisitCard: View {
+//    let visit: FieldVisit
+//
+//    var body: some View {
+//        HStack(spacing: Spacing.m) {
+//            VStack(spacing: 4) {
+//                Image(systemName: "calendar.badge.clock")
+//                    .font(.title3)
+//                    .foregroundStyle(Color.lmsPrimary)
+//                Text(visit.dateLabel)
+//                    .font(.lmsCaption.weight(.semibold))
+//                    .foregroundStyle(Color.lmsPrimary)
+//            }
+//            .frame(width: 64)
+//
+//            VStack(alignment: .leading, spacing: 4) {
+//                Text(visit.borrowerName).font(.lmsHeadline)
+//                Text(visit.purpose).font(.lmsCaption).foregroundStyle(.secondary)
+//                Text(visit.address).font(.caption2).foregroundStyle(.tertiary)
+//            }
+//
+//            Spacer()
+//
+//            StatusBadge(visit.status, tone: visit.statusTone)
+//        }
+//        .padding(Spacing.m)
+//        .background(.background, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+//        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 1)
+//        .padding(.horizontal, Spacing.m)
+//    }
+//}
+//
+//// MARK: - Field Visit Model
+//
+//struct FieldVisit: Identifiable {
+//    var id: UUID = UUID()
+//    var borrowerName: String
+//    var purpose: String
+//    var address: String
+//    var date: Date
+//    var status: String
+//    var statusTone: StatusBadge.Tone
+//
+//    var dateLabel: String {
+//        let formatter = DateFormatter()
+//        formatter.dateFormat = "dd MMM"
+//        return formatter.string(from: date)
+//    }
+//
+//    static let mockVisits: [FieldVisit] = [
+//        FieldVisit(borrowerName: "Jane Doe", purpose: "Property Verification",
+//                   address: "12 Maple Ave, Mumbai",
+//                   date: Calendar.current.date(byAdding: .day, value: 2, to: .now)!,
+//                   status: "Scheduled", statusTone: .info),
+//        FieldVisit(borrowerName: "Robert King", purpose: "Address Verification",
+//                   address: "45 Industrial Road, Pune",
+//                   date: Calendar.current.date(byAdding: .day, value: 4, to: .now)!,
+//                   status: "Pending", statusTone: .warning)
+//    ]
+//}
 
 // MARK: - Shared Empty State View
 

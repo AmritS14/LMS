@@ -7,7 +7,6 @@ struct OfficerTabView: View {
             Tab("Queue", systemImage: "tray.full.fill") { LOApplicationsListView() }
             Tab("Collections", systemImage: "exclamationmark.arrow.circlepath") { LOCollectionsView() }
             Tab("Messages", systemImage: "bubble.left.and.bubble.right.fill") { StaffMessagingView() }
-            Tab("Alerts", systemImage: "bell.fill") { LONotificationsView() }
             Tab("Profile", systemImage: "person.crop.circle.fill") { StaffProfileView() }
         }
     }

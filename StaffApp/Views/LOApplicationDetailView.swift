@@ -239,14 +239,14 @@ struct OverviewTab: View {
                 }
                 .padding(.horizontal, Spacing.m)
 
-                // Risk panel
-                SectionCard(title: "Risk Assessment") {
-                    LabeledContent("Credit Score", value: profile.map { "\($0.creditScore ?? 0)" } ?? "—")
-                    LabeledContent("Risk Level", value: riskLevel)
-                    LabeledContent("LTV Ratio", value: "75%")
-                    LabeledContent("Identity Match", value: "Verified")
-                }
-                .padding(.horizontal, Spacing.m)
+//                // Risk panel
+//                SectionCard(title: "Risk Assessment") {
+//                    LabeledContent("Credit Score", value: profile.map { "\($0.creditScore ?? 0)" } ?? "—")
+//                    LabeledContent("Risk Level", value: riskLevel)
+//                    LabeledContent("LTV Ratio", value: "75%")
+//                    LabeledContent("Identity Match", value: "Verified")
+//                }
+//                .padding(.horizontal, Spacing.m)
 
                 // Loan details
                 SectionCard(title: "Loan Details") {
@@ -338,7 +338,7 @@ struct DocumentsTab: View {
         }
         .sheet(item: $selectedDoc) { doc in
             LODocumentReviewSheet(document: doc)
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
         }
     }
 }
@@ -388,8 +388,8 @@ struct DocumentRow: View {
 
     private var iconName: String {
         switch document.status {
-        case .verified: return "doc.badge.checkmark"
-        case .rejected: return "doc.badge.minus"
+        case .verified: return "doc.badge.plus"
+        case .rejected: return "doc.badge.ellipsis"
         case .pending: return "doc.badge.clock"
         }
     }

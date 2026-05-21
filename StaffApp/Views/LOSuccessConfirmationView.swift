@@ -20,13 +20,13 @@ struct LOSuccessConfirmationView: View {
                         .scaleEffect(animate ? 1 : 0.3)
                         .opacity(animate ? 1 : 0)
 
-                    Circle()
-                        .fill(Color.lmsSuccess.opacity(0.2))
-                        .frame(width: 100, height: 100)
-                        .scaleEffect(animate ? 1 : 0.1)
-                        .opacity(animate ? 1 : 0)
+//                    Circle()
+//                        .fill(Color.lmsSuccess.opacity(0.2))
+//                        .frame(width: 100, height: 100)
+//                        .scaleEffect(animate ? 1 : 0.1)
+//                        .opacity(animate ? 1 : 0)
 
-                    Image(systemName: "checkmark.circle.fill")
+                    Image(systemName: "checkmark.seal.fill")
                         .resizable()
                         .frame(width: 72, height: 72)
                         .foregroundStyle(Color.lmsSuccess)
@@ -53,25 +53,14 @@ struct LOSuccessConfirmationView: View {
                         .animation(.easeOut(duration: 0.4).delay(0.45), value: animate)
                 }
 
-                // What's Next card
-                SectionCard(title: "What happens next?") {
-                    VStack(alignment: .leading, spacing: Spacing.s) {
-                        NextStepRow(icon: "1.circle.fill", text: "Manager receives the application in their Approvals queue")
-                        NextStepRow(icon: "2.circle.fill", text: "Manager reviews your remarks and makes the final decision")
-                        NextStepRow(icon: "3.circle.fill", text: "Borrower is notified of the approval or rejection")
-                    }
-                }
-                .padding(.horizontal, Spacing.m)
-                .opacity(animate ? 1 : 0)
-                .animation(.easeOut(duration: 0.4).delay(0.6), value: animate)
 
                 Spacer()
 
                 PrimaryButton("Back to Dashboard") {
                     dismiss()
                 }
-                .padding(.horizontal, Spacing.m)
-                .padding(.bottom, Spacing.l)
+                .padding(.horizontal, Spacing.s)
+                .padding(.bottom, Spacing.s)
                 .opacity(animate ? 1 : 0)
                 .animation(.easeOut(duration: 0.4).delay(0.7), value: animate)
             }

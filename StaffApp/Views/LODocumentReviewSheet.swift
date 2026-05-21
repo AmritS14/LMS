@@ -145,8 +145,8 @@ struct StatusPillButton: View {
             Text(label)
                 .font(.lmsCaption.weight(isSelected ? .bold : .medium))
                 .foregroundStyle(isSelected ? .white : color)
-                .padding(.horizontal, Spacing.s)
-                .padding(.vertical, Spacing.xs)
+                .padding(.horizontal, Spacing.m)
+                .padding(.vertical, Spacing.s)
                 .frame(maxWidth: .infinity)
                 .background(
                     isSelected

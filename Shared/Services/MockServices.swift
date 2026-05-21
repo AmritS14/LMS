@@ -7,7 +7,7 @@ enum MockData {
     // MARK: Users & Profiles
 
     static let loanOfficerUser = User(
-        id: UUID(uuidString: "11111111-0000-0000-0000-000000000001")!,
+        id: UUID(),
         fullName: "Arjun Mehta",
         email: "arjun.mehta@lmsbank.in",
         phone: "+91-9876543210",
@@ -23,7 +23,7 @@ enum MockData {
     )
 
     static let managerUser = User(
-        id: UUID(uuidString: "22222222-0000-0000-0000-000000000002")!,
+        id: UUID(),
         fullName: "Priya Sharma",
         email: "priya.sharma@lmsbank.in",
         phone: "+91-9000000002",
@@ -33,7 +33,7 @@ enum MockData {
     // MARK: Borrowers
 
     static let borrowerJane = User(
-        id: UUID(uuidString: "33333333-0000-0000-0000-000000000003")!,
+        id: UUID(),
         fullName: "Jane Doe",
         email: "jane.doe@email.com",
         phone: "+91-9111111111",
@@ -52,7 +52,7 @@ enum MockData {
     )
 
     static let borrowerRobert = User(
-        id: UUID(uuidString: "44444444-0000-0000-0000-000000000004")!,
+        id: UUID(),
         fullName: "Robert King",
         email: "robert.king@email.com",
         phone: "+91-9222222222",
@@ -71,7 +71,7 @@ enum MockData {
     )
 
     static let borrowerAmelie = User(
-        id: UUID(uuidString: "55555555-0000-0000-0000-000000000005")!,
+        id: UUID(),
         fullName: "Amelie Fernandez",
         email: "amelie.fernandez@email.com",
         phone: "+91-9333333333",
@@ -90,7 +90,7 @@ enum MockData {
     )
 
     static let borrowerDaniel = User(
-        id: UUID(uuidString: "66666666-0000-0000-0000-000000000006")!,
+        id: UUID(),
         fullName: "Daniel Sharma",
         email: "daniel.sharma@email.com",
         phone: "+91-9444444444",
@@ -109,7 +109,7 @@ enum MockData {
     )
 
     static let borrowerSophia = User(
-        id: UUID(uuidString: "77777777-0000-0000-0000-000000000007")!,
+        id: UUID(),
         fullName: "Sophia Iyer",
         email: "sophia.iyer@email.com",
         phone: "+91-9555555555",
@@ -174,7 +174,7 @@ enum MockData {
     // MARK: Loan Applications
 
     static let appJane = LoanApplication(
-        id: UUID(uuidString: "A1111111-0000-0000-0000-000000000001")!,
+        id: UUID(),
         borrowerID: borrowerJane.id,
         assignedOfficerID: loanOfficerUser.id,
         loanType: .home,
@@ -188,7 +188,7 @@ enum MockData {
     )
 
     static let appRobert = LoanApplication(
-        id: UUID(uuidString: "A2222222-0000-0000-0000-000000000002")!,
+        id: UUID(),
         borrowerID: borrowerRobert.id,
         assignedOfficerID: loanOfficerUser.id,
         loanType: .business,
@@ -202,7 +202,7 @@ enum MockData {
     )
 
     static let appAmelie = LoanApplication(
-        id: UUID(uuidString: "A3333333-0000-0000-0000-000000000003")!,
+        id: UUID(),
         borrowerID: borrowerAmelie.id,
         assignedOfficerID: loanOfficerUser.id,
         loanType: .education,
@@ -216,7 +216,7 @@ enum MockData {
     )
 
     static let appDaniel = LoanApplication(
-        id: UUID(uuidString: "A4444444-0000-0000-0000-000000000004")!,
+        id: UUID(),
         borrowerID: borrowerDaniel.id,
         assignedOfficerID: loanOfficerUser.id,
         loanType: .vehicle,
@@ -230,7 +230,7 @@ enum MockData {
     )
 
     static let appSophia = LoanApplication(
-        id: UUID(uuidString: "A5555555-0000-0000-0000-000000000005")!,
+        id: UUID(),
         borrowerID: borrowerSophia.id,
         assignedOfficerID: loanOfficerUser.id,
         loanType: .personal,
@@ -275,7 +275,7 @@ enum MockData {
             startDate: Calendar.current.date(byAdding: .month, value: -6, to: .now)!
         )
         return Loan(
-            id: UUID(uuidString: "L5555555-0000-0000-0000-000000000005")!,
+            id: UUID(),
             applicationID: appSophia.id,
             borrowerID: borrowerSophia.id,
             principal: 250_000,
