@@ -24,18 +24,18 @@ struct NewLoanApplicationView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(.systemGroupedBackground).ignoresSafeArea()
+                Color.lmsBackground.ignoresSafeArea()
 
                 ScrollView {
-                    VStack(spacing: 20) {
+                    VStack(spacing: Spacing.ml) {
                         productPicker
                         sliderCard
                         resultCard
                         documentsCard
                         submitButton
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, 32)
+                    .padding(.horizontal, Spacing.m)
+                    .padding(.bottom, Spacing.xl)
                 }
             }
             .navigationTitle("EMI Calculator")
@@ -61,80 +61,78 @@ struct NewLoanApplicationView: View {
     // MARK: - Product Picker
     var productPicker: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
+            HStack(spacing: Spacing.sm) {
                 ForEach(products, id: \.type) { p in
                     Button {
                         calcLoanType = p.type
                         calcRate = p.rate
                     } label: {
-                        VStack(spacing: 8) {
+                        VStack(spacing: Spacing.s) {
                             ZStack {
                                 Circle()
-                                    .fill(calcLoanType == p.type ? Color.blue : Color(.systemFill))
+                                    .fill(calcLoanType == p.type ? Color.lmsAccent : Color.lmsFill)
                                     .frame(width: 48, height: 48)
                                 Image(systemName: p.icon)
                                     .foregroundStyle(calcLoanType == p.type ? .white : .secondary)
                                     .font(.title3)
                             }
                             Text(p.name.replacingOccurrences(of: " Loan", with: ""))
-                                .font(.caption).bold()
-                                .foregroundStyle(calcLoanType == p.type ? .blue : .secondary)
+                                .font(.lmsCaption).bold()
+                                .foregroundStyle(calcLoanType == p.type ? Color.lmsAccent : .secondary)
                         }
                         .frame(width: 72)
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 4)
-            .padding(.vertical, 8)
+            .padding(.horizontal, Spacing.xs)
+            .padding(.vertical, Spacing.s)
         }
     }
 
     // MARK: - Sliders Card
     var sliderCard: some View {
-        VStack(spacing: 20) {
-            sliderRow(
-                label: "Principal Amount",
-                value: Formatting.currency(Decimal(viewModel.requestedAmount)),
-                slider: Slider(
-                    value: $viewModel.requestedAmount,
-                    in: 50_000...10_000_000, step: 50_000
+        SectionCard {
+            VStack(spacing: Spacing.ml) {
+                sliderRow(
+                    label: "Principal Amount",
+                    value: Formatting.currency(Decimal(viewModel.requestedAmount)),
+                    slider: Slider(
+                        value: $viewModel.requestedAmount,
+                        in: 50_000...10_000_000, step: 50_000
+                    )
                 )
-            )
-            Divider()
-            sliderRow(
-                label: "Tenure",
-                value: "\(viewModel.tenureMonths) months",
-                slider: Slider(
-                    value: Binding(
-                        get: { Double(viewModel.tenureMonths) },
-                        set: { viewModel.tenureMonths = Int($0) }
-                    ),
-                    in: 6...360, step: 6
+                Divider()
+                sliderRow(
+                    label: "Tenure",
+                    value: "\(viewModel.tenureMonths) months",
+                    slider: Slider(
+                        value: Binding(
+                            get: { Double(viewModel.tenureMonths) },
+                            set: { viewModel.tenureMonths = Int($0) }
+                        ),
+                        in: 6...360, step: 6
+                    )
                 )
-            )
-            Divider()
-            HStack {
-                Text("Interest Rate").foregroundStyle(.secondary)
-                Spacer()
-                Text(String(format: "%.2f%% p.a.", calcRate)).bold()
+                Divider()
+                HStack {
+                    Text("Interest Rate").foregroundStyle(.secondary)
+                    Spacer()
+                    Text(String(format: "%.2f%% p.a.", calcRate)).bold()
+                }
+                .font(.lmsSubheadline)
             }
-            .font(.subheadline)
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
     }
 
     func sliderRow(label: String, value: String, slider: some View) -> some View {
-        VStack(spacing: 10) {
+        VStack(spacing: Spacing.sm) {
             HStack {
-                Text(label).font(.subheadline).foregroundStyle(.secondary)
+                Text(label).font(.lmsSubheadline).foregroundStyle(.secondary)
                 Spacer()
-                Text(value).font(.subheadline).bold()
+                Text(value).font(.lmsSubheadline).bold()
             }
-            slider.tint(.blue)
+            slider.tint(Color.lmsAccent)
         }
     }
 
@@ -148,17 +146,17 @@ struct NewLoanApplicationView: View {
         )
         
         return VStack(spacing: 0) {
-            VStack(spacing: 4) {
+            VStack(spacing: Spacing.xs) {
                 Text("Monthly EMI")
-                    .font(.subheadline)
+                    .font(.lmsSubheadline)
                     .foregroundStyle(.white.opacity(0.8))
                 Text(Formatting.currency(emiResult.monthlyInstallment))
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                    .font(.lmsHeroAmount)
                     .foregroundStyle(.white)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 24)
-            .background(Color.blue)
+            .padding(.vertical, Spacing.l)
+            .background(Color.lmsAccent)
 
             HStack {
                 resultStat("Principal", Formatting.currency(Decimal(viewModel.requestedAmount)))
@@ -167,52 +165,42 @@ struct NewLoanApplicationView: View {
                 Divider().frame(height: 40)
                 resultStat("Total", Formatting.currency(emiResult.totalPayable))
             }
-            .padding(.vertical, 14)
-            .background(Color(.systemBackground))
+            .padding(.vertical, Spacing.sm)
+            .background(Color.lmsSurface)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.08), radius: 10, y: 3)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card))
     }
 
     func resultStat(_ label: String, _ value: String) -> some View {
-        VStack(spacing: 4) {
-            Text(value).font(.footnote).bold()
-            Text(label).font(.caption2).foregroundStyle(.secondary)
+        VStack(spacing: Spacing.xs) {
+            Text(value).font(.lmsFootnote).bold()
+            Text(label).font(.lmsCaption2).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
     }
 
     // MARK: - Documents Card
     var documentsCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Documents").font(.headline)
-                Spacer()
-            }
-
+        SectionCard(title: "Documents") {
             Button {
                 showDocSheet = true
             } label: {
-                HStack {
-                    Image(systemName: "arrow.up.doc.fill").foregroundStyle(.blue)
+                HStack(spacing: Spacing.s) {
+                    Image(systemName: "arrow.up.doc.fill").foregroundStyle(Color.lmsAccent)
                     Text("Upload KYC & Collateral Papers")
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(Color.lmsAccent)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(12)
-                .background(Color.blue.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .padding(Spacing.sm)
+                .background(Color.lmsAccent.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.input))
             }
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
     }
 
     // MARK: - Submit Button
     var submitButton: some View {
-        Button {
+        PrimaryButton("Submit Application", isLoading: viewModel.isSubmitting) {
             Task {
                 guard let env = env, let userID = session.currentUser?.id else { return }
                 let success = await viewModel.submit(loanService: env.loans, borrowerID: userID)
@@ -220,19 +208,7 @@ struct NewLoanApplicationView: View {
                     showConfirm = true
                 }
             }
-        } label: {
-            ZStack {
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(viewModel.isSubmitting ? Color.blue.opacity(0.4) : Color.blue)
-                    .frame(height: 52)
-                if viewModel.isSubmitting {
-                    ProgressView().tint(.white)
-                } else {
-                    Text("Submit Application").font(.headline).foregroundStyle(.white)
-                }
-            }
         }
-        .disabled(viewModel.isSubmitting)
     }
 }
 

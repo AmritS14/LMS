@@ -13,14 +13,18 @@ struct PrimaryButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack {
-                if isLoading { ProgressView().controlSize(.small) }
-                Text(title).font(.lmsHeadline)
+            HStack(spacing: Spacing.s) {
+                if isLoading { 
+                    ProgressView() 
+                }
+                Text(title)
+                    .font(.headline)
             }
-            .frame(maxWidth: .infinity, minHeight: 48)
+            .frame(maxWidth: .infinity, minHeight: 44)
         }
         .buttonStyle(.borderedProminent)
         .controlSize(.large)
         .disabled(isLoading)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }

@@ -12,11 +12,11 @@ struct SectionCard<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
             if let title {
-                Text(title).font(.lmsHeadline)
+                Text(title).font(.headline)
             }
             content
         }
         .padding(Spacing.m)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: 10))
     }
 }

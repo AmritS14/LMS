@@ -1,4 +1,5 @@
 
+```swift
 import SwiftUI
 
 // MARK: - Login Screen
@@ -17,12 +18,8 @@ struct LoginView: View {
         NavigationStack {
             ZStack {
                 // Light blue → white gradient background
-                LinearGradient(
-                    colors: [Color(red: 0.88, green: 0.93, blue: 1.0), Color.white],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
+                LinearGradient.lmsBackgroundGradient
+                    .ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     Spacer().frame(height: 72)
@@ -34,11 +31,11 @@ struct LoginView: View {
                             .foregroundStyle(.blue)
 
                         Text("Loan Management System")
-                            .font(.system(size: 22, weight: .bold))
+                            .font(.lmsTitle)
                             .foregroundStyle(.primary)
 
                         Text("Secure Borrower & Staff Portal")
-                            .font(.system(size: 15))
+                            .font(.lmsSubheadline)
                             .foregroundStyle(.secondary)
                     }
                     .padding(.bottom, 36)
@@ -51,25 +48,11 @@ struct LoginView: View {
                             .keyboardType(.emailAddress)
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.never)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
-                            .background(Color(.systemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(Color(.systemGray4), lineWidth: 1)
-                            )
+                            .textFieldStyle(.lmsBordered)
 
                         // Password field
                         SecureField("Password", text: $password)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
-                            .background(Color(.systemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(Color(.systemGray4), lineWidth: 1)
-                            )
+                            .textFieldStyle(.lmsBordered)
 
                         // Error message
                         if let errorMessage = viewModel.errorMessage {
@@ -81,7 +64,7 @@ struct LoginView: View {
                         }
 
                         // Login button
-                        Button {
+                        PrimaryButton("Login", isLoading: viewModel.isBusy) {
                             guard let auth = env?.auth else { return }
                             Task {
                                 await viewModel.requestOTP(authService: auth)
@@ -89,22 +72,8 @@ struct LoginView: View {
                                     navigateToOTP = true
                                 }
                             }
-                        } label: {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(viewModel.isBusy ? Color.blue.opacity(0.6) : Color.blue)
-                                    .frame(height: 50)
-
-                                if viewModel.isBusy {
-                                    ProgressView().tint(.white)
-                                } else {
-                                    Text("Login")
-                                        .font(.system(size: 17, weight: .semibold))
-                                        .foregroundStyle(.white)
-                                }
-                            }
                         }
-                        .disabled(viewModel.isBusy || viewModel.identifier.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || password.isEmpty)
+                        .disabled(viewModel.identifier.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || password.isEmpty)
                         .padding(.top, 2)
 
                         // Register / Forgot Password
@@ -127,9 +96,8 @@ struct LoginView: View {
                     }
                     .padding(20)
                     .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(Color(.systemBackground))
-                            .shadow(color: .black.opacity(0.08), radius: 16, x: 0, y: 6)
+                        RoundedRectangle(cornerRadius: CornerRadius.large)
+                            .fill(Color.lmsSurface)
                     )
                     .padding(.horizontal, 24)
 
@@ -196,14 +164,14 @@ struct OTPVerificationView: View {
 
     var body: some View {
         ZStack {
-            Color(.systemBackground).ignoresSafeArea()
+            Color.lmsSurface.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 Spacer().frame(height: 48)
 
                 // MARK: Shield icon (animates to checkmark on success)
                 ZStack {
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    RoundedRectangle(cornerRadius: CornerRadius.extraLarge, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: showCheckmark
@@ -214,7 +182,6 @@ struct OTPVerificationView: View {
                             )
                         )
                         .frame(width: 72, height: 72)
-                        .shadow(
                             color: showCheckmark
                                 ? Color.green.opacity(0.35)
                                 : Color.blue.opacity(0.35),
@@ -231,7 +198,7 @@ struct OTPVerificationView: View {
 
                 // MARK: Header text
                 Text(showCheckmark ? "Verified!" : "Two-Factor Authentication")
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.lmsTitle)
                     .foregroundStyle(.primary)
                     .animation(.easeInOut, value: showCheckmark)
                     .padding(.bottom, 6)
@@ -239,7 +206,7 @@ struct OTPVerificationView: View {
                 Text(showCheckmark
                      ? "Taking you to your dashboard…"
                      : "Enter the 6-digit verification code\nsent to your email")
-                    .font(.system(size: 15))
+                    .font(.lmsSubheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .animation(.easeInOut, value: showCheckmark)
@@ -267,7 +234,7 @@ struct OTPVerificationView: View {
                         // Time label
                         VStack(spacing: 1) {
                             Text(timeString)
-                                .font(.system(size: 15, weight: .bold, design: .monospaced))
+                                .font(.lmsMonoTimer)
                                 .foregroundStyle(timerColor)
                                 .animation(.easeInOut, value: timerColor)
 
@@ -291,7 +258,7 @@ struct OTPVerificationView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(Color.red.opacity(0.08))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.input))
                     .padding(.horizontal, 24)
                     .padding(.bottom, 16)
                     .transition(.move(edge: .top).combined(with: .opacity))
@@ -328,7 +295,7 @@ struct OTPVerificationView: View {
                 }
 
                 // MARK: Verify button
-                Button {
+                PrimaryButton("Verify", isLoading: viewModel.isBusy) {
                     guard let auth = env?.auth else { return }
                     viewModel.otp = fullOTP
                     Task { @MainActor in
@@ -343,22 +310,8 @@ struct OTPVerificationView: View {
                             }
                         }
                     }
-                } label: {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(isVerifyEnabled ? Color.blue : Color(.systemGray4))
-                            .frame(height: 50)
-
-                        if viewModel.isBusy {
-                            ProgressView().tint(.white)
-                        } else {
-                            Text("Verify")
-                                .font(.system(size: 17, weight: .semibold))
-                                .foregroundStyle(isVerifyEnabled ? .white : Color(.systemGray2))
-                        }
-                    }
                 }
-                .disabled(!isVerifyEnabled || viewModel.isBusy)
+                .disabled(!isVerifyEnabled)
                 .padding(.horizontal, 24)
                 .padding(.bottom, 16)
                 .opacity(showCheckmark ? 0 : 1)
@@ -474,17 +427,16 @@ struct OTPDigitBox: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.systemBackground))
+            RoundedRectangle(cornerRadius: CornerRadius.medium)
+                .fill(Color.lmsSurface)
                 .frame(width: 46, height: 56)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: CornerRadius.medium)
                         .stroke(
                             isExpired ? Color.red : (isFocused ? Color.blue : Color(.systemGray4)),
                             lineWidth: isFocused || isExpired ? 2 : 1.5
                         )
                 )
-                .shadow(
                     color: isExpired ? Color.red.opacity(0.15) : (isFocused ? Color.blue.opacity(0.15) : .clear),
                     radius: 6, x: 0, y: 2
                 )

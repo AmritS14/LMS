@@ -11,14 +11,14 @@ struct HomeDashboardView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(.systemGroupedBackground).ignoresSafeArea()
+                Color.lmsBackground.ignoresSafeArea()
 
                 ScrollView {
-                    VStack(spacing: 20) {
+                    VStack(spacing: Spacing.ml) {
                         if viewModel.isLoading {
                             ProgressView().padding(.top, 40)
                         } else if let error = viewModel.errorMessage {
-                            Text(error).foregroundStyle(.red).padding()
+                            Text(error).foregroundStyle(Color.lmsDanger).padding()
                         } else {
                             if viewModel.activeLoans.isEmpty && viewModel.applications.isEmpty {
                                 emptyState.padding(.horizontal)
@@ -31,24 +31,24 @@ struct HomeDashboardView: View {
                                 if !viewModel.activeLoans.isEmpty {
                                     HStack(alignment: .bottom) {
                                         Text("Active Loans")
-                                            .font(.headline)
+                                            .font(.lmsHeadline)
                                             .foregroundStyle(.primary)
                                         Spacer()
                                         if viewModel.activeLoans.count > 1 {
-                                            HStack(spacing: 6) {
+                                            HStack(spacing: Spacing.xs_s) {
                                                 ForEach(viewModel.activeLoans) { loan in
                                                     Circle()
-                                                        .fill(selectedLoanID == loan.id ? Color.blue : Color(.systemGray4))
+                                                        .fill(selectedLoanID == loan.id ? Color.lmsAccent : Color.lmsGray4)
                                                         .frame(width: 6, height: 6)
                                                         .animation(.easeInOut, value: selectedLoanID)
                                                 }
                                             }
-                                            .padding(.bottom, 6)
+                                            .padding(.bottom, Spacing.xs_s)
                                         }
                                     }
                                     .padding(.horizontal)
-                                    .padding(.top, 8)
-                                    .padding(.bottom, 4)
+                                    .padding(.top, Spacing.s)
+                                    .padding(.bottom, Spacing.xs)
 
                                     if viewModel.activeLoans.count > 1 {
                                         TabView(selection: $selectedLoanID) {
@@ -70,7 +70,7 @@ struct HomeDashboardView: View {
                                                 .padding(.horizontal)
                                         }
                                     } else if let loan = viewModel.activeLoans.first {
-                                        VStack(spacing: 24) {
+                                        VStack(spacing: Spacing.l) {
                                             loanHeroCard(loan)
                                             emiListSection(for: loan)
                                         }
@@ -80,7 +80,7 @@ struct HomeDashboardView: View {
                             }
                         }
                     }
-                    .padding(.bottom, 32)
+                    .padding(.bottom, Spacing.xl)
                 }
             }
             .navigationTitle("Dashboard")
@@ -121,31 +121,31 @@ struct HomeDashboardView: View {
         let progress = total > 0 ? Double(paidCount) / Double(total) : 0
         let emiAmount = EMICalculator.calculate(principal: loan.principal, annualInterestRate: loan.interestRate, tenureMonths: loan.tenureMonths, startDate: loan.disbursementDate).monthlyInstallment
 
-        return VStack(alignment: .leading, spacing: 16) {
+        return VStack(alignment: .leading, spacing: Spacing.m) {
             HStack {
                 Label("\(loan.loanType.rawValue.capitalized) Loan", systemImage: icon(for: loan.loanType))
-                    .font(.subheadline).bold()
-                    .foregroundStyle(.blue)
+                    .font(.lmsSubheadline).bold()
+                    .foregroundStyle(Color.lmsAccent)
                 Spacer()
-                StatusPill(status: .disbursed)
+                StatusBadge(ApplicationStatus.disbursed.rawValue.capitalized, tone: .success)
             }
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
                 Text("Outstanding Balance")
-                    .font(.caption)
+                    .font(.lmsCaption)
                     .foregroundStyle(.secondary)
                 Text(Formatting.currency(outstanding))
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .font(.lmsHeroAmount)
             }
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Spacing.xs_s) {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         Capsule()
-                            .fill(Color(.systemFill))
+                            .fill(Color.lmsFill)
                             .frame(height: 8)
                         Capsule()
-                            .fill(Color.blue)
+                            .fill(Color.lmsAccent)
                             .frame(width: max(8, geo.size.width * progress), height: 8)
                     }
                 }
@@ -153,12 +153,12 @@ struct HomeDashboardView: View {
 
                 HStack {
                     Text("\(paidCount) of \(total) EMIs paid")
-                        .font(.caption)
+                        .font(.lmsCaption)
                         .foregroundStyle(.secondary)
                     Spacer()
                     Text("\(Int(progress * 100))% complete")
-                        .font(.caption).bold()
-                        .foregroundStyle(.blue)
+                        .font(.lmsCaption).bold()
+                        .foregroundStyle(Color.lmsAccent)
                 }
             }
 
@@ -173,31 +173,30 @@ struct HomeDashboardView: View {
             }
         }
         .padding()
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.07), radius: 10, y: 3)
+        .background(Color.lmsSurface)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
     }
 
     // MARK: - Status Tracker Card
     func statusTrackerCard(_ app: LoanApplication) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Spacing.m) {
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text("\(app.loanType.rawValue.capitalized) Loan Application")
-                        .font(.headline)
+                        .font(.lmsHeadline)
                     Text(Formatting.currency(app.requestedAmount))
-                        .font(.subheadline)
+                        .font(.lmsSubheadline)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
                 Image(systemName: icon(for: app.loanType))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(Color.lmsAccent)
                     .font(.title2)
             }
             if app.status == .rejected {
-                HStack(spacing: 10) {
+                HStack(spacing: Spacing.input) {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.red).font(.title2)
+                        .foregroundStyle(Color.lmsDanger).font(.title2)
                     VStack(alignment: .leading) {
                         Text("Application Rejected").bold()
                     }
@@ -209,10 +208,10 @@ struct HomeDashboardView: View {
                         let isDone = isStepDone(current: app.status, step: step, order: order)
                         let isCurrent = app.status == step
 
-                        VStack(spacing: 4) {
+                        VStack(spacing: Spacing.xs) {
                             ZStack {
                                 Circle()
-                                    .fill(isDone || isCurrent ? Color.blue : Color(.systemFill))
+                                    .fill(isDone || isCurrent ? Color.lmsAccent : Color.lmsFill)
                                     .frame(width: 28, height: 28)
                                 if isDone {
                                     Image(systemName: "checkmark")
@@ -224,7 +223,7 @@ struct HomeDashboardView: View {
                             }
                             Text(step.rawValue.capitalized)
                                 .font(.system(size: 9, weight: isCurrent ? .bold : .regular))
-                                .foregroundStyle(isCurrent ? .blue : .secondary)
+                                .foregroundStyle(isCurrent ? Color.lmsAccent : .secondary)
                                 .multilineTextAlignment(.center)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
@@ -233,7 +232,7 @@ struct HomeDashboardView: View {
 
                         if idx < order.count - 1 {
                             Rectangle()
-                                .fill(isDone ? Color.blue : Color(.systemFill))
+                                .fill(isDone ? Color.lmsAccent : Color.lmsFill)
                                 .frame(height: 2)
                                 .frame(maxWidth: .infinity)
                                 .offset(y: -10)
@@ -243,24 +242,23 @@ struct HomeDashboardView: View {
             }
         }
         .padding()
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
+        .background(Color.lmsSurface)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
     }
 
     // MARK: - EMI List
     func emiListSection(for loan: Loan) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             Text("Upcoming EMIs")
-                .font(.headline)
-                .padding(.leading, 4)
+                .font(.lmsHeadline)
+                .padding(.leading, Spacing.xs)
 
             let scheduleToUse = (selectedLoanID == loan.id) ? repaymentViewModel.emiSchedule : loan.emiSchedule
             let pendingEMIs = scheduleToUse.filter { $0.status == .upcoming || $0.status == .overdue }.prefix(3)
 
             if pendingEMIs.isEmpty {
                 Text("No upcoming payments.")
-                    .font(.subheadline)
+                    .font(.lmsSubheadline)
                     .foregroundStyle(.secondary)
                     .padding()
             } else {
@@ -275,29 +273,28 @@ struct HomeDashboardView: View {
 
     // MARK: - Empty State
     var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: Spacing.m) {
             Image(systemName: "doc.text.magnifyingglass")
-                .font(.system(size: 48))
+                .font(.lmsHeroIcon)
                 .foregroundStyle(.secondary)
             Text("No active loans")
-                .font(.headline)
+                .font(.lmsHeadline)
             Text("Go to the Apply tab to calculate and submit a loan application.")
-                .font(.subheadline)
+                .font(.lmsSubheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
         .padding(40)
         .frame(maxWidth: .infinity)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.05), radius: 8, y: 2)
+        .background(Color.lmsSurface)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
     }
 
     // MARK: - Helpers
     func stat(title: String, value: String) -> some View {
-        VStack(spacing: 2) {
-            Text(value).font(.subheadline).bold()
-            Text(title).font(.caption2).foregroundStyle(.secondary)
+        VStack(spacing: Spacing.xxs) {
+            Text(value).font(.lmsSubheadline).bold()
+            Text(title).font(.lmsCaption2).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -319,27 +316,6 @@ struct HomeDashboardView: View {
     }
 }
 
-// MARK: - Status Pill
-struct StatusPill: View {
-    let status: ApplicationStatus
-    var body: some View {
-        Text(status.rawValue.capitalized)
-            .font(.caption2).bold()
-            .padding(.horizontal, 8).padding(.vertical, 4)
-            .background(statusColor.opacity(0.12))
-            .foregroundStyle(statusColor)
-            .clipShape(Capsule())
-    }
-    var statusColor: Color {
-        switch status {
-        case .disbursed, .approved, .closed: return .green
-        case .rejected: return .red
-        case .recommended: return .blue
-        default: return .orange
-        }
-    }
-}
-
 // MARK: - EMI Row Card
 struct EMIRow: View {
     let emi: EMI
@@ -352,14 +328,14 @@ struct EMIRow: View {
                     .fill(statusColor.opacity(0.12))
                     .frame(width: 40, height: 40)
                 Text("\(emi.installmentNumber)")
-                    .font(.subheadline).bold()
+                    .font(.lmsSubheadline).bold()
                     .foregroundStyle(statusColor)
             }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(Formatting.currency(emi.totalAmount)).font(.subheadline).bold()
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                Text(Formatting.currency(emi.totalAmount)).font(.lmsSubheadline).bold()
                 Text("Due \(Formatting.date(emi.dueDate))")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.lmsCaption).foregroundStyle(.secondary)
             }
 
             Spacer()
@@ -367,31 +343,26 @@ struct EMIRow: View {
             switch emi.status {
             case .paid:
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green).font(.title3)
+                    .foregroundStyle(Color.lmsSuccess).font(.title3)
             case .overdue:
                 Button("Pay Now", action: onPay)
                     .buttonStyle(.borderedProminent)
-                    .tint(.red)
+                    .tint(Color.lmsDanger)
                     .controlSize(.small)
             case .upcoming:
-                Text("Upcoming")
-                    .font(.caption).foregroundStyle(.secondary)
-                    .padding(.horizontal, 8).padding(.vertical, 4)
-                    .background(Color(.systemFill))
-                    .clipShape(Capsule())
+                StatusBadge("Upcoming", tone: .info)
             }
         }
         .padding(14)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .shadow(color: .black.opacity(0.05), radius: 6, y: 1)
+        .background(Color.lmsSurface)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.button))
     }
 
     var statusColor: Color {
         switch emi.status {
-        case .paid: return .green
-        case .overdue: return .red
-        case .upcoming: return .blue
+        case .paid: return Color.lmsSuccess
+        case .overdue: return Color.lmsDanger
+        case .upcoming: return Color.lmsAccent
         }
     }
 }
