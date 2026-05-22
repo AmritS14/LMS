@@ -395,3 +395,19 @@ struct EMIRow: View {
         }
     }
 }
+
+#Preview {
+    HomeDashboardView()
+        .environment(SessionStore(
+            currentUser: MockAuthService.seedBorrower,
+            borrowerProfile: MockAuthService.seedBorrowerProfile
+        ))
+        .environment(\.appEnvironment, AppEnvironment(
+            auth: MockAuthService(),
+            loans: MockLoanService(),
+            documents: MockDocumentService(),
+            notifications: MockNotificationService(),
+            messaging: MockMessagingService(),
+            keychain: MockKeychainService()
+        ))
+}

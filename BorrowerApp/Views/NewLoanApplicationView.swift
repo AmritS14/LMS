@@ -235,3 +235,19 @@ struct NewLoanApplicationView: View {
         .disabled(viewModel.isSubmitting)
     }
 }
+
+#Preview {
+    NewLoanApplicationView()
+        .environment(SessionStore(
+            currentUser: MockAuthService.seedBorrower,
+            borrowerProfile: MockAuthService.seedBorrowerProfile
+        ))
+        .environment(\.appEnvironment, AppEnvironment(
+            auth: MockAuthService(),
+            loans: MockLoanService(),
+            documents: MockDocumentService(),
+            notifications: MockNotificationService(),
+            messaging: MockMessagingService(),
+            keychain: MockKeychainService()
+        ))
+}

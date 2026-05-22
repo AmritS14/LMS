@@ -49,6 +49,14 @@ struct NotificationsView: View {
 
 #Preview { 
     NavigationStack {
-        NotificationsView() 
+        NotificationsView()
+            .environment(\.appEnvironment, AppEnvironment(
+                auth: MockAuthService(),
+                loans: MockLoanService(),
+                documents: MockDocumentService(),
+                notifications: MockNotificationService(),
+                messaging: MockMessagingService(),
+                keychain: MockKeychainService()
+            ))
     }
 }

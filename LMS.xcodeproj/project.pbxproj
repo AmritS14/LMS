@@ -65,11 +65,13 @@
 		9073C990A1687625410E1BD8 /* StaffApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECD8C28C6EE6908B66DD7AC /* StaffApp.swift */; };
 		972A0DCF4680DB0FF2F6082A /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE98171A238045C22C2F9E8 /* AppEnvironment.swift */; };
 		A4ED0715F1E93A3369607DDF /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88B914FAC311966CF0312454 /* StatusBadge.swift */; };
+		AA001122334455667788AABB /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001122334455667788AA00 /* RegisterView.swift */; };
 		AC2433330FD509FFA6D35559 /* SystemSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50240F0BA8981C4CD1360F4B /* SystemSettingsView.swift */; };
 		AEC46A6B6FC8863AC7B09AEE /* LoanApplicationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67CE1BB7A83A622F16249215 /* LoanApplicationViewModel.swift */; };
 		AF6096782C4A1998ACE43AED /* ApplicationTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378FE18EBDE8ED6EAC15B43F /* ApplicationTrackingView.swift */; };
 		B21519E21329DBABAB377BAB /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F43612DC9CA160255FFC33 /* Colors.swift */; };
 		B655352FA07FEC2F784BB434 /* AuditTrailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 395C6FD33D73365EF60206F5 /* AuditTrailView.swift */; };
+		BB001122334455667788BBCC /* ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB001122334455667788BB00 /* ForgotPasswordView.swift */; };
 		BDCF412AA9C7F15281D10B55 /* StaffMessagingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67D1EAF548F0D2CDF5AB845C /* StaffMessagingView.swift */; };
 		BE28FEE792EA8A0F91A8089C /* Endpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16751F7EF73D594F9FAEA39E /* Endpoints.swift */; };
 		C7EC73AA5008E5C5A111E157 /* MessagingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D006F72DB84815CA65BE6A7 /* MessagingService.swift */; };
@@ -144,8 +146,10 @@
 		9AA2A2DE47232F5AA8A071B1 /* DocumentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentService.swift; sourceTree = "<group>"; };
 		9FCA06D6DA2270CD267813E0 /* ProductConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductConfigView.swift; sourceTree = "<group>"; };
 		A661E2C59635EFD0C144B906 /* LoanService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoanService.swift; sourceTree = "<group>"; };
+		AA001122334455667788AA00 /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
 		B07AD9174280E67995096E93 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		B1F43612DC9CA160255FFC33 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
+		BB001122334455667788BB00 /* ForgotPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordView.swift; sourceTree = "<group>"; };
 		BBECFA398FAD4F385E80C23D /* NotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsView.swift; sourceTree = "<group>"; };
 		C218E1883EDF01C93F50EB7A /* BorrowerProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BorrowerProfileView.swift; sourceTree = "<group>"; };
 		D2CE2D15122C2AB876A86802 /* StaffLoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaffLoginView.swift; sourceTree = "<group>"; };
@@ -220,6 +224,8 @@
 				11538E6ED3D89A812369BF88 /* HomeDashboardView.swift */,
 				DA0D234D5F91C703EA095E10 /* KYCView.swift */,
 				106AFA5E311F8E8EB97A16CA /* LoginView.swift */,
+				AA001122334455667788AA00 /* RegisterView.swift */,
+				BB001122334455667788BB00 /* ForgotPasswordView.swift */,
 				110706905C594DC975DCFE77 /* NewLoanApplicationView.swift */,
 				BBECFA398FAD4F385E80C23D /* NotificationsView.swift */,
 				1FF7914A86ED65B6282042EF /* RepaymentDashboardView.swift */,
@@ -323,7 +329,6 @@
 				211DE72674707B85B3C3C40A /* MockLoanService.swift */,
 				77E37F22B749EB4CF963D0B3 /* MockSupportServices.swift */,
 			);
-			name = Mocks;
 			path = Mocks;
 			sourceTree = "<group>";
 		};
@@ -400,8 +405,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = E4CC6372170BE6DC84316F52 /* Build configuration list for PBXProject "LMS" */;
 			developmentRegion = en;
@@ -489,6 +492,8 @@
 				1FBC600590547C2F0E6BD4C2 /* DashboardViewModel.swift in Sources */,
 				850682E07C033FC34B6B770E /* RepaymentViewModel.swift in Sources */,
 				2E61A75D6508555B4A0D13BF /* MessagingViewModel.swift in Sources */,
+				AA001122334455667788AABB /* RegisterView.swift in Sources */,
+				BB001122334455667788BBCC /* ForgotPasswordView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
