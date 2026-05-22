@@ -136,6 +136,22 @@
 		900C4AC51523D2823ABE0AA5 /* OfficerApplicationQueueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfficerApplicationQueueView.swift; sourceTree = "<group>"; };
 		92084DACBFEC7A60525C2925 /* StaffRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaffRootView.swift; sourceTree = "<group>"; };
 		93417E4CF1AF5336D0BDA3F7 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		96C3D5AE2FC0687C00E5EA49 /* LoanOfficerAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoanOfficerAppApp.swift; sourceTree = "<group>"; };
+		96C3D5B02FC0687C00E5EA49 /* SharedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedComponents.swift; sourceTree = "<group>"; };
+		96C3D5B22FC0687C00E5EA49 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		96C3D5B42FC0687C00E5EA49 /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
+		96C3D5B62FC0687C00E5EA49 /* AllApplicationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllApplicationsView.swift; sourceTree = "<group>"; };
+		96C3D5B72FC0687C00E5EA49 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		96C3D5B82FC0687C00E5EA49 /* CommunicationsMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunicationsMainView.swift; sourceTree = "<group>"; };
+		96C3D5B92FC0687C00E5EA49 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		96C3D5BA2FC0687C00E5EA49 /* DocumentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentsView.swift; sourceTree = "<group>"; };
+		96C3D5BB2FC0687C00E5EA49 /* LoanReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoanReviewView.swift; sourceTree = "<group>"; };
+		96C3D5BC2FC0687C00E5EA49 /* NotificationsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsTabView.swift; sourceTree = "<group>"; };
+		96C3D5BD2FC0687C00E5EA49 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		96C3D5BE2FC0687C00E5EA49 /* RecoveryManagementMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryManagementMainView.swift; sourceTree = "<group>"; };
+		96C3D5BF2FC0687C00E5EA49 /* RecoveryVerificationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryVerificationView.swift; sourceTree = "<group>"; };
+		96C3D5C12FC0687C00E5EA49 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		96C3D5C22FC0687C00E5EA49 /* ContentView 2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentView 2.swift"; sourceTree = "<group>"; };
 		9AA2A2DE47232F5AA8A071B1 /* DocumentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentService.swift; sourceTree = "<group>"; };
 		9FCA06D6DA2270CD267813E0 /* ProductConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductConfigView.swift; sourceTree = "<group>"; };
 		A661E2C59635EFD0C144B906 /* LoanService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoanService.swift; sourceTree = "<group>"; };
@@ -262,6 +278,69 @@
 			path = Resources;
 			sourceTree = "<group>";
 		};
+		96C3D5AF2FC0687C00E5EA49 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				96C3D5AE2FC0687C00E5EA49 /* LoanOfficerAppApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		96C3D5B12FC0687C00E5EA49 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				96C3D5B02FC0687C00E5EA49 /* SharedComponents.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		96C3D5B32FC0687C00E5EA49 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				96C3D5B22FC0687C00E5EA49 /* Models.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		96C3D5B52FC0687C00E5EA49 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				96C3D5B42FC0687C00E5EA49 /* AppViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		96C3D5C02FC0687C00E5EA49 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				96C3D5B62FC0687C00E5EA49 /* AllApplicationsView.swift */,
+				96C3D5B72FC0687C00E5EA49 /* ChatView.swift */,
+				96C3D5B82FC0687C00E5EA49 /* CommunicationsMainView.swift */,
+				96C3D5B92FC0687C00E5EA49 /* DashboardView.swift */,
+				96C3D5BA2FC0687C00E5EA49 /* DocumentsView.swift */,
+				96C3D5BB2FC0687C00E5EA49 /* LoanReviewView.swift */,
+				96C3D5BC2FC0687C00E5EA49 /* NotificationsTabView.swift */,
+				96C3D5BD2FC0687C00E5EA49 /* ProfileView.swift */,
+				96C3D5BE2FC0687C00E5EA49 /* RecoveryManagementMainView.swift */,
+				96C3D5BF2FC0687C00E5EA49 /* RecoveryVerificationView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		96C3D5C32FC0687C00E5EA49 /* loan officer */ = {
+			isa = PBXGroup;
+			children = (
+				96C3D5AF2FC0687C00E5EA49 /* App */,
+				96C3D5B12FC0687C00E5EA49 /* Components */,
+				96C3D5B32FC0687C00E5EA49 /* Models */,
+				96C3D5B52FC0687C00E5EA49 /* ViewModels */,
+				96C3D5C02FC0687C00E5EA49 /* Views */,
+				96C3D5C12FC0687C00E5EA49 /* Assets.xcassets */,
+				96C3D5C22FC0687C00E5EA49 /* ContentView 2.swift */,
+			);
+			path = "loan officer";
+			sourceTree = "<group>";
+		};
 		ABB8C58CBAF5BDB847314EBD /* Shared */ = {
 			isa = PBXGroup;
 			children = (
@@ -303,6 +382,7 @@
 				ABB8C58CBAF5BDB847314EBD /* Shared */,
 				F11648575E21545DFE47E250 /* StaffApp */,
 				3C83BCA67B2DF25CC483E810 /* Products */,
+				96C3D5C32FC0687C00E5EA49 /* loan officer */,
 			);
 			sourceTree = "<group>";
 		};
