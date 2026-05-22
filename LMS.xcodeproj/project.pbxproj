@@ -90,6 +90,8 @@
 		EA91AB60DA8481BDF1D1B490 /* MessagingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D006F72DB84815CA65BE6A7 /* MessagingService.swift */; };
 		EB25603ECBC4548778393153 /* EMICalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F582C8AB54B323AD8E169865 /* EMICalculator.swift */; };
 		ED138C18F937FC71F291CD50 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75FAA397F17964650F366348 /* KeychainService.swift */; };
+		F04C0D722FC06930009E0886 /* LMSTextFieldStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F04C0D712FC06930009E0886 /* LMSTextFieldStyle.swift */; };
+		F04C0D732FC06930009E0886 /* LMSTextFieldStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F04C0D712FC06930009E0886 /* LMSTextFieldStyle.swift */; };
 		F7F7B90D792B9760F95CE95A /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F43612DC9CA160255FFC33 /* Colors.swift */; };
 		F872AD1A8550E9CF19A04C1D /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E121B25741BC258047859E /* PrimaryButton.swift */; };
 		FE5DE3B39ECD459E53A65878 /* MockAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88BD61862F57DAB1E646A694 /* MockAuthService.swift */; };
@@ -158,6 +160,7 @@
 		EAA0D6C9B4ADA02384A08BA9 /* BorrowerMessagingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BorrowerMessagingView.swift; sourceTree = "<group>"; };
 		EECD8C28C6EE6908B66DD7AC /* StaffApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaffApp.swift; sourceTree = "<group>"; };
 		EFFD5FBBDCCA3CA7CBA97EB3 /* EMICalculatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EMICalculatorView.swift; sourceTree = "<group>"; };
+		F04C0D712FC06930009E0886 /* LMSTextFieldStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LMSTextFieldStyle.swift; sourceTree = "<group>"; };
 		F315B139415D3EC19DB81164 /* PortfolioDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioDashboardView.swift; sourceTree = "<group>"; };
 		F582C8AB54B323AD8E169865 /* EMICalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EMICalculator.swift; sourceTree = "<group>"; };
 		FEE98171A238045C22C2F9E8 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
@@ -195,6 +198,7 @@
 		4B257CAD17138B4BD139BED3 /* DesignSystem */ = {
 			isa = PBXGroup;
 			children = (
+				F04C0D712FC06930009E0886 /* LMSTextFieldStyle.swift */,
 				B1F43612DC9CA160255FFC33 /* Colors.swift */,
 				51E121B25741BC258047859E /* PrimaryButton.swift */,
 				0B906761D8C52A50034E4A58 /* SectionCard.swift */,
@@ -465,6 +469,7 @@
 				3B7261C9312A62898D2C2DF0 /* EMICalculatorView.swift in Sources */,
 				016DA3D6DEB000E7BD048CAB /* Endpoints.swift in Sources */,
 				49E56C7B64CF25EAEF445047 /* Formatting.swift in Sources */,
+				F04C0D722FC06930009E0886 /* LMSTextFieldStyle.swift in Sources */,
 				293BA185C003169CA497DAD4 /* HomeDashboardView.swift in Sources */,
 				5AAD19A5CCD179034CEA8C1D /* KYCView.swift in Sources */,
 				ED138C18F937FC71F291CD50 /* KeychainService.swift in Sources */,
@@ -531,6 +536,7 @@
 				792D0B37DF96C7A9D90D2633 /* Spacing.swift in Sources */,
 				9073C990A1687625410E1BD8 /* StaffApp.swift in Sources */,
 				825AF51AA045E92CF99F1D3A /* StaffLoginView.swift in Sources */,
+				F04C0D732FC06930009E0886 /* LMSTextFieldStyle.swift in Sources */,
 				BDCF412AA9C7F15281D10B55 /* StaffMessagingView.swift in Sources */,
 				68FD2EE89E0768E5A4FCD489 /* StaffProfileView.swift in Sources */,
 				65806DE55B096D1831BF4A12 /* StaffRootView.swift in Sources */,

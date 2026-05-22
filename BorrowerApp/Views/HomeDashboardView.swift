@@ -194,7 +194,7 @@ struct HomeDashboardView: View {
                     .font(.title2)
             }
             if app.status == .rejected {
-                HStack(spacing: Spacing.input) {
+                HStack(spacing: Spacing.s) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(Color.lmsDanger).font(.title2)
                     VStack(alignment: .leading) {

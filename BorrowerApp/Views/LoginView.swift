@@ -1,5 +1,3 @@
-
-```swift
 import SwiftUI
 
 // MARK: - Login Screen
@@ -182,6 +180,7 @@ struct OTPVerificationView: View {
                             )
                         )
                         .frame(width: 72, height: 72)
+                        .shadow(
                             color: showCheckmark
                                 ? Color.green.opacity(0.35)
                                 : Color.blue.opacity(0.35),
@@ -437,6 +436,7 @@ struct OTPDigitBox: View {
                             lineWidth: isFocused || isExpired ? 2 : 1.5
                         )
                 )
+                .shadow(
                     color: isExpired ? Color.red.opacity(0.15) : (isFocused ? Color.blue.opacity(0.15) : .clear),
                     radius: 6, x: 0, y: 2
                 )
