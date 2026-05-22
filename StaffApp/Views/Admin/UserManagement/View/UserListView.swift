@@ -57,8 +57,8 @@ struct UserListView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink(destination: ProfileView()) {
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 16, weight: .bold))
+                    Image(systemName: "person.crop.circle")
+                        .font(.title3)
                 }
             }
         }
@@ -86,19 +86,23 @@ struct UserListView: View {
 
     /// A single filter pill.
     private func filterPill(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        Button(action: {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                action()
+            }
+        }) {
             Text(title)
                 .font(.lmsSubheadline)
                 .padding(.horizontal, Spacing.m)
                 .padding(.vertical, Spacing.s)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .background(
-                    isSelected ? AdminColor.accent : Color(.systemBackground),
+                    isSelected ? AdminColor.accent : AdminColor.cardBackground,
                     in: Capsule()
                 )
                 .overlay(
                     Capsule()
-                        .strokeBorder(isSelected ? Color.clear : Color.gray.opacity(0.2), lineWidth: 1)
+                        .strokeBorder(isSelected ? Color.clear : Color.primary.opacity(0.08), lineWidth: 1)
                 )
         }
     }

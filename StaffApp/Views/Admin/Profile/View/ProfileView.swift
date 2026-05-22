@@ -32,7 +32,7 @@ struct ProfileView: View {
                 footerSection
             }
             .padding(.horizontal, AdminSpacing.cardRowHorizontalInset)
-            .padding(.top, AdminSpacing.cardRowVerticalInset)
+            .padding(.top, Spacing.m)
             .padding(.bottom, Spacing.xl)
         }
         .background(AdminColor.background)
@@ -62,21 +62,21 @@ struct ProfileView: View {
     // MARK: - Sections
     
     private var headerView: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
             PhotosPicker(selection: $selectedItem, matching: .images) {
                 ZStack(alignment: .bottomTrailing) {
                     if let avatarImage {
                         avatarImage
                             .resizable()
                             .scaledToFill()
-                            .frame(width: 80, height: 80)
+                            .frame(width: 84, height: 84)
                             .clipShape(Circle())
                     } else {
                         Text("SA")
                             .font(.system(size: 32, weight: .bold))
                             .foregroundStyle(.white)
-                            .frame(width: 80, height: 80)
-                            .background(Color.indigo)
+                            .frame(width: 84, height: 84)
+                            .background(Color.indigo.gradient)
                             .clipShape(Circle())
                     }
                     
@@ -84,17 +84,17 @@ struct ProfileView: View {
                     Image(systemName: "camera.fill")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(.white)
-                        .frame(width: 24, height: 24)
-                        .background(Color.indigo)
+                        .frame(width: 26, height: 26)
+                        .background(AdminColor.accent)
                         .clipShape(Circle())
-                        .overlay(Circle().stroke(Color(uiColor: .systemBackground), lineWidth: 2))
-                        .shadow(radius: 2)
-                        .offset(x: 2, y: 2)
+                        .overlay(Circle().stroke(AdminColor.background, lineWidth: 2.5))
+                        .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
                 }
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Change profile photo")
 
-            VStack(spacing: 4) {
+            VStack(spacing: 6) {
                 Text("Sarah Jenkins")
                     .font(.title2)
                     .fontWeight(.bold)
@@ -103,12 +103,12 @@ struct ProfileView: View {
                     .font(.caption)
                     .fontWeight(.bold)
                     .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, 5)
                     .background(Color.indigo.opacity(0.15), in: Capsule())
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.bottom, 8)
+        .padding(.vertical, Spacing.s)
     }
 
     private var accountSection: some View {
@@ -138,11 +138,6 @@ struct ProfileView: View {
                 AdminColor.cardBackground,
                 in: RoundedRectangle(cornerRadius: 16, style: .continuous)
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-            )
-            .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
         }
     }
 
@@ -161,17 +156,15 @@ struct ProfileView: View {
                 Divider()
                 
                 HStack(spacing: 12) {
-                    iconView(icon: "key.fill", color: .orange)
                     Toggle("Two-Factor Authentication", isOn: $isTwoFactorEnabled)
-                        .tint(.green)
+                        .tint(AdminColor.accent)
                 }
                 
                 Divider()
                 
                 HStack(spacing: 12) {
-                    iconView(icon: "faceid", color: .indigo)
                     Toggle("Biometric Login", isOn: $isBiometricEnabled)
-                        .tint(.green)
+                        .tint(AdminColor.accent)
                 }
             }
             .padding(AdminSpacing.cardPadding)
@@ -179,11 +172,6 @@ struct ProfileView: View {
                 AdminColor.cardBackground,
                 in: RoundedRectangle(cornerRadius: 16, style: .continuous)
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-            )
-            .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
         }
     }
 
@@ -214,11 +202,6 @@ struct ProfileView: View {
                 AdminColor.cardBackground,
                 in: RoundedRectangle(cornerRadius: 16, style: .continuous)
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-            )
-            .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
         }
     }
 
@@ -238,7 +221,6 @@ struct ProfileView: View {
                     showSignOutConfirmation = true
                 } label: {
                     HStack(spacing: 12) {
-                        iconView(icon: "rectangle.portrait.and.arrow.right.fill", color: .red.opacity(0.2), foregroundColor: .red)
                         Text("Sign Out")
                             .foregroundStyle(.red)
                         Spacer()
@@ -251,11 +233,6 @@ struct ProfileView: View {
                 AdminColor.cardBackground,
                 in: RoundedRectangle(cornerRadius: 16, style: .continuous)
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-            )
-            .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
         }
     }
     
@@ -264,8 +241,6 @@ struct ProfileView: View {
     private func profileNavigationRow<Destination: View>(icon: String, iconColor: Color, title: String, value: String? = nil, destination: Destination) -> some View {
         NavigationLink(destination: destination) {
             HStack(spacing: 12) {
-                iconView(icon: icon, color: iconColor)
-                
                 Text(title)
                     .foregroundStyle(.primary)
                 
@@ -331,10 +306,6 @@ struct PersonalInfoView: View {
                     }
                     .padding(AdminSpacing.cardPadding)
                     .background(AdminColor.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                    )
                 }
                 
                 VStack(alignment: .leading, spacing: AdminSpacing.headerToCardGap) {
@@ -383,10 +354,6 @@ struct PersonalInfoView: View {
                     }
                     .padding(AdminSpacing.cardPadding)
                     .background(AdminColor.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                    )
                 }
                 
                 if isEditing {
@@ -501,10 +468,6 @@ struct KYCDetailedView: View {
                     }
                     .padding(AdminSpacing.cardPadding)
                     .background(AdminColor.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                    )
                 }
                 
                 // Documents Card
@@ -520,10 +483,6 @@ struct KYCDetailedView: View {
                     }
                     .padding(AdminSpacing.cardPadding)
                     .background(AdminColor.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                    )
                 }
             }
             .padding(.horizontal, AdminSpacing.cardRowHorizontalInset)
@@ -621,10 +580,6 @@ struct ChangePasswordView: View {
                     }
                     .padding(AdminSpacing.cardPadding)
                     .background(AdminColor.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                    )
                 }
                 
                 AdminPrimaryButton("Update Password") {
@@ -718,20 +673,16 @@ struct NotificationSettingsDetailedView: View {
                     
                     VStack(spacing: Spacing.s) {
                         Toggle("Email Notifications", isOn: $emailApproved)
-                            .tint(.green)
+                            .tint(AdminColor.accent)
                         Divider()
                         Toggle("In-App Push Alerts", isOn: $inAppApproved)
-                            .tint(.green)
+                            .tint(AdminColor.accent)
                         Divider()
                         Toggle("SMS Notifications", isOn: $smsApproved)
-                            .tint(.green)
+                            .tint(AdminColor.accent)
                     }
                     .padding(AdminSpacing.cardPadding)
                     .background(AdminColor.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                    )
                 }
                 
                 // Section 2: EMI Due Alerts
@@ -740,20 +691,16 @@ struct NotificationSettingsDetailedView: View {
                     
                     VStack(spacing: Spacing.s) {
                         Toggle("Email Notifications", isOn: $emailDue)
-                            .tint(.green)
+                            .tint(AdminColor.accent)
                         Divider()
                         Toggle("In-App Push Alerts", isOn: $inAppDue)
-                            .tint(.green)
+                            .tint(AdminColor.accent)
                         Divider()
                         Toggle("SMS Notifications", isOn: $smsDue)
-                            .tint(.green)
+                            .tint(AdminColor.accent)
                     }
                     .padding(AdminSpacing.cardPadding)
                     .background(AdminColor.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                    )
                 }
                 
                 // Section 3: Payment Overdue Alerts
@@ -762,20 +709,16 @@ struct NotificationSettingsDetailedView: View {
                     
                     VStack(spacing: Spacing.s) {
                         Toggle("Email Notifications", isOn: $emailOverdue)
-                            .tint(.green)
+                            .tint(AdminColor.accent)
                         Divider()
                         Toggle("In-App Push Alerts", isOn: $inAppOverdue)
-                            .tint(.green)
+                            .tint(AdminColor.accent)
                         Divider()
                         Toggle("SMS Notifications", isOn: $smsOverdue)
-                            .tint(.green)
+                            .tint(AdminColor.accent)
                     }
                     .padding(AdminSpacing.cardPadding)
                     .background(AdminColor.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                    )
                 }
                 
                 AdminPrimaryButton("Save Preferences") {
@@ -856,10 +799,6 @@ struct SupportDetailedView: View {
                     }
                     .padding(AdminSpacing.cardPadding)
                     .background(AdminColor.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                    )
                 }
                 
                 // Submit Ticket Card
@@ -915,10 +854,6 @@ struct SupportDetailedView: View {
                     }
                     .padding(AdminSpacing.cardPadding)
                     .background(AdminColor.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                    )
                 }
                 
                 AdminPrimaryButton("Submit Ticket") {

@@ -19,14 +19,16 @@ struct DashboardView: View {
         ScrollView {
             VStack(spacing: AdminSpacing.sectionGap) {
                 // Total Distribution Card
-                distributionCard
-                    .onTapGesture {
-                        showDetails = true
-                    }
+                Button {
+                    showDetails = true
+                } label: {
+                    distributionCard
+                }
+                .buttonStyle(.plain)
 
                 // Recent Applications List
                 VStack(alignment: .leading, spacing: AdminSpacing.headerToCardGap) {
-                    Text("Recent Application")
+                    Text("Recent Applications")
                         .font(.lmsTitle2)
                         .foregroundStyle(.primary)
 
@@ -45,8 +47,8 @@ struct DashboardView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink(destination: ProfileView()) {
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 16, weight: .bold))
+                    Image(systemName: "person.crop.circle")
+                        .font(.title3)
                 }
             }
         }
@@ -145,11 +147,6 @@ struct DashboardView: View {
                     AdminColor.cardBackground,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous)
                 )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                )
-                .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
             }
         }
     }

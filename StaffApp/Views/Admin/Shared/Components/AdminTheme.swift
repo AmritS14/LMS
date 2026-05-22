@@ -2,21 +2,9 @@ import SwiftUI
 
 // MARK: - Admin Local Color Theme (Supporting Light & Dark Mode)
 struct AdminColor {
-    static let background = Color(uiColor: UIColor { traitCollection in
-        if traitCollection.userInterfaceStyle == .dark {
-            return UIColor(hex: "#121214") // Dark purple-tinted slate
-        } else {
-            return UIColor(hex: "#E0DFE4") // Soft light lilac
-        }
-    })
+    static let background = Color(uiColor: UIColor.systemGroupedBackground)
 
-    static let cardBackground = Color(uiColor: UIColor { traitCollection in
-        if traitCollection.userInterfaceStyle == .dark {
-            return UIColor(hex: "#1C1C1E") // Elevated gray card
-        } else {
-            return UIColor(hex: "#ECEBF0") // Premium light card
-        }
-    })
+    static let cardBackground = Color(uiColor: UIColor.secondarySystemGroupedBackground)
 
     static let accent = Color(hex: "#E24901")
 
@@ -103,8 +91,8 @@ struct AdminPrimaryButton: View {
             }
             .frame(maxWidth: .infinity, minHeight: 52)
             .background(isEnabled ? AdminColor.accent : Color.gray.opacity(0.4))
-            .clipShape(Capsule())
-            .shadow(color: isEnabled ? AdminColor.accent.opacity(0.2) : Color.clear, radius: 10, x: 0, y: 5)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .shadow(color: isEnabled ? AdminColor.accent.opacity(0.15) : Color.clear, radius: 6, x: 0, y: 3)
         }
         .buttonStyle(.plain)
         .disabled(isLoading)

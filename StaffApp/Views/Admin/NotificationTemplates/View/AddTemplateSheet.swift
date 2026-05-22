@@ -28,132 +28,59 @@ struct AddTemplateSheet: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: AdminSpacing.sectionGap) {
-                    
-                    // Section 1: Trigger Event Selection Dropdown
-                    VStack(alignment: .leading, spacing: AdminSpacing.headerToCardGap) {
-                        SectionHeaderView(title: "Trigger Event", systemImage: "bolt.fill")
-                        
-                        Menu {
-                            ForEach(TriggerEvent.allCases) { trigger in
-                                Button {
-                                    selectedTrigger = trigger
-                                } label: {
-                                    HStack {
-                                        Text(trigger.rawValue)
-                                        Spacer()
-                                        Image(systemName: trigger.systemImage)
-                                    }
-                                }
-                            }
-                        } label: {
-                            HStack {
-                                Image(systemName: selectedTrigger.systemImage)
-                                    .foregroundColor(AdminColor.accent)
-                                Text(selectedTrigger.rawValue)
-                                    .foregroundColor(.primary)
-                                Spacer()
-                                Image(systemName: "chevron.down")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding()
-                            .background(
-                                AdminColor.cardBackground,
-                                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                            )
+            Form {
+                // Section 1: Trigger Event Selection Dropdown
+                Section {
+                    Picker("Trigger Event", selection: $selectedTrigger) {
+                        ForEach(TriggerEvent.allCases) { trigger in
+                            Label(trigger.rawValue, systemImage: trigger.systemImage)
+                                .tag(trigger)
                         }
                     }
-
-                    // Section 2: Template Title
-                    VStack(alignment: .leading, spacing: AdminSpacing.headerToCardGap) {
-                        SectionHeaderView(title: "Template Title", systemImage: "tag")
-                        
-                        TextField("e.g. Approved Notification", text: $title)
-                            .textFieldStyle(.roundedBorder)
-                            .padding(AdminSpacing.cardPadding)
-                            .background(
-                                AdminColor.cardBackground,
-                                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                            )
-                    }
-
-                    // Section 3: Delivery Channels
-                    VStack(alignment: .leading, spacing: AdminSpacing.headerToCardGap) {
-                        SectionHeaderView(title: "Delivery Channels", systemImage: "paperplane.fill")
-
-                        VStack(spacing: Spacing.s) {
-                            ForEach(NotificationChannel.allCases.indices, id: \.self) { index in
-                                let channel = NotificationChannel.allCases[index]
-                                Toggle(isOn: Binding(
-                                    get: { channels.contains(channel) },
-                                    set: { isEnabled in
-                                        if isEnabled {
-                                            channels.insert(channel)
-                                        } else {
-                                            channels.remove(channel)
-                                        }
-                                    }
-                                )) {
-                                    Label(channel.rawValue, systemImage: channel.systemImage)
-                                }
-
-                                if index < NotificationChannel.allCases.count - 1 {
-                                    Divider()
-                                }
-                            }
-                        }
-                        .padding(AdminSpacing.cardPadding)
-                        .background(
-                            AdminColor.cardBackground,
-                            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                        )
-                    }
-
-                    // Section 4: Message Body Text Editor
-                    VStack(alignment: .leading, spacing: AdminSpacing.headerToCardGap) {
-                        SectionHeaderView(title: "Message Body", systemImage: "text.alignleft")
-
-                        VStack(spacing: Spacing.s) {
-                            TextEditor(text: $bodyText)
-                                .font(.system(.body, design: .monospaced))
-                                .frame(minHeight: 180)
-                                .scrollContentBackground(.hidden)
-                                .background(Color.clear)
-
-                            Divider()
-
-                            // Placeholder tokens reference
-                            placeholderHint
-                        }
-                        .padding(AdminSpacing.cardPadding)
-                        .background(
-                            AdminColor.cardBackground,
-                            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                        )
-                    }
+                    .pickerStyle(.menu)
                 }
-                .padding(.horizontal, AdminSpacing.cardRowHorizontalInset)
-                .padding(.vertical, 24)
+
+                // Section 2: Template Title
+                Section {
+                    TextField("Template Title (e.g. Approved Notification)", text: $title)
+                } header: {
+                    Text("Template Title")
+                }
+
+                // Section 3: Delivery Channels
+                Section {
+                    ForEach(NotificationChannel.allCases.indices, id: \.self) { index in
+                        let channel = NotificationChannel.allCases[index]
+                        Toggle(isOn: Binding(
+                            get: { channels.contains(channel) },
+                            set: { isEnabled in
+                                if isEnabled {
+                                    channels.insert(channel)
+                                } else {
+                                    channels.remove(channel)
+                                }
+                            }
+                        )) {
+                            Text(channel.rawValue)
+                        }
+                        .tint(AdminColor.accent)
+                    }
+                } header: {
+                    Text("Delivery Channels")
+                }
+
+                // Section 4: Message Body Text Editor
+                Section {
+                    TextEditor(text: $bodyText)
+                        .font(.system(.body, design: .monospaced))
+                        .frame(minHeight: 180)
+
+                    // Placeholder tokens reference
+                    placeholderHint
+                } header: {
+                    Text("Message Body")
+                }
             }
-            .background(AdminColor.background)
             .navigationTitle("New Template")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -165,13 +92,12 @@ struct AddTemplateSheet: View {
                             onDismiss()
                         }
                     }
-                    .tint(AdminColor.accent)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Create") {
                         handleCreateTemplate()
                     }
-                    .tint(AdminColor.accent)
+                    .fontWeight(.bold)
                     .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || channels.isEmpty)
                 }
             }

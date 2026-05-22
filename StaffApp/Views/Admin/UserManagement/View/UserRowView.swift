@@ -48,11 +48,6 @@ struct UserRowView: View {
             AdminColor.cardBackground,
             in: RoundedRectangle(cornerRadius: 16, style: .continuous)
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.02), radius: 4, y: 2)
     }
 
     private var initialsAvatar: some View {
@@ -64,9 +59,9 @@ struct UserRowView: View {
             .joined()
 
         return Text(initials)
-            .font(.system(.title3, design: .default, weight: .bold))
+            .font(.system(.callout, design: .default, weight: .bold))
             .foregroundStyle(.white)
-            .frame(width: 50, height: 50)
+            .frame(width: 44, height: 44)
             .background(avatarColor.gradient, in: Circle())
     }
 
@@ -215,10 +210,6 @@ struct UserDetailsView: View {
                 AdminColor.cardBackground,
                 in: RoundedRectangle(cornerRadius: 16, style: .continuous)
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-            )
         }
     }
 
@@ -242,10 +233,6 @@ struct UserDetailsView: View {
                 .background(
                     AdminColor.cardBackground,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
                 )
             }
 
@@ -275,10 +262,6 @@ struct UserDetailsView: View {
                     AdminColor.cardBackground,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous)
                 )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                )
             }
 
             // Card 3: Loan Stats
@@ -295,10 +278,6 @@ struct UserDetailsView: View {
                 .background(
                     AdminColor.cardBackground,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
                 )
             }
 
@@ -349,10 +328,6 @@ struct UserDetailsView: View {
                             AdminColor.cardBackground,
                             in: RoundedRectangle(cornerRadius: 16, style: .continuous)
                         )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                        )
                     }
                 }
             }
@@ -377,10 +352,6 @@ struct UserDetailsView: View {
                 .background(
                     AdminColor.cardBackground,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
                 )
             }
 
@@ -429,10 +400,6 @@ struct UserDetailsView: View {
                     AdminColor.cardBackground,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous)
                 )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                )
             }
 
             // Card 3: Supervising Manager
@@ -450,10 +417,6 @@ struct UserDetailsView: View {
                 .background(
                     AdminColor.cardBackground,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
                 )
             }
 
@@ -480,10 +443,6 @@ struct UserDetailsView: View {
                 .background(
                     AdminColor.cardBackground,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
                 )
             }
 
@@ -532,10 +491,6 @@ struct UserDetailsView: View {
                     AdminColor.cardBackground,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous)
                 )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                )
             }
 
             // Card 3: Permissions Configuration
@@ -559,10 +514,6 @@ struct UserDetailsView: View {
                 .background(
                     AdminColor.cardBackground,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
                 )
             }
 
@@ -588,10 +539,6 @@ struct UserDetailsView: View {
                 .background(
                     AdminColor.cardBackground,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
                 )
             }
         }

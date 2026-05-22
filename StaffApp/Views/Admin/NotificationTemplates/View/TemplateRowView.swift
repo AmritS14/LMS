@@ -50,11 +50,6 @@ struct TemplateRowView: View {
             AdminColor.cardBackground,
             in: RoundedRectangle(cornerRadius: 16, style: .continuous)
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
         .contentShape(Rectangle())
     }
 

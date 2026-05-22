@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Charts
 
 struct DistributionDetailsView: View {
     @Bindable var viewModel: DashboardViewModel
@@ -48,9 +49,6 @@ struct DistributionDetailsView: View {
                 .font(.system(size: 34, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
             
-            Text("Aggregated across all approved active loans")
-                .font(.lmsCaption)
-                .foregroundStyle(.white.opacity(0.7))
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Spacing.l)
@@ -62,27 +60,57 @@ struct DistributionDetailsView: View {
         .shadow(color: AdminColor.accent.opacity(0.2), radius: 8, x: 0, y: 4)
     }
 
+    private let portfolioData: [(category: String, amountStr: String, amount: Double, percentage: Double, color: Color)] = [
+        ("Home", "₹45L", 45.00, 0.547, .indigo),
+        ("Business", "₹20.5L", 20.50, 0.249, .orange),
+        ("Personal", "₹8.5L", 8.50, 0.103, .cyan),
+        ("Vehicle", "₹8.2L", 8.20, 0.100, .teal)
+    ]
+
     private var loanDistributionSection: some View {
         VStack(alignment: .leading, spacing: AdminSpacing.headerToCardGap) {
-            SectionHeaderView(title: "Loan Portfolio Breakdown", systemImage: "chart.pie.fill")
+            SectionHeaderView(title: "Loan Portfolio Breakdown", systemImage: "chart.bar.fill")
             
-            VStack(spacing: Spacing.m) {
-                distributionRow(title: "Home Loans", amount: "₹45.00 L", percentage: 0.547, color: .indigo)
-                Divider()
-                distributionRow(title: "Business Loans", amount: "₹20.50 L", percentage: 0.249, color: .orange)
-                Divider()
-                distributionRow(title: "Personal Loans", amount: "₹8.50 L", percentage: 0.103, color: .cyan)
-                Divider()
-                distributionRow(title: "Vehicle Loans", amount: "₹8.20 L", percentage: 0.100, color: .teal)
+            VStack {
+                Chart {
+                    ForEach(portfolioData, id: \.category) { item in
+                        BarMark(
+                            x: .value("Category", item.category),
+                            y: .value("Amount", item.amount)
+                        )
+                        .foregroundStyle(item.color.gradient)
+                        .cornerRadius(6)
+                        .annotation(position: .top, alignment: .center) {
+                            VStack(spacing: 2) {
+                                Text(item.amountStr)
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(.primary)
+                                Text(String(format: "%.1f%%", item.percentage * 100))
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.bottom, 2)
+                        }
+                    }
+                }
+                .frame(height: 220)
+                .chartYAxis(.hidden)
+                .chartXAxis {
+                    AxisMarks { value in
+                        AxisValueLabel() {
+                            if let category = value.as(String.self) {
+                                Text(category)
+                                    .font(.caption2)
+                            }
+                        }
+                    }
+                }
             }
             .padding(AdminSpacing.cardPadding)
+            .padding(.top, Spacing.m)
             .background(
                 AdminColor.cardBackground,
                 in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
             )
         }
     }
@@ -123,10 +151,6 @@ struct DistributionDetailsView: View {
                 AdminColor.cardBackground,
                 in: RoundedRectangle(cornerRadius: 16, style: .continuous)
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-            )
         }
     }
 
@@ -134,107 +158,38 @@ struct DistributionDetailsView: View {
         VStack(alignment: .leading, spacing: AdminSpacing.headerToCardGap) {
             SectionHeaderView(title: "Active Loans & Applications", systemImage: "folder.badge.gearshape")
             
-            HStack(spacing: Spacing.s) {
+            VStack(spacing: Spacing.s) {
                 NavigationLink(destination: DemographicUserListView(role: nil, viewModel: userVM)) {
-                    cardView(
-                        count: "\(viewModel.snapshot.stats.totalUser)",
-                        title: "Total Users",
-                        color: .blue
-                    )
+                    statRow(title: "Total Users", count: viewModel.snapshot.stats.totalUser, systemImage: "")
                 }
                 .buttonStyle(.plain)
-
+                
+                Divider()
+                
                 NavigationLink(destination: DashboardLoansListView(title: "Active Loans", applications: viewModel.snapshot.recentApplications.filter { $0.status == .approved })) {
-                    cardView(
-                        count: "\(viewModel.snapshot.stats.activeLoans)",
-                        title: "Active Loans",
-                        color: AdminColor.accent
-                    )
+                    statRow(title: "Active Loans", count: viewModel.snapshot.stats.activeLoans, systemImage: "")
                 }
                 .buttonStyle(.plain)
-
+                
+                Divider()
+                
                 NavigationLink(destination: DashboardLoansListView(title: "Applications", applications: viewModel.snapshot.recentApplications)) {
-                    cardView(
-                        count: "\(viewModel.snapshot.stats.applications)",
-                        title: "Applications",
-                        color: .green
-                    )
+                    statRow(title: "Applications", count: viewModel.snapshot.stats.applications, systemImage: "")
                 }
                 .buttonStyle(.plain)
             }
+            .padding(AdminSpacing.cardPadding)
+            .background(
+                AdminColor.cardBackground,
+                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+            )
         }
     }
 
-    private func cardView(count: String, title: String, color: Color) -> some View {
-        VStack(spacing: Spacing.xs) {
-            Text(count)
-                .font(.system(size: 26, weight: .bold, design: .rounded))
-                .foregroundStyle(color)
-            Text(title)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .lineLimit(1)
-            
-            HStack(spacing: 2) {
-                Text("View Details")
-                    .font(.system(size: 9, weight: .medium))
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 7))
-            }
-            .foregroundStyle(color)
-            .padding(.top, 4)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, Spacing.m)
-        .padding(.horizontal, Spacing.xs)
-        .background(Color.primary.opacity(0.02), in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.05), lineWidth: 1))
-    }
-
-    // MARK: - Row Helpers
-
-    private func distributionRow(title: String, amount: String, percentage: Double, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            HStack {
-                Text(title)
-                    .font(.lmsHeadline)
-                    .foregroundStyle(.primary)
-                Spacer()
-                Text(amount)
-                    .font(.lmsHeadline)
-                    .foregroundStyle(.primary)
-            }
-            
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.primary.opacity(0.05))
-                        .frame(height: 8)
-                    
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(color.gradient)
-                        .frame(width: geo.size.width * percentage, height: 8)
-                }
-            }
-            .frame(height: 8)
-            
-            HStack {
-                Spacer()
-                Text(String(format: "%.1f%%", percentage * 100))
-                    .font(.lmsCaption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
+    // Row Helpers
 
     private func statRow(title: String, count: Int, systemImage: String) -> some View {
         HStack(spacing: Spacing.s) {
-            Image(systemName: systemImage)
-                .font(.body)
-                .foregroundStyle(AdminColor.accent)
-                .frame(width: 24, alignment: .center)
-            
             Text(title)
                 .font(.lmsSubheadline)
                 .foregroundStyle(.primary)
@@ -339,11 +294,6 @@ struct DashboardLoansListView: View {
                             AdminColor.cardBackground,
                             in: RoundedRectangle(cornerRadius: 16, style: .continuous)
                         )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                        )
-                        .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
                     }
                 }
             }
