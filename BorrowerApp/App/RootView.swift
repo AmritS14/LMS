@@ -9,34 +9,37 @@ struct RootView: View {
             if session.isAuthenticated {
                 BorrowerTabView()
                     .task {
-                        if let env = env {
+                        if let env {
                             _ = try? await env.notifications.requestAuthorization()
                             if let deviceToken = "mock_device_token".data(using: .utf8) {
                                 try? await env.notifications.registerDeviceToken(deviceToken)
                             }
                         }
                     }
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .scale(scale: 0.97)),
-                        removal: .opacity
-                    ))
+                    .transition(.opacity)
             } else {
                 LoginView()
                     .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: 0.35), value: session.isAuthenticated)
+        .animation(.easeInOut(duration: 0.3), value: session.isAuthenticated)
     }
 }
 
 struct BorrowerTabView: View {
     var body: some View {
         TabView {
-            Tab("Dashboard", systemImage: "house") {
-                HomeDashboardView()
+            Tab("Home", systemImage: "house.fill") {
+                NavigationStack { HomeDashboardView() }
             }
-            Tab("Apply", systemImage: "plus.circle") {
-                NewLoanApplicationView()
+            Tab("Apply", systemImage: "plus.circle.fill") {
+                NavigationStack { NewLoanApplicationView() }
+            }
+            Tab("Messages", systemImage: "bubble.left.and.bubble.right.fill") {
+                NavigationStack { BorrowerMessagingView() }
+            }
+            Tab("Profile", systemImage: "person.crop.circle.fill") {
+                NavigationStack { BorrowerProfileView() }
             }
         }
     }

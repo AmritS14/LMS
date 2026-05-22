@@ -3,35 +3,33 @@ import SwiftUI
 struct BorrowerMessagingView: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.appEnvironment) private var env
-    
+
     @State private var viewModel = MessagingViewModel()
+    @FocusState private var composerFocused: Bool
 
     var body: some View {
         ZStack {
-            Color(.systemGroupedBackground).ignoresSafeArea()
-            
+            Color.lmsBackground.ignoresSafeArea()
+
             if viewModel.isLoading && viewModel.threads.isEmpty {
                 ProgressView()
             } else if viewModel.activeThread == nil {
-                VStack(spacing: 16) {
-                    Image(systemName: "message.fill")
-                        .font(.system(size: 48))
-                        .foregroundStyle(.secondary)
-                    Text("No active conversations")
-                        .font(.headline)
-                }
+                ContentUnavailableView(
+                    "No Conversations",
+                    systemImage: "bubble.left.and.bubble.right",
+                    description: Text("You don't have any active support threads yet.")
+                )
             } else {
                 VStack(spacing: 0) {
                     messageThread
-                    Divider()
                     inputBar
                 }
             }
         }
-        .navigationTitle("Support Chat")
+        .navigationTitle("Support")
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            guard let env = env, let userID = session.currentUser?.id else { return }
+            guard let env, let userID = session.currentUser?.id else { return }
             await viewModel.fetchThreads(messagingService: env.messaging, userID: userID)
             if let first = viewModel.threads.first {
                 await viewModel.selectThread(first, messagingService: env.messaging)
@@ -39,112 +37,104 @@ struct BorrowerMessagingView: View {
         }
     }
 
-
-
     // MARK: - Message Thread
-    var messageThread: some View {
+    private var messageThread: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(spacing: 4) {
+                LazyVStack(spacing: Spacing.xs) {
                     ForEach(viewModel.activeThreadMessages) { msg in
-                        messageView(msg).id(msg.id)
+                        messageBubble(msg).id(msg.id)
                     }
                 }
-                .padding(.vertical, 12)
-                .padding(.horizontal, 12)
+                .padding(.horizontal, Spacing.sm)
+                .padding(.vertical, Spacing.sm)
             }
+            .scrollDismissesKeyboard(.interactively)
             .onChange(of: viewModel.activeThreadMessages.count) { _, _ in
-                if let last = viewModel.activeThreadMessages.last {
-                    withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
-                }
+                scrollToBottom(proxy: proxy)
             }
-            .onAppear {
-                if let last = viewModel.activeThreadMessages.last {
-                    proxy.scrollTo(last.id, anchor: .bottom)
-                }
+            .onAppear { scrollToBottom(proxy: proxy) }
+        }
+    }
+
+    private func scrollToBottom(proxy: ScrollViewProxy) {
+        if let last = viewModel.activeThreadMessages.last {
+            withAnimation(.easeOut(duration: 0.25)) {
+                proxy.scrollTo(last.id, anchor: .bottom)
             }
         }
     }
 
-    // MARK: - Single Message View
+    // MARK: - Single Message Bubble
     @ViewBuilder
-    func messageView(_ msg: ChatMessage) -> some View {
+    private func messageBubble(_ msg: ChatMessage) -> some View {
         let isMe = msg.senderID == session.currentUser?.id
-        HStack(alignment: .bottom, spacing: 8) {
+        HStack(alignment: .bottom, spacing: Spacing.xs) {
             if isMe { Spacer(minLength: 60) }
 
-            if !isMe {
-                Circle()
-                    .fill(Color.blue)
-                    .frame(width: 6, height: 6)
-                    .offset(y: -4)
-            }
-
-            VStack(alignment: isMe ? .trailing : .leading, spacing: 4) {
-                if !isMe {
-                    Text("Officer")
-                        .font(.caption2).bold()
-                        .foregroundStyle(.blue)
-                        .padding(.leading, 4)
-                }
-
+            VStack(alignment: isMe ? .trailing : .leading, spacing: 2) {
                 Text(msg.body)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 9)
-                    .background(isMe ? Color.blue : Color(.secondarySystemBackground))
+                    .font(.body)
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.vertical, Spacing.s)
+                    .background(isMe ? Color.accentColor : Color.lmsSurface)
                     .foregroundStyle(isMe ? .white : .primary)
                     .clipShape(bubbleShape(isMe: isMe))
-                    .font(.subheadline)
 
                 Text(Formatting.date(msg.sentAt))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, Spacing.xs)
             }
 
             if !isMe { Spacer(minLength: 60) }
         }
-        .padding(.vertical, 3)
     }
 
-    func bubbleShape(isMe: Bool) -> some Shape {
+    private func bubbleShape(isMe: Bool) -> some Shape {
         UnevenRoundedRectangle(
-            topLeadingRadius:     isMe ? 16 : 4,
-            bottomLeadingRadius:  16,
-            bottomTrailingRadius: isMe ? 4 : 16,
-            topTrailingRadius:    16
+            topLeadingRadius:     18,
+            bottomLeadingRadius:  isMe ? 18 : 4,
+            bottomTrailingRadius: isMe ? 4 : 18,
+            topTrailingRadius:    18,
+            style: .continuous
         )
     }
 
     // MARK: - Input Bar
-    var inputBar: some View {
-        HStack(spacing: 10) {
-            @Bindable var vm = viewModel
-            TextField("Message…", text: $vm.newMessageText, axis: .vertical)
-                .lineLimit(1...4)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 9)
-                .background(Color(.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 20))
+    private var inputBar: some View {
+        @Bindable var vm = viewModel
+        return HStack(alignment: .bottom, spacing: Spacing.s) {
+            TextField("Message", text: $vm.newMessageText, axis: .vertical)
+                .lineLimit(1...5)
+                .padding(.horizontal, Spacing.sm)
+                .padding(.vertical, Spacing.s)
+                .background(Color.lmsSurface, in: Capsule())
+                .focused($composerFocused)
 
-            Button {
-                Task {
-                    guard let env = env, let userID = session.currentUser?.id else { return }
-                    await viewModel.sendMessage(messagingService: env.messaging, senderID: userID)
-                }
-            } label: {
+            Button(action: send) {
                 Image(systemName: "arrow.up.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(
-                        viewModel.newMessageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                        ? Color.secondary : Color.blue
-                    )
+                    .font(.system(size: 30))
+                    .foregroundStyle(canSend ? Color.accentColor : Color.lmsGray4)
             }
-            .disabled(viewModel.newMessageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isSending)
+            .disabled(!canSend)
+            .animation(.easeInOut(duration: 0.15), value: canSend)
         }
-        .padding(.horizontal)
-        .padding(.vertical, 10)
-        .background(Color(.systemBackground))
+        .padding(.horizontal, Spacing.sm)
+        .padding(.vertical, Spacing.s)
+        .background(.bar)
+    }
+
+    private var canSend: Bool {
+        !viewModel.newMessageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !viewModel.isSending
+    }
+
+    private func send() {
+        guard let env, let userID = session.currentUser?.id else { return }
+        Task {
+            await viewModel.sendMessage(messagingService: env.messaging, senderID: userID)
+        }
     }
 }
 

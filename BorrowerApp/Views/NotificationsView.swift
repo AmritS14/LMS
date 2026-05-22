@@ -2,41 +2,62 @@ import SwiftUI
 
 struct NotificationsView: View {
     @Environment(\.appEnvironment) private var env
-    
+
     @State private var notifications: [PushNotification] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
 
     var body: some View {
         List {
-            if isLoading {
-                ProgressView().frame(maxWidth: .infinity)
-            } else if let error = errorMessage {
-                Text(error).foregroundStyle(Color.lmsDanger)
+            if isLoading && notifications.isEmpty {
+                Section {
+                    HStack { Spacer(); ProgressView(); Spacer() }
+                        .listRowBackground(Color.clear)
+                }
+            } else if let errorMessage {
+                Section {
+                    Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(Color.lmsDanger)
+                }
             } else if notifications.isEmpty {
-                Text("No notifications").foregroundStyle(.secondary)
+                Section {
+                    ContentUnavailableView(
+                        "No Notifications",
+                        systemImage: "bell.slash",
+                        description: Text("You'll see updates about your loans and applications here.")
+                    )
+                    .listRowBackground(Color.clear)
+                }
             } else {
-                ForEach(notifications) { notif in
-                    VStack(alignment: .leading, spacing: Spacing.xs) {
-                        HStack {
-                            Text(notif.title).font(.lmsHeadline)
-                            Spacer()
-                            Text(Formatting.date(notif.receivedAt, style: .long)).font(.lmsCaption).foregroundStyle(.secondary)
+                Section {
+                    ForEach(notifications) { notif in
+                        VStack(alignment: .leading, spacing: Spacing.xs) {
+                            HStack(alignment: .firstTextBaseline) {
+                                Text(notif.title)
+                                    .font(.subheadline.weight(.semibold))
+                                Spacer()
+                                Text(Formatting.date(notif.receivedAt, style: .long))
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Text(notif.body)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
                         }
-                        Text(notif.body).font(.lmsBody)
+                        .padding(.vertical, Spacing.xs)
                     }
-                    .padding(.vertical, Spacing.xs)
                 }
             }
         }
+        .listStyle(.insetGrouped)
         .navigationTitle("Notifications")
-        .task {
-            await fetchNotifications()
-        }
+        .navigationBarTitleDisplayMode(.large)
+        .refreshable { await fetchNotifications() }
+        .task { await fetchNotifications() }
     }
-    
+
     private func fetchNotifications() async {
-        guard let env = env else { return }
+        guard let env else { return }
         isLoading = true
         do {
             notifications = try await env.notifications.fetchHistory(limit: 50)
@@ -47,7 +68,7 @@ struct NotificationsView: View {
     }
 }
 
-#Preview { 
+#Preview {
     NavigationStack {
         NotificationsView()
             .environment(\.appEnvironment, AppEnvironment(
