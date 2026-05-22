@@ -12,12 +12,19 @@ struct SectionCard<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
             if let title {
-                Text(title).font(.lmsHeadline)
+                Text(title)
+                    .font(.lmsTitle3)
+                    .foregroundColor(.lmsText)
             }
             content
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Spacing.m)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+        .padding(Spacing.l)
+        .background(Color.lmsCardBackground)
+        .cornerRadius(CornerRadius.xlarge)
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.xlarge)
+                .stroke(Color.gray.opacity(0.08), lineWidth: 1)
+        )
     }
 }

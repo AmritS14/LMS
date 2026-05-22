@@ -13,11 +13,11 @@ struct PrimaryButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack {
-                if isLoading { ProgressView().controlSize(.small) }
+            HStack(spacing: Spacing.s) {
+                if isLoading { ProgressView().controlSize(.small).tint(.white) }
                 Text(title).font(.lmsHeadline)
             }
-            .frame(maxWidth: .infinity, minHeight: 44)
+            .frame(maxWidth: .infinity, minHeight: 52)
             .foregroundColor(.white)
             .background(Color.lmsNavyBlue)
             .clipShape(Capsule())

@@ -1,10 +1,10 @@
 import SwiftUI
 
 public struct ApplicationReviewView: View {
-    let navyBlue = Color.blue
-    let bgLight = Color(red: 0.96, green: 0.97, blue: 0.98)
-    let cardBg = Color.white
-    let successGreen = Color(red: 0.13, green: 0.77, blue: 0.36)
+    let navyBlue = Color.lmsNavyBlue
+    let bgLight = Color.lmsSurface
+    let cardBg = Color.lmsCardBackground
+    let successGreen = Color.lmsSuccess
     
     @Environment(\.dismiss) var dismiss
     @State private var showingApprove = false

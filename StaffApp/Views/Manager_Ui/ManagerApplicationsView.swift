@@ -2,11 +2,7 @@ import SwiftUI
 
 public struct ManagerApplicationsView: View {
     @Environment(\.dismiss) var dismiss
-    @State private var selectedTab = "Pending"
     @State private var searchText = ""
-    @State private var navigateToNotifications = false
-    @State private var navigateToProfile = false
-    let tabs = ["Pending", "Approved", "Rejected", "Sent Back"]
     
     // For Navigation
     @State private var navigateToReview = false
@@ -21,10 +17,13 @@ public struct ManagerApplicationsView: View {
     ]
     
     private var filteredApps: [MockApplication] {
-        allApps.filter { app in
-            let matchesStatus = app.status == selectedTab
-            let matchesSearch = searchText.isEmpty || app.name.localizedCaseInsensitiveContains(searchText) || app.subtitle.localizedCaseInsensitiveContains(searchText)
-            return matchesStatus && matchesSearch
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return allApps.filter { app in
+            let matchesSearch = query.isEmpty ||
+                app.name.localizedCaseInsensitiveContains(query) ||
+                app.subtitle.localizedCaseInsensitiveContains(query) ||
+                app.officer.localizedCaseInsensitiveContains(query)
+            return matchesSearch
         }
     }
     
@@ -32,49 +31,6 @@ public struct ManagerApplicationsView: View {
     
     public var body: some View {
         VStack(spacing: 0) {
-            // Header icons row
-            HStack {
-                Spacer()
-                
-                Button(action: { navigateToNotifications = true }) {
-                    Image(systemName: "bell")
-                        .font(.lmsHeadline)
-                        .foregroundColor(.primary)
-                }
-                
-                Button(action: { navigateToProfile = true }) {
-                    Image(systemName: "person.circle.fill")
-                        .resizable()
-                        .frame(width: 32, height: 32)
-                        .foregroundColor(.gray)
-                        .clipShape(Circle())
-                }
-                .padding(.leading, Spacing.s)
-            }
-            .padding(.horizontal, Spacing.m)
-            .padding(.vertical, Spacing.xs)
-                
-                // Custom Segmented Control
-                HStack(spacing: 0) {
-                    ForEach(tabs, id: \.self) { tab in
-                        Button(action: {
-                            selectedTab = tab
-                        }) {
-                            Text(tab)
-                                .font(.lmsSubheadline)
-                                .foregroundColor(selectedTab == tab ? .primary : .gray)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, Spacing.s)
-                                .background(selectedTab == tab ? Color.lmsSurface : Color.clear)
-                                .cornerRadius(CornerRadius.small)
-                        }
-                    }
-                }
-                .padding(Spacing.xs)
-                .background(Color.gray.opacity(0.15))
-                .cornerRadius(CornerRadius.medium)
-                .padding(.horizontal, Spacing.m)
-                .padding(.bottom, Spacing.m)
                 
                 // Search and Filter
                 HStack(spacing: Spacing.m) {
@@ -87,13 +43,8 @@ public struct ManagerApplicationsView: View {
                     .padding(.horizontal, Spacing.m)
                     .padding(.vertical, 10)
                     .background(Color.gray.opacity(0.1))
-                    .cornerRadius(CornerRadius.medium)
+                    .clipShape(Capsule())
                     
-                    Button(action: {}) {
-                        Image(systemName: "slider.horizontal.3")
-                            .font(.system(size: 20))
-                            .foregroundColor(.primary)
-                    }
                 }
                 .padding(.horizontal, Spacing.m)
                 .padding(.bottom, Spacing.m)
@@ -144,12 +95,7 @@ public struct ManagerApplicationsView: View {
         .navigationDestination(isPresented: $navigateToReview) {
             ApplicationReviewView()
         }
-        .navigationDestination(isPresented: $navigateToProfile) {
-            StaffProfileView()
-        }
-        .navigationDestination(isPresented: $navigateToNotifications) {
-            LONotificationsView()
-        }
+
     }
     
     private func applicationCard(name: String, subtitle: String, amount: String, officer: String, recLabel: String, recTone: StatusBadge.Tone) -> some View {
@@ -204,19 +150,8 @@ public struct ManagerApplicationsView: View {
             }
             
             // Bottom row
-            HStack(spacing: Spacing.m) {
-                PrimaryButton("Review") {
-                    navigateToReview = true
-                }
-                
-                Button(action: {}) {
-                    Image(systemName: "ellipsis")
-                        .font(.lmsHeadline)
-                        .foregroundColor(.primary)
-                        .frame(width: 48, height: 48)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(CornerRadius.small)
-                }
+            PrimaryButton("Review") {
+                navigateToReview = true
             }
         }
         .padding(Spacing.m)

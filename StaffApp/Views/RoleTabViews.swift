@@ -14,12 +14,12 @@ struct OfficerTabView: View {
 struct ManagerTabView: View {
     var body: some View {
         TabView {
-            Tab("Portfolio", systemImage: "chart.pie") { PortfolioDashboardView() }
-            Tab("Approvals", systemImage: "checkmark.seal") { ApprovalsQueueView() }
-            Tab("Reports", systemImage: "doc.text.magnifyingglass") { ReportsView() }
-            Tab("Products", systemImage: "slider.horizontal.3") { ProductConfigView() }
-            Tab("Profile", systemImage: "person.crop.circle") { StaffProfileView() }
+            Tab("Dashboard", systemImage: "house.fill") { ManagerDashboardView() }
+            Tab("Applications", systemImage: "doc.text") { ManagerApplicationsView() }
+            Tab("Analytics", systemImage: "chart.bar.fill") { ReportsView() }
+            Tab("Profile", systemImage: "person.circle") { StaffProfileView() }
         }
+        .tint(.lmsNavyBlue)
     }
 }
 
