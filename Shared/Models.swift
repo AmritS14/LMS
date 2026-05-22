@@ -3,10 +3,10 @@ import Foundation
 // MARK: - User (identity common to every role)
 
 enum UserRole: String, Codable, Sendable, CaseIterable, Identifiable {
-    case borrower
-    case loanOfficer
-    case manager
     case admin
+    case manager
+    case loanOfficer
+    case borrower
     
     var id: String { rawValue }
     
@@ -35,7 +35,19 @@ struct User: Identifiable, Codable, Sendable, Hashable {
     var email: String
     var phone: String
     var role: UserRole
+    var isActive: Bool = true
     var createdAt: Date = .now
+
+    var uniqueID: String {
+        let prefix: String
+        switch role {
+        case .admin: prefix = "ADM"
+        case .manager: prefix = "MGR"
+        case .loanOfficer: prefix = "OFF"
+        case .borrower: prefix = "BRW"
+        }
+        return "\(prefix)-\(id.uuidString.prefix(8).uppercased())"
+    }
 }
 
 // MARK: - Borrower-only profile (KYC, credit, personal details)

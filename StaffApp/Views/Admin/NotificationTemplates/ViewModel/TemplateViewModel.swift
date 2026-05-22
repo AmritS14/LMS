@@ -138,6 +138,18 @@ final class TemplateViewModel {
         templates.append(newTemplate)
         AuditLogger.log(action: "Template Created", details: "Title: \(title), Trigger: \(trigger.rawValue)")
     }
+
+    /// Creates a new template with title, trigger event, body text, and delivery channels.
+    func createTemplate(for trigger: TriggerEvent, title: String, bodyText: String, channels: Set<NotificationChannel>) {
+        let newTemplate = NotificationTemplate(
+            title: title,
+            triggerEvent: trigger,
+            bodyText: bodyText,
+            channels: channels
+        )
+        templates.append(newTemplate)
+        AuditLogger.log(action: "Template Created", details: "Title: \(title), Trigger: \(trigger.rawValue)")
+    }
     
     /// Deletes templates at the specified offsets.
     func deleteTemplates(at offsets: IndexSet) {

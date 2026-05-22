@@ -15,9 +15,7 @@ import SwiftUI
 struct TemplateListView: View {
     @Bindable var viewModel: TemplateViewModel
     
-    @State private var showAddAlert = false
-    @State private var newTemplateTitle = ""
-    @State private var selectedTrigger: TriggerEvent = .loanApproved
+    @State private var showAddTemplateSheet = false
 
     var body: some View {
         List {
@@ -45,27 +43,16 @@ struct TemplateListView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    newTemplateTitle = ""
-                    showAddAlert = true
+                    showAddTemplateSheet = true
                 } label: {
                     Image(systemName: "plus")
                 }
             }
         }
-        .alert("New Notification Template", isPresented: $showAddAlert) {
-            TextField("Template Title", text: $newTemplateTitle)
-            Picker("Trigger Event", selection: $selectedTrigger) {
-                ForEach(TriggerEvent.allCases) { trigger in
-                    Text(trigger.rawValue).tag(trigger)
-                }
+        .sheet(isPresented: $showAddTemplateSheet) {
+            AddTemplateSheet(viewModel: viewModel) {
+                showAddTemplateSheet = false
             }
-            Button("Cancel", role: .cancel) {}
-            Button("Create") {
-                viewModel.createTemplate(for: selectedTrigger, title: newTemplateTitle)
-            }
-            .disabled(newTemplateTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-        } message: {
-            Text("Enter a title and select a trigger event for the new template.")
         }
     }
 

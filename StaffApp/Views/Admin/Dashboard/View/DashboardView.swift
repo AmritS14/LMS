@@ -11,13 +11,18 @@ import SwiftUI
 
 struct DashboardView: View {
     @Bindable var viewModel: DashboardViewModel
+    @Bindable var userVM: UserManagementViewModel
     @State private var isAmountVisible: Bool = true
+    @State private var showDetails: Bool = false
 
     var body: some View {
         ScrollView {
             VStack(spacing: AdminSpacing.sectionGap) {
                 // Total Distribution Card
                 distributionCard
+                    .onTapGesture {
+                        showDetails = true
+                    }
 
                 // Recent Applications List
                 VStack(alignment: .leading, spacing: AdminSpacing.headerToCardGap) {
@@ -34,6 +39,9 @@ struct DashboardView: View {
         }
         .background(AdminColor.background)
         .navigationTitle("Dashboard")
+        .navigationDestination(isPresented: $showDetails) {
+            DistributionDetailsView(viewModel: viewModel, userVM: userVM)
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink(destination: ProfileView()) {
@@ -149,6 +157,6 @@ struct DashboardView: View {
 
 #Preview {
     NavigationStack {
-        DashboardView(viewModel: DashboardViewModel())
+        DashboardView(viewModel: DashboardViewModel(), userVM: UserManagementViewModel())
     }
 }

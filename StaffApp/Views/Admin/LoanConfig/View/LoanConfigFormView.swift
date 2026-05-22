@@ -15,9 +15,7 @@ import SwiftUI
 struct LoanConfigFormView: View {
     @Bindable var viewModel: LoanConfigViewModel
     
-    @State private var showAddLoanAlert = false
-    @State private var newLoanName = ""
-    @State private var selectedCategoryForNewLoan: LoanCategory = .personal
+    @State private var showAddLoanSheet = false
     @State private var errorMessage: String? = nil
     @State private var selectedProduct: LoanProduct? = nil
 
@@ -62,17 +60,26 @@ struct LoanConfigFormView: View {
                     }
                 }
             }
-
-            saveSection
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .background(AdminColor.background)
         .sheet(item: $selectedProduct) { product in
             if let binding = viewModel.binding(for: product.id) {
-                LoanProductEditorSheet(product: binding) {
-                    selectedProduct = nil
-                }
+                LoanProductEditorSheet(
+                    product: binding,
+                    onSave: {
+                        selectedProduct = nil
+                    },
+                    onCancel: {
+                        selectedProduct = nil
+                    }
+                )
+            }
+        }
+        .sheet(isPresented: $showAddLoanSheet) {
+            AddLoanProductSheet(viewModel: viewModel) {
+                showAddLoanSheet = false
             }
         }
         .navigationTitle("Loan Configurations")
@@ -84,32 +91,12 @@ struct LoanConfigFormView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    newLoanName = ""
                     errorMessage = nil
-                    showAddLoanAlert = true
+                    showAddLoanSheet = true
                 } label: {
                     Image(systemName: "plus")
                 }
             }
-        }
-        .alert("New Loan Product", isPresented: $showAddLoanAlert) {
-            TextField("Loan Name", text: $newLoanName)
-            Picker("Category", selection: $selectedCategoryForNewLoan) {
-                ForEach(LoanCategory.allCases) { category in
-                    Text(category.rawValue).tag(category)
-                }
-            }
-            Button("Cancel", role: .cancel) {}
-            Button("Add") {
-                do {
-                    try viewModel.addLoanProduct(category: selectedCategoryForNewLoan, name: newLoanName)
-                } catch {
-                    errorMessage = error.localizedDescription
-                }
-            }
-            .disabled(newLoanName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-        } message: {
-            Text("Enter a unique name for the new loan product.")
         }
         .alert("Error", isPresented: Binding(
             get: { errorMessage != nil },
@@ -121,26 +108,6 @@ struct LoanConfigFormView: View {
                 Text(errorMessage)
             }
         }
-    }
-
-    // MARK: - Save Section
-
-    /// Prominent save button at the bottom of the form.
-    private var saveSection: some View {
-        AdminPrimaryButton("Save Configuration", isLoading: viewModel.isSaving) {
-            Task {
-                await viewModel.saveConfiguration()
-            }
-        }
-        .disabled(!viewModel.hasUnsavedChanges)
-        .listRowInsets(EdgeInsets(
-            top: AdminSpacing.headerTopInset,
-            leading: AdminSpacing.cardRowHorizontalInset,
-            bottom: AdminSpacing.headerTopInset,
-            trailing: AdminSpacing.cardRowHorizontalInset
-        ))
-        .listRowBackground(Color.clear)
-        .listRowSeparator(.hidden)
     }
 }
 

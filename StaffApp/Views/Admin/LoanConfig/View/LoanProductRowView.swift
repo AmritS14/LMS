@@ -65,6 +65,21 @@ struct LoanProductRowView: View {
 struct LoanProductEditorSheet: View {
     @Binding var product: LoanProduct
     let onSave: () -> Void
+    let onCancel: () -> Void
+
+    @State private var draftProduct: LoanProduct
+    @State private var showUnsavedChangesAlert = false
+
+    init(product: Binding<LoanProduct>, onSave: @escaping () -> Void, onCancel: @escaping () -> Void) {
+        self._product = product
+        self.onSave = onSave
+        self.onCancel = onCancel
+        self._draftProduct = State(initialValue: product.wrappedValue)
+    }
+
+    private var hasChanges: Bool {
+        draftProduct != product
+    }
 
     /// Clean number formatter for editable amount fields (only numbers, no symbol inside text field).
     private let numberFormatter: NumberFormatter = {
@@ -72,7 +87,7 @@ struct LoanProductEditorSheet: View {
         formatter.numberStyle = .none
         formatter.maximumFractionDigits = 0
         return formatter
-    }    ()
+    }()
 
     var body: some View {
         NavigationStack {
@@ -83,7 +98,7 @@ struct LoanProductEditorSheet: View {
                         SectionHeaderView(title: "Loan Name", systemImage: "tag")
                         
                         VStack(spacing: Spacing.s) {
-                            TextField("Name", text: $product.name)
+                            TextField("Name", text: $draftProduct.name)
                                 .textFieldStyle(.roundedBorder)
                         }
                         .padding(AdminSpacing.cardPadding)
@@ -112,7 +127,7 @@ struct LoanProductEditorSheet: View {
                                     Text("₹")
                                         .font(.body)
                                         .foregroundStyle(.primary)
-                                    TextField("Min", value: $product.minAmount, formatter: numberFormatter)
+                                    TextField("Min", value: $draftProduct.minAmount, formatter: numberFormatter)
                                         .textFieldStyle(.roundedBorder)
                                         .keyboardType(.numberPad)
                                         .frame(width: 120)
@@ -131,7 +146,7 @@ struct LoanProductEditorSheet: View {
                                     Text("₹")
                                         .font(.body)
                                         .foregroundStyle(.primary)
-                                    TextField("Max", value: $product.maxAmount, formatter: numberFormatter)
+                                    TextField("Max", value: $draftProduct.maxAmount, formatter: numberFormatter)
                                         .textFieldStyle(.roundedBorder)
                                         .keyboardType(.numberPad)
                                         .frame(width: 120)
@@ -161,11 +176,11 @@ struct LoanProductEditorSheet: View {
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                                 Spacer()
-                                Text("\(product.interestRate, specifier: "%.2f")%")
+                                Text("\(draftProduct.interestRate, specifier: "%.2f")%")
                                     .font(.system(.subheadline, design: .monospaced, weight: .semibold))
                                     .foregroundStyle(AdminColor.accent)
                             }
-                            Slider(value: $product.interestRate, in: 1...30, step: 0.25)
+                            Slider(value: $draftProduct.interestRate, in: 1...30, step: 0.25)
                                 .tint(AdminColor.accent)
                         }
                         .padding(AdminSpacing.cardPadding)
@@ -190,15 +205,15 @@ struct LoanProductEditorSheet: View {
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                                 Spacer()
-                                Stepper("\(product.maxTenure) \(product.tenureUnit.rawValue.lowercased())", value: $product.maxTenure, in: 1...1000, step: 1)
+                                Stepper("\(draftProduct.maxTenure) \(draftProduct.tenureUnit.rawValue.lowercased())", value: $draftProduct.maxTenure, in: 1...1000, step: 1)
                             }
                             
                             Divider()
                             
-                            Picker("Tenure Unit", selection: $product.tenureUnit) {
-                                ForEach(TenureUnit.allCases) { unit in
-                                    Text(unit.rawValue).tag(unit)
-                                }
+                            Picker("Tenure Unit", selection: $draftProduct.tenureUnit) {
+                                  ForEach(TenureUnit.allCases) { unit in
+                                      Text(unit.rawValue).tag(unit)
+                                  }
                             }
                             .pickerStyle(.segmented)
                         }
@@ -223,16 +238,33 @@ struct LoanProductEditorSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
-                        onSave()
+                        if hasChanges {
+                            showUnsavedChangesAlert = true
+                        } else {
+                            onCancel()
+                        }
                     }
                     .tint(AdminColor.accent)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
+                        product = draftProduct
                         onSave()
                     }
                     .tint(AdminColor.accent)
                 }
+            }
+            .alert("Unsaved Changes", isPresented: $showUnsavedChangesAlert) {
+                Button("Stay", role: .cancel) {}
+                Button("Discard Changes", role: .destructive) {
+                    onCancel()
+                }
+                Button("Save & Exit") {
+                    product = draftProduct
+                    onSave()
+                }
+            } message: {
+                Text("You have unsaved changes. Do you want to leave without saving?")
             }
         }
     }

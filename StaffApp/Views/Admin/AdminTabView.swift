@@ -46,7 +46,7 @@ struct AdminTabView: View {
             // MARK: - Overview Tab (Dashboard)
             Tab(AdminTab.overview.rawValue, systemImage: AdminTab.overview.systemImage, value: .overview) {
                 NavigationStack {
-                    DashboardView(viewModel: dashboardVM)
+                    DashboardView(viewModel: dashboardVM, userVM: userVM)
                 }
                 .tint(AdminColor.accent)
                 .accentColor(AdminColor.accent)

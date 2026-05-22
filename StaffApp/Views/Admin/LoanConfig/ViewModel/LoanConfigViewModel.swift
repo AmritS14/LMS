@@ -31,10 +31,14 @@ final class LoanConfigViewModel {
     /// Tracks whether unsaved changes exist.
     var hasUnsavedChanges: Bool = false
 
+    /// A backup of the products to restore if changes are discarded.
+    private var originalProducts: [LoanCategory: [LoanProduct]] = [:]
+
     // MARK: - Initialization
 
     init(products: [LoanCategory: [LoanProduct]] = LoanProduct.sampleProducts) {
         self.productsByCategory = products
+        self.originalProducts = products
     }
 
     // MARK: - Computed Properties
@@ -65,8 +69,15 @@ final class LoanConfigViewModel {
         
         AuditLogger.log(action: "Loan Configurations Saved", details: "Total Products: \(totalProductCount)")
 
+        originalProducts = productsByCategory
         hasUnsavedChanges = false
         showSaveAlert = true
+    }
+
+    /// Discards all unsaved edits and restores the backup.
+    func discardChanges() {
+        productsByCategory = originalProducts
+        hasUnsavedChanges = false
     }
 
     /// Marks that the user has made edits to the configuration.
