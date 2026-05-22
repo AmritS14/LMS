@@ -5,7 +5,6 @@ struct HomeDashboardView: View {
     @Environment(\.appEnvironment) private var env
     
     @State private var viewModel = DashboardViewModel()
-    @State private var repaymentViewModel = RepaymentViewModel()
     @State private var selectedLoanID: UUID?
 
     var body: some View {
@@ -53,30 +52,43 @@ struct HomeDashboardView: View {
                                     if viewModel.activeLoans.count > 1 {
                                         TabView(selection: $selectedLoanID) {
                                             ForEach(viewModel.activeLoans) { loan in
-                                                VStack {
-                                                    loanHeroCard(loan)
-                                                    Spacer(minLength: 0) // Push to top
+                                                NavigationLink(destination: RepaymentDashboardView(loan: loan)) {
+                                                    VStack {
+                                                        loanHeroCard(loan)
+                                                        Spacer(minLength: 0)
+                                                    }
                                                 }
+                                                .buttonStyle(PlainButtonStyle())
                                                 .tag(loan.id as UUID?)
                                                 .padding(.horizontal)
                                             }
                                         }
                                         .tabViewStyle(.page(indexDisplayMode: .never))
                                         .frame(height: 250)
-                                        
-                                        if let selectedID = selectedLoanID,
-                                           let selectedLoan = viewModel.activeLoans.first(where: { $0.id == selectedID }) {
-                                            emiListSection(for: selectedLoan)
-                                                .padding(.horizontal)
-                                        }
                                     } else if let loan = viewModel.activeLoans.first {
-                                        VStack(spacing: 24) {
+                                        NavigationLink(destination: RepaymentDashboardView(loan: loan)) {
                                             loanHeroCard(loan)
-                                            emiListSection(for: loan)
                                         }
+                                        .buttonStyle(PlainButtonStyle())
                                         .padding(.horizontal)
                                     }
                                 }
+                                
+                                NavigationLink(destination: NewLoanApplicationView()) {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "plus.circle.fill")
+                                            .font(.title3)
+                                        Text("Apply for a New Loan")
+                                            .font(.headline)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                    .background(Color.blue.opacity(0.12))
+                                    .foregroundStyle(.blue)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                                }
+                                .padding(.horizontal)
+                                .padding(.top, 16)
                             }
                         }
                     }
@@ -88,7 +100,7 @@ struct HomeDashboardView: View {
             .toolbarTitleDisplayMode(.inlineLarge)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink(destination: BorrowerProfileView().toolbar(.hidden, for: .tabBar)) {
+                    NavigationLink(destination: BorrowerProfileView()) {
                         Image(systemName: "person.crop.circle.fill")
                             .resizable()
                     }
@@ -99,14 +111,6 @@ struct HomeDashboardView: View {
                     await viewModel.fetchDashboardData(loanService: env.loans, borrowerID: userID)
                     if let first = viewModel.activeLoans.first {
                         selectedLoanID = first.id
-                        await repaymentViewModel.loadRepaymentData(loanService: env.loans, loan: first)
-                    }
-                }
-            }
-            .onChange(of: selectedLoanID) { _, newID in
-                if let newID = newID, let env = env, let loan = viewModel.activeLoans.first(where: { $0.id == newID }) {
-                    Task {
-                        await repaymentViewModel.loadRepaymentData(loanService: env.loans, loan: loan)
                     }
                 }
             }
@@ -248,30 +252,6 @@ struct HomeDashboardView: View {
         .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
     }
 
-    // MARK: - EMI List
-    func emiListSection(for loan: Loan) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Upcoming EMIs")
-                .font(.headline)
-                .padding(.leading, 4)
-
-            let scheduleToUse = (selectedLoanID == loan.id) ? repaymentViewModel.emiSchedule : loan.emiSchedule
-            let pendingEMIs = scheduleToUse.filter { $0.status == .upcoming || $0.status == .overdue }.prefix(3)
-
-            if pendingEMIs.isEmpty {
-                Text("No upcoming payments.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding()
-            } else {
-                ForEach(pendingEMIs) { emi in
-                    EMIRow(emi: emi) {
-                        Task { await repaymentViewModel.payEMI(emi) }
-                    }
-                }
-            }
-        }
-    }
 
     // MARK: - Empty State
     var emptyState: some View {
@@ -281,10 +261,21 @@ struct HomeDashboardView: View {
                 .foregroundStyle(.secondary)
             Text("No active loans")
                 .font(.headline)
-            Text("Go to the Apply tab to calculate and submit a loan application.")
+            Text("You don't have any active loans or pending applications.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+                
+            NavigationLink(destination: NewLoanApplicationView()) {
+                Text("Calculate & Apply")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color.blue)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .padding(.top, 8)
         }
         .padding(40)
         .frame(maxWidth: .infinity)
@@ -336,62 +327,6 @@ struct StatusPill: View {
         case .rejected: return .red
         case .recommended: return .blue
         default: return .orange
-        }
-    }
-}
-
-// MARK: - EMI Row Card
-struct EMIRow: View {
-    let emi: EMI
-    let onPay: () -> Void
-
-    var body: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(statusColor.opacity(0.12))
-                    .frame(width: 40, height: 40)
-                Text("\(emi.installmentNumber)")
-                    .font(.subheadline).bold()
-                    .foregroundStyle(statusColor)
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(Formatting.currency(emi.totalAmount)).font(.subheadline).bold()
-                Text("Due \(Formatting.date(emi.dueDate))")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            switch emi.status {
-            case .paid:
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green).font(.title3)
-            case .overdue:
-                Button("Pay Now", action: onPay)
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                    .controlSize(.small)
-            case .upcoming:
-                Text("Upcoming")
-                    .font(.caption).foregroundStyle(.secondary)
-                    .padding(.horizontal, 8).padding(.vertical, 4)
-                    .background(Color(.systemFill))
-                    .clipShape(Capsule())
-            }
-        }
-        .padding(14)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .shadow(color: .black.opacity(0.05), radius: 6, y: 1)
-    }
-
-    var statusColor: Color {
-        switch emi.status {
-        case .paid: return .green
-        case .overdue: return .red
-        case .upcoming: return .blue
         }
     }
 }

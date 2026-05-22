@@ -7,7 +7,7 @@ struct RootView: View {
     var body: some View {
         Group {
             if session.isAuthenticated {
-                BorrowerTabView()
+                HomeDashboardView()
                     .task {
                         if let env = env {
                             _ = try? await env.notifications.requestAuthorization()
@@ -29,21 +29,8 @@ struct RootView: View {
     }
 }
 
-struct BorrowerTabView: View {
-    var body: some View {
-        TabView {
-            Tab("Dashboard", systemImage: "house") {
-                HomeDashboardView()
-            }
-            Tab("Apply", systemImage: "plus.circle") {
-                NewLoanApplicationView()
-            }
-        }
-    }
-}
-
 #Preview {
-    BorrowerTabView()
+    RootView()
         .environment(SessionStore(
             currentUser: MockAuthService.seedBorrower,
             borrowerProfile: MockAuthService.seedBorrowerProfile

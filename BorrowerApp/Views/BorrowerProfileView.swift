@@ -134,7 +134,7 @@ struct BorrowerProfileView: View {
             // KYC Card
             let isVerified = session.borrowerProfile?.kycStatus == .verified
             NavigationLink {
-                KYCView().toolbar(.hidden, for: .tabBar)
+                KYCView()
             } label: {
                 statCard(
                     icon: isVerified ? "checkmark.seal.fill" : "exclamationmark.triangle.fill",
@@ -191,7 +191,7 @@ struct BorrowerProfileView: View {
             
 
             NavigationLink {
-                BorrowerMessagingView().toolbar(.hidden,for: .tabBar)
+                BorrowerMessagingView()
             } label: {
                 menuRow(
                     icon: "bubble.left.and.bubble.right.fill",

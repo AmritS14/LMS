@@ -16,35 +16,41 @@ struct RepaymentDashboardView: View {
                     } else if let error = viewModel.errorMessage {
                         Text(error).foregroundStyle(Color.lmsDanger)
                     } else if let activeLoan = viewModel.activeLoan {
+                        
+                        if let nextEmi = viewModel.emiSchedule.first(where: { $0.status == .upcoming || $0.status == .overdue }) {
+                            heroCard(for: nextEmi)
+                        } else {
+                            SectionCard(title: "All Caught Up!") {
+                                Text("There are no upcoming EMIs for this loan.")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        
                         SectionCard(title: "Loan Details") {
                             LabeledContent("Principal", value: Formatting.currency(activeLoan.principal))
                             LabeledContent("Disbursed on", value: Formatting.date(activeLoan.disbursementDate))
                             LabeledContent("Status", value: activeLoan.status.rawValue.capitalized)
                             if activeLoan.status == .active {
-                                LabeledContent("Next EMI", value: Formatting.currency(nextEMIAmount))
-                                LabeledContent("Due Date", value: nextEMIDate)
+                                LabeledContent("Remaining EMIs", value: "\(viewModel.emiSchedule.filter { $0.status != .paid }.count)")
                             }
                         }
                         
-                        let upcoming = viewModel.emiSchedule.filter { $0.status == .upcoming || $0.status == .overdue }
-                        if !upcoming.isEmpty {
-                            SectionCard(title: "Upcoming EMIs") {
-                                ForEach(upcoming) { emi in
-                                    emiRow(emi)
-                                }
+                        NavigationLink(destination: FullScheduleView(viewModel: viewModel)) {
+                            HStack {
+                                Text("View Full Schedule")
+                                    .font(.headline)
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(.secondary)
                             }
+                            .padding()
+                            .background(Color(.systemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .shadow(color: .black.opacity(0.05), radius: 8, y: 2)
                         }
+                        .buttonStyle(PlainButtonStyle())
                         
-                        let paid = viewModel.emiSchedule.filter { $0.status == .paid }
-                        SectionCard(title: "Payment History") {
-                            if paid.isEmpty {
-                                Text("No payments yet").foregroundStyle(.secondary)
-                            } else {
-                                ForEach(paid) { emi in
-                                    emiRow(emi)
-                                }
-                            }
-                        }
                     } else {
                         Text("No loan data.").foregroundStyle(.secondary)
                     }
@@ -69,25 +75,86 @@ struct RepaymentDashboardView: View {
         }
     }
     
-    private var nextEMIAmount: Decimal {
-        viewModel.emiSchedule.first(where: { $0.status == .upcoming || $0.status == .overdue })?.totalAmount ?? 0
-    }
-    
-    private var nextEMIDate: String {
-        guard let emi = viewModel.emiSchedule.first(where: { $0.status == .upcoming || $0.status == .overdue }) else {
-            return "—"
+    private func heroCard(for emi: EMI) -> some View {
+        VStack(spacing: 24) {
+            VStack(spacing: 8) {
+                Text("Next Payment Due")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+                
+                Text(Formatting.currency(emi.totalAmount))
+                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .foregroundStyle(.primary)
+                
+                Text(Formatting.date(emi.dueDate))
+                    .font(.headline)
+                    .foregroundStyle(emi.status == .overdue ? Color.red : Color.blue)
+            }
+            
+            Button {
+                Task {
+                    await viewModel.payEMI(emi)
+                }
+            } label: {
+                Text("Pay Now")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(Color.blue)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
         }
-        return Formatting.date(emi.dueDate)
+        .padding(24)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .shadow(color: .black.opacity(0.08), radius: 15, y: 8)
+    }
+}
+
+struct FullScheduleView: View {
+    var viewModel: RepaymentViewModel
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: Spacing.m) {
+                let upcoming = viewModel.emiSchedule.filter { $0.status == .upcoming || $0.status == .overdue }
+                if !upcoming.isEmpty {
+                    SectionCard(title: "Upcoming EMIs") {
+                        ForEach(Array(upcoming.enumerated()), id: \.element.id) { index, emi in
+                            emiRow(emi, isNext: index == 0)
+                        }
+                    }
+                }
+                
+                let paid = viewModel.emiSchedule.filter { $0.status == .paid }
+                SectionCard(title: "Payment History") {
+                    if paid.isEmpty {
+                        Text("No payments yet").foregroundStyle(.secondary)
+                    } else {
+                        ForEach(paid) { emi in
+                            emiRow(emi)
+                        }
+                    }
+                }
+            }
+            .padding(Spacing.m)
+        }
+        .navigationTitle("Full Schedule")
+        .navigationBarTitleDisplayMode(.inline)
     }
     
-    private func emiRow(_ emi: EMI) -> some View {
+    private func emiRow(_ emi: EMI, isNext: Bool = false) -> some View {
         HStack {
             VStack(alignment: .leading) {
                 Text(Formatting.currency(emi.totalAmount)).font(.lmsHeadline)
                 Text("Due: \(Formatting.date(emi.dueDate))").font(.lmsCaption)
             }
             Spacer()
-            if emi.status == .upcoming || emi.status == .overdue {
+            if emi.status == .paid {
+                StatusBadge(emi.status.rawValue.capitalized, tone: .success)
+            } else if isNext {
                 Button("Pay") {
                     Task {
                         await viewModel.payEMI(emi)
@@ -96,7 +163,7 @@ struct RepaymentDashboardView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
             } else {
-                StatusBadge(emi.status.rawValue.capitalized, tone: .success)
+                StatusBadge(emi.status.rawValue.capitalized, tone: emi.status == .overdue ? .danger : .warning)
             }
         }
         .padding(.vertical, Spacing.xs)

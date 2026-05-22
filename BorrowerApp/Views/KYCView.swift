@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct KYCView: View {
     @Environment(SessionStore.self) private var session
@@ -7,6 +8,9 @@ struct KYCView: View {
     @State private var isUploading = false
     @State private var uploadMessage: String?
     @State private var uploadedDocuments: [DocumentKind] = []
+    
+    @State private var isPickerPresented = false
+    @State private var documentKindToUpload: DocumentKind? = nil
     
     var body: some View {
         List {
@@ -50,11 +54,28 @@ struct KYCView: View {
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.7), value: uploadMessage)
+        .fileImporter(
+            isPresented: $isPickerPresented,
+            allowedContentTypes: [UTType.pdf, UTType.image, UTType.text, UTType.data],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                guard let url = urls.first, let kind = documentKindToUpload else { return }
+                uploadPickedDocument(url: url, kind: kind)
+            case .failure(let error):
+                uploadMessage = "Selection failed: \(error.localizedDescription)"
+                clearMessageAfterDelay()
+            }
+        }
     }
     
     @ViewBuilder
     private func documentRow(kind: DocumentKind, title: String, icon: String, iconColor: Color) -> some View {
-        Button(action: { uploadMockDocument(kind: kind) }) {
+        Button(action: {
+            documentKindToUpload = kind
+            isPickerPresented = true
+        }) {
             HStack(spacing: 14) {
                 ZStack {
                     Circle()
@@ -99,21 +120,44 @@ struct KYCView: View {
         }
     }
     
-    private func uploadMockDocument(kind: DocumentKind) {
+    private func uploadPickedDocument(url: URL, kind: DocumentKind) {
         guard let env = env, let userID = session.currentUser?.id else { return }
-        isUploading = true
-        uploadMessage = nil
-        Task {
-            do {
-                _ = try await env.documents.upload(Data(), fileName: "mock_\(kind.rawValue).pdf", mimeType: "application/pdf", kind: kind, ownerID: userID)
-                uploadMessage = "Uploaded \(kind.rawValue) successfully!"
-                await fetchDocuments()
-            } catch {
-                uploadMessage = "Failed to upload."
-            }
-            isUploading = false
+        
+        guard url.startAccessingSecurityScopedResource() else {
+            uploadMessage = "Cannot access file."
+            clearMessageAfterDelay()
+            return
+        }
+        
+        defer { url.stopAccessingSecurityScopedResource() }
+        
+        do {
+            let data = try Data(contentsOf: url)
+            let fileName = url.lastPathComponent
+            let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream"
             
-            // Auto dismiss toast after 3 seconds
+            isUploading = true
+            uploadMessage = nil
+            
+            Task {
+                do {
+                    _ = try await env.documents.upload(data, fileName: fileName, mimeType: mimeType, kind: kind, ownerID: userID)
+                    uploadMessage = "Uploaded \(kind.rawValue) successfully!"
+                    await fetchDocuments()
+                } catch {
+                    uploadMessage = "Failed to upload."
+                }
+                isUploading = false
+                clearMessageAfterDelay()
+            }
+        } catch {
+            uploadMessage = "Failed to read file."
+            clearMessageAfterDelay()
+        }
+    }
+    
+    private func clearMessageAfterDelay() {
+        Task {
             try? await Task.sleep(for: .seconds(3))
             if !isUploading {
                 uploadMessage = nil
