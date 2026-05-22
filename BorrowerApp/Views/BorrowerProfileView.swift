@@ -5,6 +5,28 @@ struct BorrowerProfileView: View {
     @Environment(\.appEnvironment) private var env
     
     @State private var settledLoans: [Loan] = []
+    @State private var uploadedDocumentKinds: [DocumentKind] = []
+    
+    private var kycStatusText: String {
+        if session.borrowerProfile?.kycStatus == .verified {
+            return "Verified"
+        }
+        let required: [(DocumentKind, String)] = [
+            (.identityProof, "ID Proof"),
+            (.addressProof, "Address"),
+            (.incomeProof, "Income"),
+            (.bankStatement, "Bank Stmt")
+        ]
+        let missing = required.filter { !uploadedDocumentKinds.contains($0.0) }.map { $0.1 }
+        
+        if missing.isEmpty {
+            return "Pending Approval"
+        } else if missing.count == 1 {
+            return "\(missing[0]) not uploaded"
+        } else {
+            return "\(missing.count) docs missing"
+        }
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -52,8 +74,11 @@ struct BorrowerProfileView: View {
                 do {
                     let loans = try await env.loans.fetchActiveLoans(borrowerID: userID)
                     self.settledLoans = loans.filter { $0.status == .settled }
+                    
+                    let docs = try await env.documents.list(ownerID: userID)
+                    self.uploadedDocumentKinds = docs.map { $0.kind }
                 } catch {
-                    print("Failed to fetch loans: \(error)")
+                    print("Failed to fetch profile data: \(error)")
                 }
             }
         }
@@ -108,12 +133,17 @@ struct BorrowerProfileView: View {
             
             // KYC Card
             let isVerified = session.borrowerProfile?.kycStatus == .verified
-            statCard(
-                icon: isVerified ? "checkmark.seal.fill" : "exclamationmark.triangle.fill",
-                iconColor: isVerified ? .teal : .orange,
-                title: "KYC Status",
-                value: session.borrowerProfile?.kycStatus.rawValue.capitalized ?? "Pending"
-            )
+            NavigationLink {
+                KYCView().toolbar(.hidden, for: .tabBar)
+            } label: {
+                statCard(
+                    icon: isVerified ? "checkmark.seal.fill" : "exclamationmark.triangle.fill",
+                    iconColor: isVerified ? .teal : .orange,
+                    title: isVerified ? "KYC is verified" : "KYC not verified",
+                    value: kycStatusText
+                )
+            }
+            .buttonStyle(PlainButtonStyle())
         }
     }
     
@@ -131,6 +161,8 @@ struct BorrowerProfileView: View {
                     .font(.headline)
                     .fontWeight(.bold)
                     .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                 
                 Text(title)
                     .font(.caption)
@@ -157,20 +189,7 @@ struct BorrowerProfileView: View {
             
             Divider().padding(.leading, 60)
             
-            NavigationLink {
-                KYCView().toolbar(.hidden, for: .tabBar)
-            } label: {
-                menuRow(
-                    icon: "doc.text.viewfinder",
-                    iconColor: .orange,
-                    title: "Manage KYC Documents",
-                    subtitle: "View or upload identity documents",
-                    showChevron: true
-                )
-            }
-            
-            Divider().padding(.leading, 60)
-            
+
             NavigationLink {
                 BorrowerMessagingView().toolbar(.hidden,for: .tabBar)
             } label: {
@@ -272,13 +291,21 @@ struct BorrowerProfileView: View {
             
             if settledLoans.count > 1 {
                 NavigationLink(destination: LoanHistoryListView(loans: settledLoans)) {
-                    Text("See All \(settledLoans.count) Loans")
-                        .font(.subheadline).bold()
-                        .frame(maxWidth: .infinity)
-                        .padding(14)
-                        .background(Color.blue.opacity(0.1))
-                        .foregroundStyle(.blue)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    HStack {
+                        Text("See All \(settledLoans.count) Loans")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(Color(.tertiaryLabel))
+                    }
+                    .padding(.vertical, 16)
+                    .padding(.horizontal, 16)
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .shadow(color: Color.black.opacity(0.03), radius: 6, x: 0, y: 3)
                 }
                 .buttonStyle(PlainButtonStyle())
             }

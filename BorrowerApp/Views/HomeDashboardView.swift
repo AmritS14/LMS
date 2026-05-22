@@ -53,16 +53,22 @@ struct HomeDashboardView: View {
                                     if viewModel.activeLoans.count > 1 {
                                         TabView(selection: $selectedLoanID) {
                                             ForEach(viewModel.activeLoans) { loan in
-                                                VStack(spacing: 24) {
+                                                VStack {
                                                     loanHeroCard(loan)
-                                                    emiListSection(for: loan)
+                                                    Spacer(minLength: 0) // Push to top
                                                 }
                                                 .tag(loan.id as UUID?)
                                                 .padding(.horizontal)
                                             }
                                         }
                                         .tabViewStyle(.page(indexDisplayMode: .never))
-                                        .frame(height: 540)
+                                        .frame(height: 250)
+                                        
+                                        if let selectedID = selectedLoanID,
+                                           let selectedLoan = viewModel.activeLoans.first(where: { $0.id == selectedID }) {
+                                            emiListSection(for: selectedLoan)
+                                                .padding(.horizontal)
+                                        }
                                     } else if let loan = viewModel.activeLoans.first {
                                         VStack(spacing: 24) {
                                             loanHeroCard(loan)

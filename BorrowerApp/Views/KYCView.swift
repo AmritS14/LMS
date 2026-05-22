@@ -11,14 +11,14 @@ struct KYCView: View {
     var body: some View {
         List {
             Section("Identity") {
-                documentRow(kind: .identityProof, title: "ID Proof", icon: "person.text.rectangle")
+                documentRow(kind: .identityProof, title: "ID Proof", icon: "person.text.rectangle", iconColor: .blue)
             }
             Section("Address") {
-                documentRow(kind: .addressProof, title: "Address Proof", icon: "house")
+                documentRow(kind: .addressProof, title: "Address Proof", icon: "house", iconColor: .teal)
             }
             Section("Income") {
-                documentRow(kind: .incomeProof, title: "Salary Slips", icon: "doc.text")
-                documentRow(kind: .bankStatement, title: "Bank Statement", icon: "building.columns")
+                documentRow(kind: .incomeProof, title: "Salary Slips", icon: "doc.text", iconColor: .orange)
+                documentRow(kind: .bankStatement, title: "Bank Statement", icon: "building.columns", iconColor: .indigo)
             }
         }
         .navigationTitle("KYC")
@@ -53,30 +53,40 @@ struct KYCView: View {
     }
     
     @ViewBuilder
-    private func documentRow(kind: DocumentKind, title: String, icon: String) -> some View {
+    private func documentRow(kind: DocumentKind, title: String, icon: String, iconColor: Color) -> some View {
         Button(action: { uploadMockDocument(kind: kind) }) {
-            HStack {
-                Label(title, systemImage: icon)
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(iconColor.opacity(0.12))
+                        .frame(width: 32, height: 32)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(iconColor)
+                }
+                
+                Text(title)
                     .foregroundStyle(.primary)
+                
                 Spacer()
                 
-                if uploadedDocuments.contains(kind) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "checkmark.circle.fill")
-                        Text("Submitted")
+                let isUploaded = uploadedDocuments.contains(kind)
+                
+                Group {
+                    if #available(iOS 17.0, *) {
+                        Image(systemName: isUploaded ? "checkmark.circle.fill" : "arrow.up.circle.fill")
+                            .font(.title2)
+                            .symbolEffect(.bounce, value: isUploaded)
+                    } else {
+                        Image(systemName: isUploaded ? "checkmark.circle.fill" : "arrow.up.circle.fill")
+                            .font(.title2)
                     }
-                    .font(.caption.bold())
-                    .foregroundStyle(.green)
-                } else {
-                    HStack(spacing: 4) {
-                        Image(systemName: "arrow.up.doc")
-                        Text("Upload")
-                    }
-                    .font(.caption.bold())
-                    .foregroundStyle(.blue)
                 }
+                .foregroundStyle(isUploaded ? .green : .red)
             }
         }
+        .buttonStyle(.plain)
     }
     
     private func fetchDocuments() async {
