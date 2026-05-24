@@ -40,40 +40,70 @@ actor MockMessagingService: MessagingService {
     
     private let borrowerID = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
     private let officerID  = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
-    private let threadID   = UUID(uuidString: "dddddddd-dddd-dddd-dddd-dddddddddddd")!
-    private let appID      = UUID(uuidString: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")!
+    private let homeThreadID     = UUID(uuidString: "dddddddd-dddd-dddd-dddd-dddddddddddd")!
+    private let personalThreadID = UUID(uuidString: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")!
+    private let supportThreadID  = UUID(uuidString: "ffffffff-ffff-ffff-ffff-ffffffffffff")!
+    private let homeAppID     = UUID(uuidString: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")!
+    private let personalAppID = UUID(uuidString: "cccccccc-cccc-cccc-cccc-cccccccccccc")!
 
     private var threadList: [MessageThread]
     private var messageStore: [UUID: [ChatMessage]]
 
     init() {
-        let thread = MessageThread(
-            id: threadID,
+        let homeThread = MessageThread(
+            id: homeThreadID,
             participantIDs: [borrowerID, officerID],
-            applicationID: appID,
+            applicationID: homeAppID,
             lastMessagePreview: "Please share your bank statement.",
-            updatedAt: .now
+            updatedAt: Date().addingTimeInterval(-60 * 80)
         )
-        threadList = [thread]
+        let personalThread = MessageThread(
+            id: personalThreadID,
+            participantIDs: [borrowerID, officerID],
+            applicationID: personalAppID,
+            lastMessagePreview: "Your application is now under review.",
+            updatedAt: Date().addingTimeInterval(-60 * 60 * 24)
+        )
+        let supportThread = MessageThread(
+            id: supportThreadID,
+            participantIDs: [borrowerID, officerID],
+            applicationID: nil,
+            lastMessagePreview: "How can we help you today?",
+            updatedAt: Date().addingTimeInterval(-60 * 60 * 24 * 3)
+        )
+        threadList = [homeThread, personalThread, supportThread]
 
         let t: (Int) -> Date = { Date().addingTimeInterval(Double($0) * 60) }
         messageStore = [
-            threadID: [
-                ChatMessage(id: UUID(), threadID: threadID, senderID: officerID,
+            homeThreadID: [
+                ChatMessage(id: UUID(), threadID: homeThreadID, senderID: officerID,
                             body: "Hi Naman, I've reviewed your Home Loan application. Could you clarify the source of your ₹5 L down payment?",
                             sentAt: t(-120)),
-                ChatMessage(id: UUID(), threadID: threadID, senderID: borrowerID,
+                ChatMessage(id: UUID(), threadID: homeThreadID, senderID: borrowerID,
                             body: "Hi Sarah, it's from my savings account. I can share the bank statement.",
                             sentAt: t(-110)),
-                ChatMessage(id: UUID(), threadID: threadID, senderID: officerID,
+                ChatMessage(id: UUID(), threadID: homeThreadID, senderID: officerID,
                             body: "That would be great. Also, the property valuation needs a second review.",
                             sentAt: t(-100)),
-                ChatMessage(id: UUID(), threadID: threadID, senderID: borrowerID,
+                ChatMessage(id: UUID(), threadID: homeThreadID, senderID: borrowerID,
                             body: "Understood. Should I get an independent valuation report?",
                             sentAt: t(-90)),
-                ChatMessage(id: UUID(), threadID: threadID, senderID: officerID,
+                ChatMessage(id: UUID(), threadID: homeThreadID, senderID: officerID,
                             body: "Yes, please do. Please share your bank statement as well.",
                             sentAt: t(-80))
+            ],
+            personalThreadID: [
+                ChatMessage(id: UUID(), threadID: personalThreadID, senderID: borrowerID,
+                            body: "Hello, when can I expect a decision on my personal loan?",
+                            sentAt: t(-60 * 25)),
+                ChatMessage(id: UUID(), threadID: personalThreadID, senderID: officerID,
+                            body: "Your application is now under review. We'll update you within 48 hours.",
+                            sentAt: t(-60 * 24))
+            ],
+            supportThreadID: [
+                ChatMessage(id: UUID(), threadID: supportThreadID, senderID: officerID,
+                            body: "How can we help you today?",
+                            sentAt: t(-60 * 24 * 3))
             ]
         ]
     }

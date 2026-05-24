@@ -166,6 +166,14 @@
 		FEE98171A238045C22C2F9E8 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		F0B1BEEF2FC362A400612B34 /* LoanOfficer */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = LoanOfficer;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXGroup section */
 		097291B36B00BB6BE6770696 /* Resources */ = {
 			isa = PBXGroup;
@@ -353,6 +361,7 @@
 				582532DC63C4EBFEF246A1E2 /* StaffProfileView.swift */,
 				50240F0BA8981C4CD1360F4B /* SystemSettingsView.swift */,
 				4FAACC68782FBB772D6F73B2 /* UserManagementView.swift */,
+				F0B1BEEF2FC362A400612B34 /* LoanOfficer */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -379,6 +388,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F0B1BEEF2FC362A400612B34 /* LoanOfficer */,
 			);
 			name = StaffApp;
 			productName = StaffApp;

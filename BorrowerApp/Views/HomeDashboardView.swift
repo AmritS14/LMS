@@ -7,33 +7,19 @@ struct HomeDashboardView: View {
     @State private var viewModel = DashboardViewModel()
     @State private var repaymentViewModel = RepaymentViewModel()
     @State private var selectedLoanID: UUID?
+    @State private var emiToPay: EMI?
+    @State private var showSupportSheet = false
 
     var body: some View {
         ScrollView {
-            VStack(spacing: Spacing.ml) {
-                if viewModel.isLoading {
-                    ProgressView()
-                        .padding(.top, Spacing.xl)
-                } else if let error = viewModel.errorMessage {
-                    ContentUnavailableView(
-                        "Couldn't Load Dashboard",
-                        systemImage: "exclamationmark.triangle",
-                        description: Text(error)
-                    )
-                } else if viewModel.activeLoans.isEmpty && viewModel.applications.isEmpty {
-                    emptyState
-                        .padding(.horizontal, Spacing.m)
-                        .padding(.top, Spacing.m)
-                } else {
-                    contentSections
-                }
-            }
-            .padding(.bottom, Spacing.xl)
+            mainContent
+                .padding(.bottom, Spacing.xl)
         }
         .scrollIndicators(.hidden)
         .background(Color.lmsBackground.ignoresSafeArea())
         .navigationTitle("Dashboard")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar { toolbarContent }
         .task { await loadData() }
         .onChange(of: selectedLoanID) { _, newID in
             guard let newID,
@@ -41,6 +27,56 @@ struct HomeDashboardView: View {
                   let loan = viewModel.activeLoans.first(where: { $0.id == newID }) else { return }
             Task { await repaymentViewModel.loadRepaymentData(loanService: env.loans, loan: loan) }
         }
+        .sheet(item: $emiToPay, content: paySheet)
+        .sheet(isPresented: $showSupportSheet) {
+            NavigationStack { BorrowerMessagingView() }
+        }
+    }
+
+    @ViewBuilder
+    private var mainContent: some View {
+        VStack(spacing: Spacing.ml) {
+            if viewModel.isLoading {
+                ProgressView()
+                    .padding(.top, Spacing.xl)
+            } else if let error = viewModel.errorMessage {
+                ContentUnavailableView(
+                    "Couldn't Load Dashboard",
+                    systemImage: "exclamationmark.triangle",
+                    description: Text(error)
+                )
+            } else if viewModel.activeLoans.isEmpty && viewModel.applications.isEmpty {
+                emptyState
+                    .padding(.horizontal, Spacing.m)
+                    .padding(.top, Spacing.m)
+            } else {
+                contentSections
+            }
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                showSupportSheet = true
+            } label: {
+                Image(systemName: "bubble.left.and.bubble.right")
+            }
+            .accessibilityLabel("Contact Support")
+        }
+    }
+
+    private func paySheet(emi: EMI) -> some View {
+        let loan = viewModel.activeLoans.first(where: { $0.id == selectedLoanID })
+        return PayEMISheet(emi: emi, loan: loan) {
+            Task {
+                await repaymentViewModel.payEMI(emi)
+                emiToPay = nil
+            }
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
     }
 
     // MARK: - Sections
@@ -59,14 +95,9 @@ struct HomeDashboardView: View {
                     .font(.lmsHeadline)
                 Spacer()
                 if viewModel.activeLoans.count > 1 {
-                    HStack(spacing: 6) {
-                        ForEach(viewModel.activeLoans) { loan in
-                            Circle()
-                                .fill(selectedLoanID == loan.id ? Color.accentColor : Color.lmsGray4)
-                                .frame(width: 6, height: 6)
-                                .animation(.easeInOut, value: selectedLoanID)
-                        }
-                    }
+                    Text("\(activeLoanIndex + 1) of \(viewModel.activeLoans.count)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
             .padding(.horizontal, Spacing.m)
@@ -77,11 +108,13 @@ struct HomeDashboardView: View {
                     ForEach(viewModel.activeLoans) { loan in
                         loanHeroCard(loan)
                             .padding(.horizontal, Spacing.m)
+                            .padding(.bottom, Spacing.xl)
                             .tag(loan.id as UUID?)
                     }
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .frame(height: 260)
+                .tabViewStyle(.page(indexDisplayMode: .always))
+                .indexViewStyle(.page(backgroundDisplayMode: .never))
+                .frame(height: 340)
 
                 if let selectedID = selectedLoanID,
                    let selectedLoan = viewModel.activeLoans.first(where: { $0.id == selectedID }) {
@@ -98,6 +131,12 @@ struct HomeDashboardView: View {
         }
     }
 
+    private var activeLoanIndex: Int {
+        guard let id = selectedLoanID,
+              let idx = viewModel.activeLoans.firstIndex(where: { $0.id == id }) else { return 0 }
+        return idx
+    }
+
     // MARK: - Loan Hero Card
     private func loanHeroCard(_ loan: Loan) -> some View {
         let outstanding = loan.outstandingBalance
@@ -110,6 +149,7 @@ struct HomeDashboardView: View {
             tenureMonths: loan.tenureMonths,
             startDate: loan.disbursementDate
         ).monthlyInstallment
+        let nextEMI = nextUpcomingEMI(for: loan)
 
         return VStack(alignment: .leading, spacing: Spacing.m) {
             HStack {
@@ -152,9 +192,38 @@ struct HomeDashboardView: View {
                 Divider().frame(height: 32)
                 stat(title: "Tenure", value: "\(loan.tenureMonths) mo")
             }
+
+            if let nextEMI {
+                Button {
+                    emiToPay = nextEMI
+                } label: {
+                    HStack {
+                        Image(systemName: nextEMI.status == .overdue ? "exclamationmark.circle.fill" : "creditcard.fill")
+                        Text(nextEMI.status == .overdue ? "Pay Overdue EMI" : "Pay Next EMI")
+                            .fontWeight(.semibold)
+                        Spacer()
+                        Text(Formatting.currency(nextEMI.totalAmount))
+                            .fontWeight(.semibold)
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(nextEMI.status == .overdue ? .lmsDanger : .accentColor)
+                .controlSize(.large)
+                .buttonBorderShape(.roundedRectangle(radius: CornerRadius.button))
+            }
         }
         .padding(Spacing.m)
         .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+    }
+
+    private func nextUpcomingEMI(for loan: Loan) -> EMI? {
+        let schedule = (selectedLoanID == loan.id && !repaymentViewModel.emiSchedule.isEmpty)
+            ? repaymentViewModel.emiSchedule
+            : loan.emiSchedule
+        return schedule
+            .filter { $0.status == .upcoming || $0.status == .overdue }
+            .sorted { $0.dueDate < $1.dueDate }
+            .first
     }
 
     // MARK: - Status Tracker
@@ -249,7 +318,7 @@ struct HomeDashboardView: View {
                 VStack(spacing: Spacing.s) {
                     ForEach(pendingEMIs) { emi in
                         EMIRow(emi: emi) {
-                            Task { await repaymentViewModel.payEMI(emi) }
+                            emiToPay = emi
                         }
                     }
                 }
@@ -310,42 +379,50 @@ struct EMIRow: View {
     let onPay: () -> Void
 
     var body: some View {
-        HStack(spacing: Spacing.sm) {
-            ZStack {
-                Circle()
-                    .fill(statusColor.opacity(0.15))
-                    .frame(width: 40, height: 40)
-                Text("\(emi.installmentNumber)")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(statusColor)
-            }
+        Button(action: onPay) {
+            HStack(spacing: Spacing.sm) {
+                ZStack {
+                    Circle()
+                        .fill(statusColor.opacity(0.15))
+                        .frame(width: 40, height: 40)
+                    Text("\(emi.installmentNumber)")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(statusColor)
+                }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(Formatting.currency(emi.totalAmount))
-                    .font(.subheadline.weight(.semibold))
-                Text("Due \(Formatting.date(emi.dueDate))")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(Formatting.currency(emi.totalAmount))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text("Due \(Formatting.date(emi.dueDate))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
 
-            Spacer()
+                Spacer()
 
-            switch emi.status {
-            case .paid:
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(Color.lmsSuccess)
-                    .font(.title3)
-            case .overdue:
-                Button("Pay Now", action: onPay)
-                    .buttonStyle(.borderedProminent)
-                    .tint(.lmsDanger)
-                    .controlSize(.small)
-            case .upcoming:
-                StatusBadge("Upcoming", tone: .info)
+                switch emi.status {
+                case .paid:
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(Color.lmsSuccess)
+                        .font(.title3)
+                case .overdue:
+                    StatusBadge("Overdue", tone: .danger)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                case .upcoming:
+                    StatusBadge("Upcoming", tone: .info)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
             }
+            .padding(Spacing.sm)
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         }
-        .padding(Spacing.sm)
-        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+        .buttonStyle(.plain)
+        .disabled(emi.status == .paid)
     }
 
     private var statusColor: Color {
@@ -354,6 +431,130 @@ struct EMIRow: View {
         case .overdue:  return .lmsDanger
         case .upcoming: return .accentColor
         }
+    }
+}
+
+// MARK: - Pay EMI Sheet
+struct PayEMISheet: View {
+    let emi: EMI
+    let loan: Loan?
+    let onConfirm: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var isProcessing = false
+    @State private var didSucceed = false
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                if didSucceed {
+                    successContent
+                } else {
+                    paymentContent
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.lmsBackground.ignoresSafeArea())
+            .navigationTitle(didSucceed ? "Payment Successful" : "Pay EMI")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(didSucceed ? "Done" : "Cancel") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private var paymentContent: some View {
+        VStack(spacing: Spacing.l) {
+            VStack(spacing: Spacing.xs) {
+                Text("Amount Due")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text(Formatting.currency(emi.totalAmount))
+                    .font(.lmsHeroAmount)
+                Text("Installment #\(emi.installmentNumber) • Due \(Formatting.date(emi.dueDate))")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.top, Spacing.l)
+
+            VStack(spacing: 0) {
+                breakdownRow("Principal", Formatting.currency(emi.principalComponent))
+                Divider().padding(.leading, Spacing.m)
+                breakdownRow("Interest", Formatting.currency(emi.interestComponent))
+                if let loan {
+                    Divider().padding(.leading, Spacing.m)
+                    breakdownRow("Loan", "\(loan.loanType.rawValue.capitalized) Loan")
+                }
+            }
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+            .padding(.horizontal, Spacing.m)
+
+            HStack(spacing: Spacing.s) {
+                Image(systemName: "lock.shield.fill")
+                    .foregroundStyle(.secondary)
+                Text("Secure payment via UPI")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            PrimaryButton(
+                "Pay \(Formatting.currency(emi.totalAmount))",
+                isLoading: isProcessing
+            ) {
+                Task { await processPayment() }
+            }
+            .padding(.horizontal, Spacing.m)
+            .padding(.bottom, Spacing.m)
+        }
+    }
+
+    private var successContent: some View {
+        VStack(spacing: Spacing.l) {
+            Spacer()
+            ZStack {
+                Circle()
+                    .fill(Color.lmsSuccess.opacity(0.15))
+                    .frame(width: 96, height: 96)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 44, weight: .bold))
+                    .foregroundStyle(Color.lmsSuccess)
+            }
+            VStack(spacing: Spacing.xs) {
+                Text("Payment Successful")
+                    .font(.title2.weight(.semibold))
+                Text("\(Formatting.currency(emi.totalAmount)) paid towards installment #\(emi.installmentNumber)")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, Spacing.l)
+            }
+            Spacer()
+            PrimaryButton("Done") { dismiss() }
+                .padding(.horizontal, Spacing.m)
+                .padding(.bottom, Spacing.m)
+        }
+    }
+
+    private func breakdownRow(_ label: String, _ value: String) -> some View {
+        HStack {
+            Text(label).foregroundStyle(.secondary)
+            Spacer()
+            Text(value).fontWeight(.medium)
+        }
+        .font(.subheadline)
+        .padding(Spacing.m)
+    }
+
+    private func processPayment() async {
+        isProcessing = true
+        try? await Task.sleep(for: .milliseconds(900))
+        onConfirm()
+        isProcessing = false
+        withAnimation(.easeInOut) { didSucceed = true }
     }
 }
 

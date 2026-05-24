@@ -7,6 +7,8 @@ struct BorrowerProfileView: View {
     @State private var settledLoans: [Loan] = []
     @State private var uploadedDocumentKinds: [DocumentKind] = []
     @State private var showSignOutConfirm = false
+    @State private var isCheckingCreditScore = false
+    @State private var creditScoreLastChecked: Date?
 
     private var kycStatusText: String {
         if session.borrowerProfile?.kycStatus == .verified { return "Verified" }
@@ -37,8 +39,19 @@ struct BorrowerProfileView: View {
                         value: session.currentUser?.email ?? "—")
                 infoRow(icon: "phone.fill", iconColor: .green, title: "Phone",
                         value: session.currentUser?.phone ?? "—")
-                infoRow(icon: "speedometer", iconColor: .indigo, title: "Credit Score",
-                        value: session.borrowerProfile?.creditScore.map(String.init) ?? "—")
+            }
+
+            // Credit Score
+            Section {
+                creditScoreRow
+            } header: {
+                Text("Credit Score")
+            } footer: {
+                if let last = creditScoreLastChecked {
+                    Text("Last checked \(last.formatted(.relative(presentation: .named)))")
+                } else {
+                    Text("Tap Check Now for a soft enquiry. This won't affect your score.")
+                }
             }
 
             // Verification
@@ -123,6 +136,69 @@ struct BorrowerProfileView: View {
             }
         }
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Credit Score
+    private var creditScoreRow: some View {
+        HStack(spacing: Spacing.sm) {
+            iconBadge(icon: "speedometer", color: .indigo)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("CIBIL Score")
+                if let score = session.borrowerProfile?.creditScore {
+                    Text("\(score) • \(rating(for: score))")
+                        .font(.caption)
+                        .foregroundStyle(color(for: score))
+                } else {
+                    Text("Not checked yet")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+            Button {
+                Task { await checkCreditScore() }
+            } label: {
+                if isCheckingCreditScore {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Text(session.borrowerProfile?.creditScore == nil ? "Check Now" : "Refresh")
+                        .font(.subheadline.weight(.semibold))
+                }
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .disabled(isCheckingCreditScore)
+        }
+    }
+
+    private func checkCreditScore() async {
+        isCheckingCreditScore = true
+        try? await Task.sleep(for: .milliseconds(1200))
+        let newScore = Int.random(in: 680...820)
+        if var profile = session.borrowerProfile {
+            profile.creditScore = newScore
+            session.borrowerProfile = profile
+        }
+        creditScoreLastChecked = .now
+        isCheckingCreditScore = false
+    }
+
+    private func rating(for score: Int) -> String {
+        switch score {
+        case ..<650:   return "Fair"
+        case 650..<700: return "Good"
+        case 700..<750: return "Very Good"
+        default:        return "Excellent"
+        }
+    }
+
+    private func color(for score: Int) -> Color {
+        switch score {
+        case ..<650:   return .lmsWarning
+        case 650..<700: return .lmsInfo
+        default:        return .lmsSuccess
+        }
     }
 
     // MARK: - Row components
