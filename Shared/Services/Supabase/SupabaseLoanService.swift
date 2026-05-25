@@ -60,11 +60,12 @@ actor SupabaseLoanService: LoanService {
     
     private func fetchProductCacheIfNeeded() async throws {
         if productCache.isEmpty {
-            let products: [DBLoanProduct] = try await client
+            let response = try await client
                 .from("loan_products")
                 .select()
                 .execute()
-                .value
+                
+            let products = try SupabaseManager.shared.decoder.decode([DBLoanProduct].self, from: response.data)
                 
             for product in products {
                 let lowerName = product.name.lowercased()
@@ -174,27 +175,27 @@ actor SupabaseLoanService: LoanService {
 
     func fetchApplications(for borrowerID: UUID) async throws -> [LoanApplication] {
         try await fetchProductCacheIfNeeded()
-        let dbApps: [DBLoanApplication] = try await client
+        let response = try await client
             .from("loan_applications")
             .select()
             .eq("borrower_id", value: borrowerID)
             .order("created_at", ascending: false)
             .execute()
-            .value
             
+        let dbApps = try SupabaseManager.shared.decoder.decode([DBLoanApplication].self, from: response.data)
         return dbApps.map(toDomainApplication)
     }
 
     func fetchAssignedApplications(officerID: UUID) async throws -> [LoanApplication] {
         try await fetchProductCacheIfNeeded()
-        let dbApps: [DBLoanApplication] = try await client
+        let response = try await client
             .from("loan_applications")
             .select()
             .eq("assigned_officer_id", value: officerID)
             .order("created_at", ascending: false)
             .execute()
-            .value
             
+        let dbApps = try SupabaseManager.shared.decoder.decode([DBLoanApplication].self, from: response.data)
         return dbApps.map(toDomainApplication)
     }
 
@@ -204,12 +205,13 @@ actor SupabaseLoanService: LoanService {
     }
 
     func fetchActiveLoans(borrowerID: UUID) async throws -> [Loan] {
-        let dbLoans: [DBLoan] = try await client
+        let response = try await client
             .from("loans")
             .select()
             .eq("borrower_id", value: borrowerID)
             .execute()
-            .value
+            
+        let dbLoans = try SupabaseManager.shared.decoder.decode([DBLoan].self, from: response.data)
             
         return dbLoans.map { dbLoan in
             Loan(
@@ -229,13 +231,14 @@ actor SupabaseLoanService: LoanService {
     }
 
     func fetchEMISchedule(loanID: UUID) async throws -> [EMI] {
-        let dbEmis: [DBEMI] = try await client
+        let response = try await client
             .from("emis")
             .select()
             .eq("loan_id", value: loanID)
             .order("installment_number", ascending: true)
             .execute()
-            .value
+            
+        let dbEmis = try SupabaseManager.shared.decoder.decode([DBEMI].self, from: response.data)
             
         return dbEmis.map { dbEmi in
             EMI(

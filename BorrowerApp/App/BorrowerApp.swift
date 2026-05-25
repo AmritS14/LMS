@@ -8,9 +8,9 @@ struct BorrowerApp: App {
     private let appEnvironment = AppEnvironment(
         auth: SupabaseAuthService(),
         loans: SupabaseLoanService(client: SupabaseManager.shared.client),
-        documents: MockDocumentService(),
+        documents: SupabaseDocumentService(client: SupabaseManager.shared.client),
         notifications: MockNotificationService(),
-        messaging: MockMessagingService(),
+        messaging: SupabaseMessagingService(client: SupabaseManager.shared.client),
         keychain: MockKeychainService()
     )
 

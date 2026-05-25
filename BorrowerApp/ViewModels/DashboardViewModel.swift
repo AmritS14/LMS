@@ -20,7 +20,7 @@ final class DashboardViewModel {
             self.activeLoans = fetchedLoans.filter { $0.status == .active }
             self.applications = try await appsReq
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = String(describing: error)
         }
         isLoading = false
     }

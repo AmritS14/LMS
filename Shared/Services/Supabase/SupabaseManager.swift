@@ -7,6 +7,8 @@ public struct SupabaseManager: Sendable {
     
     public let client: SupabaseClient
     
+    public let decoder: JSONDecoder
+    
     private init() {
         let customDecoder = JSONDecoder()
         customDecoder.dateDecodingStrategy = .custom { decoder in
@@ -20,8 +22,9 @@ public struct SupabaseManager: Sendable {
             formatter.formatOptions = [.withInternetDateTime]
             if let date = formatter.date(from: dateStr) { return date }
             
-            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid date format")
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid date format: \(dateStr)")
         }
+        self.decoder = customDecoder
 
         self.client = SupabaseClient(
             supabaseURL: URL(string: "https://kezcsrprvhzysftopjqd.supabase.co")!,
