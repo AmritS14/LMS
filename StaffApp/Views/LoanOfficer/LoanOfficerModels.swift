@@ -125,49 +125,6 @@ struct OfficerApplication: Identifiable, Hashable {
 
 // MARK: - Application Status Display
 
-extension ApplicationStatus {
-    var displayLabel: String {
-        switch self {
-        case .draft: "Draft"
-        case .submitted: "Submitted"
-        case .underReview: "Under Review"
-        case .escalated: "Escalated"
-        case .additionalInfoRequired: "Info Needed"
-        case .recommended: "Recommended"
-        case .approved: "Approved"
-        case .rejected: "Rejected"
-        case .disbursed: "Disbursed"
-        case .closed: "Closed"
-        }
-    }
-
-    var tone: StatusBadge.Tone {
-        switch self {
-        case .draft: .neutral
-        case .submitted, .underReview: .info
-        case .escalated, .additionalInfoRequired: .warning
-        case .recommended, .approved, .disbursed: .success
-        case .rejected: .danger
-        case .closed: .neutral
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .draft: "doc.text"
-        case .submitted: "tray.and.arrow.up"
-        case .underReview: "magnifyingglass"
-        case .escalated: "arrow.up.right.circle.fill"
-        case .additionalInfoRequired: "exclamationmark.bubble"
-        case .recommended: "hand.thumbsup"
-        case .approved: "checkmark.seal.fill"
-        case .rejected: "xmark.octagon.fill"
-        case .disbursed: "banknote.fill"
-        case .closed: "lock.fill"
-        }
-    }
-}
-
 extension KYCStatus {
     var displayLabel: String { rawValue.capitalized }
     var tone: StatusBadge.Tone {
