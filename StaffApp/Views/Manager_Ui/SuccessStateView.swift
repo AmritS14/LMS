@@ -69,114 +69,62 @@ public struct SuccessStateView: View {
     
     public var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack {
-                Image(systemName: "person.circle.fill")
-                    .resizable()
-                    .frame(width: 40, height: 40)
-                    .foregroundColor(.gray)
+            Spacer()
+            
+            VStack(spacing: Spacing.l) {
+                // Success Icon
+                ZStack {
+                    Circle()
+                        .fill(themeColor)
+                        .frame(width: 100, height: 100)
+                    
+                    Image(systemName: iconName)
+                        .font(.system(size: 40, weight: .bold))
+                        .foregroundColor(.white)
+                }
                 
-                Text("Dashboard")
-                    .font(.lmsTitle)
-                    .foregroundColor(.primary)
-                    .padding(.leading, Spacing.s)
+                // Text Details
+                VStack(spacing: Spacing.s) {
+                    Text(titleText)
+                        .font(.lmsTitle)
+                        .foregroundColor(.primary)
+                    
+                    Text(subtitleText)
+                        .font(.lmsSubheadline)
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, Spacing.xl)
+                }
                 
-                Spacer()
-                
-                Button(action: {}) {
-                    Image(systemName: "bell")
+                // Actions
+                VStack(spacing: Spacing.m) {
+                    NavigationLink(destination: ManagerDashboardView().navigationBarBackButtonHidden(true)) {
+                        Text("Back to Dashboard")
+                            .font(.lmsHeadline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity, minHeight: 48)
+                            .background(Color.lmsNavyBlue)
+                            .clipShape(Capsule())
+                    }
+                    
+                    NavigationLink(destination: ManagerApplicationsView().navigationBarBackButtonHidden(true)) {
+                        HStack {
+                            Text("Review Next Application")
+                            Image(systemName: "arrow.right")
+                        }
                         .font(.lmsHeadline)
                         .foregroundColor(.primary)
-                        .frame(width: 40, height: 40)
-                        .background(Color.lmsNavyBlue.opacity(0.1))
-                        .clipShape(Circle())
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .background(Color.gray.opacity(0.15))
+                        .clipShape(Capsule())
+                    }
                 }
+                .padding(.horizontal, Spacing.m)
             }
-            .padding(Spacing.m)
-            .background(Color.lmsSurface)
+            .padding(.bottom, Spacing.xl)
             
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: Spacing.l) {
-                    
-                    Spacer().frame(height: 40)
-                    
-                    // Success Icon
-                    ZStack {
-                        Circle()
-                            .fill(themeColor)
-                            .frame(width: 100, height: 100)
-                        
-                        Image(systemName: iconName)
-                            .font(.system(size: 40, weight: .bold))
-                            .foregroundColor(.white)
-                    }
-                    
-                    // Text Details
-                    VStack(spacing: Spacing.s) {
-                        Text(titleText)
-                            .font(.lmsTitle)
-                            .foregroundColor(.primary)
-                        
-                        Text(subtitleText)
-                            .font(.lmsSubheadline)
-                            .foregroundColor(.gray)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, Spacing.xl)
-                    }
-                    
-                    // Actions
-                    VStack(spacing: Spacing.m) {
-                        NavigationLink(destination: ManagerDashboardView().navigationBarBackButtonHidden(true)) {
-                            Text("Back to Dashboard")
-                                .font(.lmsHeadline)
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity, minHeight: 48)
-                                .background(Color.lmsNavyBlue)
-                                .cornerRadius(CornerRadius.medium)
-                        }
-                        
-                        NavigationLink(destination: ManagerApplicationsView().navigationBarBackButtonHidden(true)) {
-                            HStack {
-                                Text("Review Next Application")
-                                Image(systemName: "arrow.right")
-                            }
-                            .font(.lmsHeadline)
-                            .foregroundColor(.primary)
-                            .frame(maxWidth: .infinity, minHeight: 48)
-                            .background(Color.gray.opacity(0.15))
-                            .cornerRadius(CornerRadius.medium)
-                        }
-                    }
-                    .padding(.horizontal, Spacing.m)
-                    
-                    // Institutional Update Card
-                    SectionCard {
-                        HStack(alignment: .top, spacing: Spacing.m) {
-                            Image(systemName: updateIcon)
-                                .font(.lmsTitle2)
-                                .foregroundColor(themeColor)
-                                .padding(Spacing.s)
-                                .background(themeColor.opacity(0.15))
-                                .cornerRadius(CornerRadius.small)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(updateTitle)
-                                    .font(.lmsSubheadline)
-                                    .foregroundColor(.primary)
-                                
-                                Text(updateText)
-                                    .font(.lmsCaption)
-                                    .foregroundColor(.gray)
-                                    .lineSpacing(4)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, Spacing.m)
-                    
-                }
-                .padding(.bottom, Spacing.xl)
-            }
-            
+            Spacer()
+            Spacer()
         }
         .background(Color.lmsSurface.ignoresSafeArea())
     }

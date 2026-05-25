@@ -64,7 +64,7 @@ public struct ManagerDashboardView: View {
             .navigationDestination(isPresented: $navigateToReview) {
                 ApplicationReviewView()
             }
-            .navigationDestination(isPresented: $navigateToProfile) {
+            .sheet(isPresented: $navigateToProfile) {
                 StaffProfileView()
             }
             .navigationDestination(isPresented: $navigateToNotifications) {

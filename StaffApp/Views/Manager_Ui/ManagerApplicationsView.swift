@@ -91,6 +91,9 @@ public struct ManagerApplicationsView: View {
                         .foregroundColor(.primary)
                 }
             }
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                // Empty override to hide parent icons
+            }
         }
         .navigationDestination(isPresented: $navigateToReview) {
             ApplicationReviewView()

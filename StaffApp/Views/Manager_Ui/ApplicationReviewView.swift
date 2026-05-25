@@ -31,132 +31,139 @@ public struct ApplicationReviewView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
                     
-                    // Borrower Profile
-                    VStack(alignment: .leading, spacing: 16) {
+                    // Borrower Profile Section
+                    VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Text("Borrower Profile")
-                                .font(.title3)
-                                .fontWeight(.bold)
-                                .foregroundColor(.primary)
+                            Text("BORROWER PROFILE")
+                                .font(.footnote)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.secondary)
                             Spacer()
                             Image(systemName: "checkmark.shield")
-                                .foregroundColor(.gray)
+                                .foregroundColor(.secondary)
+                                .font(.footnote)
                         }
+                        .padding(.horizontal, 4)
                         
-                        HStack(spacing: 12) {
-                            Image(systemName: "person.circle.fill")
-                                .resizable()
-                                .frame(width: 50, height: 50)
-                                .foregroundColor(.gray)
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "person.circle.fill")
+                                    .resizable()
+                                    .frame(width: 50, height: 50)
+                                    .foregroundColor(.gray)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Jonathan Aris")
+                                        .font(.headline)
+                                        .fontWeight(.bold)
+                                    Text("Lead Tech Architect")
+                                        .font(.subheadline)
+                                        .foregroundColor(.gray)
+                                }
+                            }
                             
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Jonathan Aris")
-                                    .font(.headline)
-                                    .fontWeight(.bold)
-                                Text("Lead Tech Architect")
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
+                            HStack(spacing: 12) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("ANNUAL INCOME")
+                                        .font(.caption2)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.secondary)
+                                    Text("₹1,85,000")
+                                        .font(.headline)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.primary)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                                .background(Color.gray.opacity(0.05))
+                                .cornerRadius(8)
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("EXPERIENCE")
+                                        .font(.caption2)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.secondary)
+                                    Text("12 Years")
+                                        .font(.headline)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.primary)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                                .background(Color.gray.opacity(0.05))
+                                .cornerRadius(8)
                             }
                         }
+                        .padding()
+                        .background(cardBg)
+                        .cornerRadius(12)
+                    }
+                    
+                    // Loan Configuration Section
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("LOAN CONFIGURATION")
+                            .font(.footnote)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 4)
                         
-                        HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 16) {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("ANNUAL INCOME")
+                                Text("Requested Amount")
                                     .font(.caption)
-                                    .fontWeight(.bold)
                                     .foregroundColor(.gray)
-                                Text("₹1,85,000")
-                                    .font(.headline)
+                                Text("₹1,20,000")
+                                    .font(.title)
                                     .fontWeight(.bold)
                                     .foregroundColor(.primary)
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding()
-                            .background(Color.gray.opacity(0.05))
-                            .cornerRadius(8)
                             
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("EXPERIENCE")
+                                Text("Loan Term")
                                     .font(.caption)
-                                    .fontWeight(.bold)
                                     .foregroundColor(.gray)
-                                Text("12 Years")
-                                    .font(.headline)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.primary)
+                                HStack {
+                                    Image(systemName: "calendar")
+                                        .foregroundColor(navyBlue)
+                                    Text("15 Years")
+                                        .font(.headline)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.primary)
+                                }
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding()
-                            .background(Color.gray.opacity(0.05))
-                            .cornerRadius(8)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Primary Purpose")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                HStack {
+                                    Image(systemName: "briefcase")
+                                        .foregroundColor(navyBlue)
+                                    Text("Business Expansion")
+                                        .font(.headline)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.primary)
+                                }
+                            }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                        .background(cardBg)
+                        .cornerRadius(12)
                     }
-                    .padding()
-                    .background(cardBg)
-                    .cornerRadius(12)
                     
-                    // Loan Configuration
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Loan Configuration")
-                            .font(.title3)
-                            .fontWeight(.bold)
-                            .foregroundColor(.primary)
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Requested Amount")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text("₹1,20,000")
-                                .font(.title)
-                                .fontWeight(.bold)
-                                .foregroundColor(.primary)
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Loan Term")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            HStack {
-                                Image(systemName: "calendar")
-                                    .foregroundColor(navyBlue)
-                                Text("15 Years")
-                                    .font(.headline)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.primary)
-                            }
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Primary Purpose")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            HStack {
-                                Image(systemName: "briefcase")
-                                    .foregroundColor(navyBlue)
-                                Text("Business Expansion")
-                                    .font(.headline)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.primary)
-                            }
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                    .background(cardBg)
-                    .cornerRadius(12)
-                    
-                    // Verified Documents
-                    VStack(alignment: .leading, spacing: 16) {
+                    // Verified Documents Section
+                    VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Text("Verified Documents")
-                                .font(.title3)
-                                .fontWeight(.bold)
-                                .foregroundColor(.primary)
+                            Text("VERIFIED DOCUMENTS")
+                                .font(.footnote)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.secondary)
                             
                             Spacer()
                             
                             Text("\(verifiedCount) of 3 Verified")
-                                .font(.caption)
+                                .font(.caption2)
                                 .fontWeight(.bold)
                                 .foregroundColor(verifiedCount == 3 ? successGreen : .orange)
                                 .padding(.horizontal, 8)
@@ -164,36 +171,42 @@ public struct ApplicationReviewView: View {
                                 .background(verifiedCount == 3 ? successGreen.opacity(0.1) : Color.orange.opacity(0.1))
                                 .cornerRadius(4)
                         }
+                        .padding(.horizontal, 4)
                         
-                        documentRow(icon: "person.text.rectangle", title: "Government ID", isVerified: $verifiedGovID)
-                        documentRow(icon: "doc.text", title: "Tax Returns (3 yrs)", isVerified: $verifiedTaxReturns)
-                        documentRow(icon: "building.columns", title: "Collateral Proof", isVerified: $verifiedCollateral)
-                    }
-                    .padding()
-                    .background(cardBg)
-                    .cornerRadius(12)
-                    
-                    // Officer Evaluation
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Officer Evaluation")
-                            .font(.title3)
-                            .fontWeight(.bold)
-                            .foregroundColor(.primary)
-                        
-                        HStack(alignment: .top, spacing: 12) {
-                            Image(systemName: "quote.opening")
-                                .font(.title)
-                                .foregroundColor(navyBlue)
-                            
-                            Text("\"Strong collateral position with a debt-to-income ratio well below the risk threshold. Borrower has a stable 12-year employment history in the tech sector. Recommend immediate approval for the requested amount.\"")
-                                .font(.subheadline)
-                                .italic()
-                                .foregroundColor(.black.opacity(0.8))
+                        VStack(alignment: .leading, spacing: 16) {
+                            documentRow(icon: "person.text.rectangle", title: "Government ID", isVerified: $verifiedGovID)
+                            documentRow(icon: "doc.text", title: "Tax Returns (3 yrs)", isVerified: $verifiedTaxReturns)
+                            documentRow(icon: "building.columns", title: "Collateral Proof", isVerified: $verifiedCollateral)
                         }
+                        .padding()
+                        .background(cardBg)
+                        .cornerRadius(12)
                     }
-                    .padding()
-                    .background(cardBg)
-                    .cornerRadius(12)
+                    
+                    // Officer Evaluation Section
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("OFFICER EVALUATION")
+                            .font(.footnote)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 4)
+                        
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack(alignment: .top, spacing: 12) {
+                                Image(systemName: "quote.opening")
+                                    .font(.title)
+                                    .foregroundColor(navyBlue)
+                                
+                                Text("\"Strong collateral position with a debt-to-income ratio well below the risk threshold. Borrower has a stable 12-year employment history in the tech sector. Recommend immediate approval for the requested amount.\"")
+                                    .font(.subheadline)
+                                    .italic()
+                                    .foregroundColor(.black.opacity(0.8))
+                            }
+                        }
+                        .padding()
+                        .background(cardBg)
+                        .cornerRadius(12)
+                    }
                     
                 }
                 .padding()
@@ -259,16 +272,7 @@ public struct ApplicationReviewView: View {
                         .foregroundColor(.primary)
                 }
             }
-            ToolbarItemGroup(placement: .navigationBarTrailing) {
-                Button(action: { navigateToNotifications = true }) {
-                    Image(systemName: "bell")
-                        .foregroundColor(.primary)
-                }
-                Button(action: { navigateToProfile = true }) {
-                    Image(systemName: "person.circle.fill")
-                        .foregroundColor(.gray)
-                }
-            }
+            // Trailing toolbar items removed
         }
         .navigationDestination(isPresented: $navigateToProfile) {
             StaffProfileView()

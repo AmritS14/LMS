@@ -87,9 +87,6 @@
 		F01817CA2FBD7B0800603D20 /* LOApplicationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01817BF2FBD7B0800603D20 /* LOApplicationDetailView.swift */; };
 		F01817CB2FBD7B0800603D20 /* LODashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01817C22FBD7B0800603D20 /* LODashboardView.swift */; };
 		F01817CC2FBD7B0800603D20 /* LONotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01817C42FBD7B0800603D20 /* LONotificationsView.swift */; };
-		F7F7B90D792B9760F95CE95A /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F43612DC9CA160255FFC33 /* Colors.swift */; };
-		F872AD1A8550E9CF19A04C1D /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E121B25741BC258047859E /* PrimaryButton.swift */; };
-		FE5E0902A300F4E68D4F8455 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5311FB36A8266E69CFD93D54 /* Models.swift */; };
 		F0282000000000000000A001 /* ApplicationReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0282000000000000000B001 /* ApplicationReviewView.swift */; };
 		F0282000000000000000A002 /* ApproveModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0282000000000000000B002 /* ApproveModalView.swift */; };
 		F0282000000000000000A003 /* ManagerApplicationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0282000000000000000B003 /* ManagerApplicationsView.swift */; };
@@ -97,6 +94,9 @@
 		F0282000000000000000A005 /* RejectModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0282000000000000000B005 /* RejectModalView.swift */; };
 		F0282000000000000000A006 /* SendBackModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0282000000000000000B006 /* SendBackModalView.swift */; };
 		F0282000000000000000A007 /* SuccessStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0282000000000000000B007 /* SuccessStateView.swift */; };
+		F7F7B90D792B9760F95CE95A /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F43612DC9CA160255FFC33 /* Colors.swift */; };
+		F872AD1A8550E9CF19A04C1D /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E121B25741BC258047859E /* PrimaryButton.swift */; };
+		FE5E0902A300F4E68D4F8455 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5311FB36A8266E69CFD93D54 /* Models.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -160,9 +160,6 @@
 		F01817C32FBD7B0800603D20 /* LODocumentReviewSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LODocumentReviewSheet.swift; sourceTree = "<group>"; };
 		F01817C42FBD7B0800603D20 /* LONotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LONotificationsView.swift; sourceTree = "<group>"; };
 		F01817C52FBD7B0800603D20 /* LOSuccessConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LOSuccessConfirmationView.swift; sourceTree = "<group>"; };
-		F315B139415D3EC19DB81164 /* PortfolioDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioDashboardView.swift; sourceTree = "<group>"; };
-		F582C8AB54B323AD8E169865 /* EMICalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EMICalculator.swift; sourceTree = "<group>"; };
-		FEE98171A238045C22C2F9E8 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 		F0282000000000000000B001 /* ApplicationReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationReviewView.swift; sourceTree = "<group>"; };
 		F0282000000000000000B002 /* ApproveModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApproveModalView.swift; sourceTree = "<group>"; };
 		F0282000000000000000B003 /* ManagerApplicationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagerApplicationsView.swift; sourceTree = "<group>"; };
@@ -170,6 +167,9 @@
 		F0282000000000000000B005 /* RejectModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RejectModalView.swift; sourceTree = "<group>"; };
 		F0282000000000000000B006 /* SendBackModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendBackModalView.swift; sourceTree = "<group>"; };
 		F0282000000000000000B007 /* SuccessStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuccessStateView.swift; sourceTree = "<group>"; };
+		F315B139415D3EC19DB81164 /* PortfolioDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioDashboardView.swift; sourceTree = "<group>"; };
+		F582C8AB54B323AD8E169865 /* EMICalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EMICalculator.swift; sourceTree = "<group>"; };
+		FEE98171A238045C22C2F9E8 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -315,16 +315,6 @@
 			);
 			sourceTree = "<group>";
 		};
-		F11648575E21545DFE47E250 /* StaffApp */ = {
-			isa = PBXGroup;
-			children = (
-				57B8ACBE479C502EBB0019B6 /* App */,
-				097291B36B00BB6BE6770696 /* Resources */,
-				F6F490D0A977221B84CBB8A5 /* Views */,
-			);
-			path = StaffApp;
-			sourceTree = "<group>";
-		};
 		F0282000000000000000C001 /* Manager_Ui */ = {
 			isa = PBXGroup;
 			children = (
@@ -337,6 +327,16 @@
 				F0282000000000000000B007 /* SuccessStateView.swift */,
 			);
 			path = Manager_Ui;
+			sourceTree = "<group>";
+		};
+		F11648575E21545DFE47E250 /* StaffApp */ = {
+			isa = PBXGroup;
+			children = (
+				57B8ACBE479C502EBB0019B6 /* App */,
+				097291B36B00BB6BE6770696 /* Resources */,
+				F6F490D0A977221B84CBB8A5 /* Views */,
+			);
+			path = StaffApp;
 			sourceTree = "<group>";
 		};
 		F6F490D0A977221B84CBB8A5 /* Views */ = {
