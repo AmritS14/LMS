@@ -90,6 +90,45 @@ enum LoanType: String, Codable, Sendable, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+struct LoanProduct: Identifiable, Codable, Sendable, Hashable {
+    var id: UUID = UUID()
+    var name: String
+    var description: String?
+    var minimumAmount: Decimal
+    var maximumAmount: Decimal
+    var minimumTenureMonths: Int
+    var maximumTenureMonths: Int
+    var minimumInterestRate: Double
+    var maximumInterestRate: Double
+    var isActive: Bool = true
+
+    /// Best-guess LoanType derived from the product name
+    var loanType: LoanType {
+        let lower = name.lowercased()
+        if lower.contains("home") { return .home }
+        if lower.contains("vehicle") || lower.contains("auto") { return .vehicle }
+        if lower.contains("education") { return .education }
+        if lower.contains("business") { return .business }
+        return .personal
+    }
+
+    /// Icon for the product
+    var icon: String {
+        switch loanType {
+        case .home: return "house.fill"
+        case .personal: return "person.fill"
+        case .vehicle: return "car.fill"
+        case .business: return "briefcase.fill"
+        case .education: return "book.closed.fill"
+        }
+    }
+
+    /// Midpoint interest rate for display
+    var displayRate: Double {
+        (minimumInterestRate + maximumInterestRate) / 2.0
+    }
+}
+
 enum ApplicationStatus: String, Codable, Sendable {
     case draft
     case submitted

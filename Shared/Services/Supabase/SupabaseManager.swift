@@ -15,12 +15,21 @@ public struct SupabaseManager: Sendable {
             let container = try decoder.singleValueContainer()
             let dateStr = try container.decode(String.self)
             
+            // ISO8601 with fractional seconds: 2026-05-25T17:58:34.981323+00:00
             let formatter = ISO8601DateFormatter()
             formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
             if let date = formatter.date(from: dateStr) { return date }
             
+            // ISO8601 without fractional seconds: 2026-05-25T17:58:34+00:00
             formatter.formatOptions = [.withInternetDateTime]
             if let date = formatter.date(from: dateStr) { return date }
+            
+            // Plain date from Postgres `date` columns: 2026-05-22
+            let plainDateFormatter = DateFormatter()
+            plainDateFormatter.dateFormat = "yyyy-MM-dd"
+            plainDateFormatter.locale = Locale(identifier: "en_US_POSIX")
+            plainDateFormatter.timeZone = TimeZone(identifier: "UTC")
+            if let date = plainDateFormatter.date(from: dateStr) { return date }
             
             throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid date format: \(dateStr)")
         }

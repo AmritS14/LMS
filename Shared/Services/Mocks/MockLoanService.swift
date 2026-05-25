@@ -193,15 +193,27 @@ actor MockLoanService: LoanService {
 
     // MARK: - LoanService Protocol
 
-    func createApplication(_ draft: LoanApplication) async throws -> LoanApplication {
+    func fetchLoanProducts() async throws -> [LoanProduct] {
+        try await Task.sleep(for: .milliseconds(200))
+        return [
+            LoanProduct(name: "Home Loan", minimumAmount: 500_000, maximumAmount: 50_000_000, minimumTenureMonths: 60, maximumTenureMonths: 360, minimumInterestRate: 6, maximumInterestRate: 12),
+            LoanProduct(name: "Personal Loan", minimumAmount: 10_000, maximumAmount: 1_000_000, minimumTenureMonths: 6, maximumTenureMonths: 60, minimumInterestRate: 10, maximumInterestRate: 24),
+            LoanProduct(name: "Vehicle Loan", minimumAmount: 50_000, maximumAmount: 5_000_000, minimumTenureMonths: 12, maximumTenureMonths: 84, minimumInterestRate: 7, maximumInterestRate: 15)
+        ]
+    }
+
+    func createApplication(productID: UUID, requestedAmount: Decimal, tenureMonths: Int) async throws -> LoanApplication {
         try await Task.sleep(for: .milliseconds(400))
-        var app = draft
-        app.borrowerID = borrowerID
-        app.status = .draft
-        app.createdAt = .now
-        app.updatedAt = .now
-                applications.append(app)
-                return app
+        let app = LoanApplication(
+            borrowerID: borrowerID,
+            loanType: .personal,
+            requestedAmount: requestedAmount,
+            tenureMonths: tenureMonths,
+            interestRate: 10.5,
+            status: .submitted
+        )
+        applications.append(app)
+        return app
     }
 
     func submitApplication(id: UUID) async throws -> LoanApplication {

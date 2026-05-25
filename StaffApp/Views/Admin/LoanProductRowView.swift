@@ -12,7 +12,7 @@ import SwiftUI
 /// A reusable row displaying a summary of a loan product's name,
 /// interest rate, and max tenure. Tapping this row will open a sheet to edit its parameters.
 struct LoanProductRowView: View {
-    let product: LoanProduct
+    let product: AdminLoanProduct
     let action: () -> Void
 
     var body: some View {
@@ -48,14 +48,14 @@ struct LoanProductRowView: View {
 
 /// A sheet to edit a single loan product's parameters inline.
 struct LoanProductEditorSheet: View {
-    @Binding var product: LoanProduct
+    @Binding var product: AdminLoanProduct
     let onSave: () -> Void
     let onCancel: () -> Void
 
-    @State private var draftProduct: LoanProduct
+    @State private var draftProduct: AdminLoanProduct
     @State private var showUnsavedChangesAlert = false
 
-    init(product: Binding<LoanProduct>, onSave: @escaping () -> Void, onCancel: @escaping () -> Void) {
+    init(product: Binding<AdminLoanProduct>, onSave: @escaping () -> Void, onCancel: @escaping () -> Void) {
         self._product = product
         self.onSave = onSave
         self.onCancel = onCancel
@@ -176,7 +176,7 @@ struct LoanProductEditorSheet: View {
 #Preview {
     Form {
         LoanProductRowView(
-            product: LoanProduct.sampleProducts[.personal]![0],
+            product: AdminLoanProduct.sampleProducts[.personal]![0],
             action: {}
         )
     }

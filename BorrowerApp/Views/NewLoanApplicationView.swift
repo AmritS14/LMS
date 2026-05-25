@@ -10,58 +10,37 @@ struct NewLoanApplicationView: View {
     @State private var showConfirm = false
     @FocusState private var amountFocused: Bool
 
-    @State private var calcRate: Double = 8.50
-    @State private var calcLoanType: LoanType = .home
-    @State private var amountText: String = "2500000"
-
-    private let products: [(type: LoanType, name: String, rate: Double, icon: String)] = [
-        (.home,      "Home",      8.50, "house.fill"),
-        (.personal,  "Personal", 10.50, "person.fill"),
-        (.vehicle,   "Auto",      9.25, "car.fill"),
-        (.business,  "Business", 11.00, "briefcase.fill"),
-        (.education, "Education", 7.80, "book.closed.fill")
-    ]
-
-    private var amountPresets: [Double] {
-        switch calcLoanType {
-        case .home:      return [1_500_000, 2_500_000, 5_000_000, 7_500_000]
-        case .personal:  return [100_000, 300_000, 500_000, 1_000_000]
-        case .vehicle:   return [400_000, 600_000, 1_000_000, 1_500_000]
-        case .business:  return [500_000, 1_000_000, 2_500_000, 5_000_000]
-        case .education: return [200_000, 500_000, 1_000_000, 2_000_000]
-        }
-    }
-
-    private var tenurePresets: [Int] {
-        switch calcLoanType {
-        case .home:      return [120, 180, 240, 300]
-        case .personal:  return [12, 24, 36, 60]
-        case .vehicle:   return [24, 36, 48, 60]
-        case .business:  return [24, 48, 60, 84]
-        case .education: return [36, 60, 84, 120]
-        }
-    }
-
-    private var amountBounds: ClosedRange<Double> {
-        switch calcLoanType {
-        case .home:      return 500_000...20_000_000
-        case .personal:  return 50_000...2_500_000
-        case .vehicle:   return 100_000...5_000_000
-        case .business:  return 100_000...10_000_000
-        case .education: return 100_000...5_000_000
-        }
-    }
+    @State private var amountText: String = ""
 
     var body: some View {
         ScrollView {
             VStack(spacing: Spacing.ml) {
-                productPicker
-                amountCard
-                tenureCard
-                rateCard
-                resultCard
-                documentsCard
-                submitButton
+                if viewModel.isLoadingProducts {
+                    ProgressView("Loading loan products…")
+                        .padding(.top, Spacing.xl)
+                } else if viewModel.loanProducts.isEmpty {
+                    ContentUnavailableView(
+                        "No Products Available",
+                        systemImage: "exclamationmark.triangle",
+                        description: Text(viewModel.errorMessage ?? "Could not load loan products.")
+                    )
+                } else {
+                    productPicker
+                    amountCard
+                    tenureCard
+                    rateCard
+                    resultCard
+                    documentsCard
+                    
+                    if let errorMsg = viewModel.errorMessage {
+                        Text(errorMsg)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .padding(.horizontal, Spacing.m)
+                    }
+                    
+                    submitButton
+                }
             }
             .padding(.horizontal, Spacing.m)
             .padding(.bottom, Spacing.xl)
@@ -76,14 +55,60 @@ struct NewLoanApplicationView: View {
         .alert("Application Submitted", isPresented: $showConfirm, actions: {
             Button("OK") { dismiss() }
         }, message: {
-            Text("Your \(calcLoanType.rawValue.capitalized) Loan for \(Formatting.currency(Decimal(viewModel.requestedAmount))) is under review.")
+            Text("Your loan application for \(Formatting.currency(Decimal(viewModel.requestedAmount))) has been submitted and is under review.")
         })
-        .onAppear(perform: applyDefaults)
-        .onChange(of: calcLoanType) { _, _ in
-            clampAmountToBounds()
-            clampTenureToPresets()
+        .task {
+            if let env {
+                await viewModel.loadProducts(loanService: env.loans)
+                syncAmountText()
+            }
         }
     }
+
+    // MARK: - Computed from selected product
+    
+    private var selectedProduct: LoanProduct? { viewModel.selectedProduct }
+
+    private var amountBounds: ClosedRange<Double> {
+        guard let p = selectedProduct else { return 10_000...1_000_000 }
+        return NSDecimalNumber(decimal: p.minimumAmount).doubleValue...NSDecimalNumber(decimal: p.maximumAmount).doubleValue
+    }
+
+    private var displayRate: Double {
+        selectedProduct?.displayRate ?? 10.0
+    }
+
+    private var amountPresets: [Double] {
+        guard let p = selectedProduct else { return [] }
+        let min = NSDecimalNumber(decimal: p.minimumAmount).doubleValue
+        let max = NSDecimalNumber(decimal: p.maximumAmount).doubleValue
+        let step = (max - min) / 4.0
+        return [min, min + step, min + step * 2, min + step * 3].map { $0.rounded() }
+    }
+
+    private var tenurePresets: [Int] {
+        guard let p = selectedProduct else { return [12, 24, 36, 60] }
+        let min = p.minimumTenureMonths
+        let max = p.maximumTenureMonths
+        let step = Swift.max((max - min) / 4, 1)
+        var presets: [Int] = []
+        var v = min
+        while v <= max && presets.count < 5 {
+            presets.append(v)
+            v += step
+        }
+        if !presets.contains(max) { presets.append(max) }
+        return presets
+    }
+
+    private var stepSize: Double {
+        let range = amountBounds.upperBound - amountBounds.lowerBound
+        if range > 5_000_000 { return 100_000 }
+        if range > 1_000_000 { return 50_000 }
+        return 25_000
+    }
+
+    // MARK: - Toolbar
 
     @ToolbarContentBuilder
     private var keyboardToolbar: some ToolbarContent {
@@ -107,37 +132,30 @@ struct NewLoanApplicationView: View {
         .presentationDetents([.large])
     }
 
-    private func applyDefaults() {
-        if viewModel.requestedAmount < amountBounds.lowerBound {
-            viewModel.requestedAmount = 2_500_000
-        }
-        if !tenurePresets.contains(viewModel.tenureMonths) {
-            viewModel.tenureMonths = 240
-        }
-        syncAmountText()
-    }
-
     // MARK: - Product Picker
     private var productPicker: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Spacing.sm) {
-                ForEach(products, id: \.type) { p in
+                ForEach(viewModel.loanProducts) { product in
                     Button {
-                        calcLoanType = p.type
-                        calcRate = p.rate
+                        viewModel.selectedProduct = product
+                        // Reset amount and tenure to product defaults
+                        viewModel.requestedAmount = NSDecimalNumber(decimal: product.minimumAmount).doubleValue
+                        viewModel.tenureMonths = product.minimumTenureMonths
+                        syncAmountText()
                     } label: {
                         VStack(spacing: Spacing.s) {
                             ZStack {
                                 Circle()
-                                    .fill(calcLoanType == p.type ? Color.accentColor : Color.lmsFill)
+                                    .fill(selectedProduct?.id == product.id ? Color.accentColor : Color.lmsFill)
                                     .frame(width: 52, height: 52)
-                                Image(systemName: p.icon)
-                                    .foregroundStyle(calcLoanType == p.type ? .white : .secondary)
+                                Image(systemName: product.icon)
+                                    .foregroundStyle(selectedProduct?.id == product.id ? .white : .secondary)
                                     .font(.title3)
                             }
-                            Text(p.name)
+                            Text(product.name.replacingOccurrences(of: " Loan", with: ""))
                                 .font(.caption.weight(.medium))
-                                .foregroundStyle(calcLoanType == p.type ? .primary : .secondary)
+                                .foregroundStyle(selectedProduct?.id == product.id ? .primary : .secondary)
                         }
                         .frame(width: 72)
                     }
@@ -211,14 +229,6 @@ struct NewLoanApplicationView: View {
         .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
     }
 
-    private var stepSize: Double {
-        switch calcLoanType {
-        case .home, .business: return 100_000
-        case .vehicle: return 50_000
-        case .personal, .education: return 25_000
-        }
-    }
-
     // MARK: - Tenure Card
     private var tenureCard: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -227,15 +237,17 @@ struct NewLoanApplicationView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()
-                Picker(selection: $viewModel.tenureMonths) {
-                    ForEach(allTenureOptions, id: \.self) { months in
-                        Text(tenureLabel(months)).tag(months)
+                if let p = selectedProduct {
+                    Picker(selection: $viewModel.tenureMonths) {
+                        ForEach(allTenureOptions(for: p), id: \.self) { months in
+                            Text(tenureLabel(months)).tag(months)
+                        }
+                    } label: {
+                        Text(tenureLabel(viewModel.tenureMonths))
                     }
-                } label: {
-                    Text(tenureLabel(viewModel.tenureMonths))
+                    .pickerStyle(.menu)
+                    .tint(.primary)
                 }
-                .pickerStyle(.menu)
-                .tint(.primary)
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -256,9 +268,8 @@ struct NewLoanApplicationView: View {
         .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
     }
 
-    private var allTenureOptions: [Int] {
-        let maxMonths = calcLoanType == .home ? 360 : (calcLoanType == .business ? 120 : 84)
-        return Array(stride(from: 6, through: maxMonths, by: 6))
+    private func allTenureOptions(for product: LoanProduct) -> [Int] {
+        Array(stride(from: product.minimumTenureMonths, through: product.maximumTenureMonths, by: 6))
     }
 
     // MARK: - Rate Card
@@ -268,12 +279,14 @@ struct NewLoanApplicationView: View {
                 Text("Interest Rate")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Text("Fixed rate for \(calcLoanType.rawValue.capitalized) loans")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                if let p = selectedProduct {
+                    Text("\(String(format: "%.1f", p.minimumInterestRate))% – \(String(format: "%.1f", p.maximumInterestRate))%")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
             }
             Spacer()
-            Text(String(format: "%.2f%%", calcRate))
+            Text(String(format: "%.2f%%", displayRate))
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(.tint)
         }
@@ -285,7 +298,7 @@ struct NewLoanApplicationView: View {
     private var resultCard: some View {
         let emiResult = EMICalculator.calculate(
             principal: Decimal(viewModel.requestedAmount),
-            annualInterestRate: calcRate,
+            annualInterestRate: displayRate,
             tenureMonths: viewModel.tenureMonths,
             startDate: .now
         )
@@ -360,9 +373,7 @@ struct NewLoanApplicationView: View {
                 guard let env, let userID = session.currentUser?.id else { return }
                 let success = await viewModel.submit(
                     loanService: env.loans,
-                    borrowerID: userID,
-                    loanType: calcLoanType,
-                    interestRate: calcRate
+                    borrowerID: userID
                 )
                 if success { showConfirm = true }
             }
@@ -394,12 +405,6 @@ struct NewLoanApplicationView: View {
     private func clampAmountToBounds() {
         viewModel.requestedAmount = min(max(viewModel.requestedAmount, amountBounds.lowerBound), amountBounds.upperBound)
         syncAmountText()
-    }
-
-    private func clampTenureToPresets() {
-        if !tenurePresets.contains(viewModel.tenureMonths) {
-            viewModel.tenureMonths = tenurePresets[tenurePresets.count / 2]
-        }
     }
 
     private func shortAmount(_ value: Double) -> String {

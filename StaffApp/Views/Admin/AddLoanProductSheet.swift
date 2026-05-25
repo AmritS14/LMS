@@ -137,7 +137,7 @@ struct AddLoanProductSheet: View {
                 throw NSError(domain: "DuplicateError", code: 1, userInfo: [NSLocalizedDescriptionKey: "A loan product with this name already exists."])
             }
 
-            let newProduct = LoanProduct(
+            let newProduct = AdminLoanProduct(
                 name: name,
                 minAmount: minAmount,
                 maxAmount: maxAmount,
