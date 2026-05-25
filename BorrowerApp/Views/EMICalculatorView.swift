@@ -7,42 +7,19 @@ struct EMICalculatorView: View {
 
     var body: some View {
         Form {
-            Section("Loan Details") {
-                LabeledContent("Principal") {
-                    TextField("Amount", value: $principal, format: .number)
-                        .keyboardType(.decimalPad)
-                        .multilineTextAlignment(.trailing)
-                }
-                Stepper(
-                    value: $rate,
-                    in: 1...30,
-                    step: 0.25
-                ) {
-                    LabeledContent("Interest Rate", value: String(format: "%.2f%%", rate))
-                }
-                Stepper(
-                    value: $tenureMonths,
-                    in: 6...360,
-                    step: 6
-                ) {
-                    LabeledContent("Tenure", value: "\(tenureMonths) months")
-                }
+            Section("Inputs") {
+                TextField("Principal", value: $principal, format: .number).keyboardType(.decimalPad)
+                Stepper("Rate: \(rate, format: .number.precision(.fractionLength(2)))%", value: $rate, in: 1...30, step: 0.25)
+                Stepper("Tenure: \(tenureMonths) months", value: $tenureMonths, in: 6...360, step: 6)
             }
-
             Section("Result") {
-                let result = EMICalculator.calculate(
-                    principal: principal,
-                    annualInterestRate: rate,
-                    tenureMonths: tenureMonths,
-                    startDate: .now
-                )
+                let result = EMICalculator.calculate(principal: principal, annualInterestRate: rate, tenureMonths: tenureMonths, startDate: .now)
                 LabeledContent("Monthly EMI", value: Formatting.currency(result.monthlyInstallment))
                 LabeledContent("Total Interest", value: Formatting.currency(result.totalInterest))
                 LabeledContent("Total Payable", value: Formatting.currency(result.totalPayable))
             }
         }
         .navigationTitle("EMI Calculator")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

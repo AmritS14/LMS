@@ -12,21 +12,16 @@ final class LoanApplicationViewModel {
     var tenureMonths: Int = 12
     var purpose: String = ""
 
-    func submit(
-        loanService: any LoanService,
-        borrowerID: UUID,
-        loanType: LoanType,
-        interestRate: Double
-    ) async -> Bool {
+    func submit(loanService: any LoanService, borrowerID: UUID) async -> Bool {
         isSubmitting = true
         errorMessage = nil
         do {
             let app = LoanApplication(
                 borrowerID: borrowerID,
-                loanType: loanType,
+                loanType: .personal,
                 requestedAmount: Decimal(requestedAmount),
                 tenureMonths: tenureMonths,
-                interestRate: interestRate,
+                interestRate: 10.5,
                 status: .draft
             )
             let created = try await loanService.createApplication(app)

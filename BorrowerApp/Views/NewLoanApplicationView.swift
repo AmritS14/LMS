@@ -4,434 +4,318 @@ struct NewLoanApplicationView: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.appEnvironment) private var env
     @Environment(\.dismiss) private var dismiss
-
+    
     @State private var viewModel = LoanApplicationViewModel()
     @State private var showDocSheet = false
     @State private var showConfirm = false
-    @FocusState private var amountFocused: Bool
-
+    
+    // Default rate based on type
     @State private var calcRate: Double = 8.50
     @State private var calcLoanType: LoanType = .home
-    @State private var amountText: String = "2500000"
 
     private let products: [(type: LoanType, name: String, rate: Double, icon: String)] = [
-        (.home,      "Home",      8.50, "house.fill"),
-        (.personal,  "Personal", 10.50, "person.fill"),
-        (.vehicle,   "Auto",      9.25, "car.fill"),
-        (.business,  "Business", 11.00, "briefcase.fill"),
-        (.education, "Education", 7.80, "book.closed.fill")
+        (.home,      "Home Loan",       8.50, "house.fill"),
+        (.personal,  "Personal Loan",  10.50, "person.fill"),
+        (.vehicle,      "Auto Loan",       9.25, "car.fill"),
+        (.business,  "Business Loan",  11.00, "briefcase.fill"),
+        (.education, "Education Loan",  7.80, "book.closed.fill")
     ]
 
-    private var amountPresets: [Double] {
-        switch calcLoanType {
-        case .home:      return [1_500_000, 2_500_000, 5_000_000, 7_500_000]
-        case .personal:  return [100_000, 300_000, 500_000, 1_000_000]
-        case .vehicle:   return [400_000, 600_000, 1_000_000, 1_500_000]
-        case .business:  return [500_000, 1_000_000, 2_500_000, 5_000_000]
-        case .education: return [200_000, 500_000, 1_000_000, 2_000_000]
-        }
-    }
-
-    private var tenurePresets: [Int] {
-        switch calcLoanType {
-        case .home:      return [120, 180, 240, 300]
-        case .personal:  return [12, 24, 36, 60]
-        case .vehicle:   return [24, 36, 48, 60]
-        case .business:  return [24, 48, 60, 84]
-        case .education: return [36, 60, 84, 120]
-        }
-    }
-
-    private var amountBounds: ClosedRange<Double> {
-        switch calcLoanType {
-        case .home:      return 500_000...20_000_000
-        case .personal:  return 50_000...2_500_000
-        case .vehicle:   return 100_000...5_000_000
-        case .business:  return 100_000...10_000_000
-        case .education: return 100_000...5_000_000
-        }
-    }
-
     var body: some View {
-        ScrollView {
-            VStack(spacing: Spacing.ml) {
-                productPicker
-                amountCard
-                tenureCard
-                rateCard
-                resultCard
-                documentsCard
-                submitButton
-            }
-            .padding(.horizontal, Spacing.m)
-            .padding(.bottom, Spacing.xl)
-        }
-        .scrollIndicators(.hidden)
-        .scrollDismissesKeyboard(.interactively)
-        .background(Color.lmsBackground.ignoresSafeArea())
-        .navigationTitle("New Application")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbar { keyboardToolbar }
-        .sheet(isPresented: $showDocSheet) { documentsSheet }
-        .alert("Application Submitted", isPresented: $showConfirm, actions: {
-            Button("OK") { dismiss() }
-        }, message: {
-            Text("Your \(calcLoanType.rawValue.capitalized) Loan for \(Formatting.currency(Decimal(viewModel.requestedAmount))) is under review.")
-        })
-        .onAppear(perform: applyDefaults)
-        .onChange(of: calcLoanType) { _, _ in
-            clampAmountToBounds()
-            clampTenureToPresets()
-        }
-    }
-
-    @ToolbarContentBuilder
-    private var keyboardToolbar: some ToolbarContent {
-        ToolbarItemGroup(placement: .keyboard) {
-            Spacer()
-            Button("Done") { amountFocused = false }
-        }
-    }
-
-    private var documentsSheet: some View {
         NavigationStack {
-            KYCView()
-                .navigationTitle("Upload Documents")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Done") { showDocSheet = false }
-                    }
-                }
-        }
-        .presentationDetents([.large])
-    }
+            ZStack {
+                Color(.systemGroupedBackground).ignoresSafeArea()
 
-    private func applyDefaults() {
-        if viewModel.requestedAmount < amountBounds.lowerBound {
-            viewModel.requestedAmount = 2_500_000
+                ScrollView {
+                    VStack(spacing: 20) {
+                        productPicker
+                        sliderCard
+                        resultCard
+                        documentsCard
+                        submitButton
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 32)
+                }
+            }
+            .navigationTitle("EMI Calculator")
+            .sheet(isPresented: $showDocSheet) {
+                // In LMS we use KYCView to upload docs
+                NavigationStack {
+                    KYCView()
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                Button("Done") { showDocSheet = false }
+                            }
+                        }
+                }
+            }
+            .fullScreenCover(isPresented: $showConfirm) {
+                ApplicationSuccessView(
+                    loanType: calcLoanType.rawValue.capitalized,
+                    amount: viewModel.requestedAmount,
+                    onDismiss: {
+                        showConfirm = false
+                        dismiss()
+                    }
+                )
+            }
         }
-        if !tenurePresets.contains(viewModel.tenureMonths) {
-            viewModel.tenureMonths = 240
-        }
-        syncAmountText()
     }
 
     // MARK: - Product Picker
-    private var productPicker: some View {
+    var productPicker: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: Spacing.sm) {
+            HStack(spacing: 12) {
                 ForEach(products, id: \.type) { p in
                     Button {
                         calcLoanType = p.type
                         calcRate = p.rate
                     } label: {
-                        VStack(spacing: Spacing.s) {
+                        VStack(spacing: 8) {
                             ZStack {
                                 Circle()
-                                    .fill(calcLoanType == p.type ? Color.accentColor : Color.lmsFill)
-                                    .frame(width: 52, height: 52)
+                                    .fill(calcLoanType == p.type ? Color.blue : Color(.systemFill))
+                                    .frame(width: 48, height: 48)
                                 Image(systemName: p.icon)
                                     .foregroundStyle(calcLoanType == p.type ? .white : .secondary)
                                     .font(.title3)
                             }
-                            Text(p.name)
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(calcLoanType == p.type ? .primary : .secondary)
+                            Text(p.name.replacingOccurrences(of: " Loan", with: ""))
+                                .font(.caption).bold()
+                                .foregroundStyle(calcLoanType == p.type ? .blue : .secondary)
                         }
                         .frame(width: 72)
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.vertical, Spacing.s)
-            .padding(.horizontal, Spacing.xs)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 8)
         }
     }
 
-    // MARK: - Amount Card
-    private var amountCard: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("Loan Amount")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
-                Text("₹")
-                    .font(.title.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                TextField("0", text: $amountText)
-                    .keyboardType(.numberPad)
-                    .focused($amountFocused)
-                    .font(.system(.largeTitle, design: .rounded).weight(.bold))
-                    .onChange(of: amountText) { _, newValue in
-                        let digits = newValue.filter(\.isNumber)
-                        if digits != newValue { amountText = digits }
-                        if let value = Double(digits) {
-                            viewModel.requestedAmount = value
-                        } else if digits.isEmpty {
-                            viewModel.requestedAmount = 0
-                        }
-                    }
-                    .onSubmit { clampAmountToBounds() }
-            }
-
+    // MARK: - Sliders Card
+    var sliderCard: some View {
+        VStack(spacing: 20) {
+            sliderRow(
+                label: "Principal Amount",
+                value: Formatting.currency(Decimal(viewModel.requestedAmount)),
+                slider: Slider(
+                    value: $viewModel.requestedAmount,
+                    in: 50_000...10_000_000, step: 50_000
+                )
+            )
+            Divider()
+            sliderRow(
+                label: "Tenure",
+                value: "\(viewModel.tenureMonths) months",
+                slider: Slider(
+                    value: Binding(
+                        get: { Double(viewModel.tenureMonths) },
+                        set: { viewModel.tenureMonths = Int($0) }
+                    ),
+                    in: 6...360, step: 6
+                )
+            )
+            Divider()
             HStack {
-                Text(Formatting.currency(Decimal(viewModel.requestedAmount)))
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                Text("Interest Rate").foregroundStyle(.secondary)
                 Spacer()
-                Stepper("", value: Binding(
-                    get: { viewModel.requestedAmount },
-                    set: { newVal in
-                        viewModel.requestedAmount = min(max(newVal, amountBounds.lowerBound), amountBounds.upperBound)
-                        syncAmountText()
-                    }
-                ), in: amountBounds, step: stepSize)
-                .labelsHidden()
+                Text(String(format: "%.2f%% p.a.", calcRate)).bold()
             }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Spacing.s) {
-                    ForEach(amountPresets, id: \.self) { preset in
-                        chip(
-                            title: shortAmount(preset),
-                            isSelected: viewModel.requestedAmount == preset
-                        ) {
-                            viewModel.requestedAmount = preset
-                            syncAmountText()
-                            amountFocused = false
-                        }
-                    }
-                }
-                .padding(.vertical, 2)
-            }
+            .font(.subheadline)
         }
-        .padding(Spacing.m)
-        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+        .padding()
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
     }
 
-    private var stepSize: Double {
-        switch calcLoanType {
-        case .home, .business: return 100_000
-        case .vehicle: return 50_000
-        case .personal, .education: return 25_000
-        }
-    }
-
-    // MARK: - Tenure Card
-    private var tenureCard: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
+    func sliderRow(label: String, value: String, slider: some View) -> some View {
+        VStack(spacing: 10) {
             HStack {
-                Text("Tenure")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                Text(label).font(.subheadline).foregroundStyle(.secondary)
                 Spacer()
-                Picker(selection: $viewModel.tenureMonths) {
-                    ForEach(allTenureOptions, id: \.self) { months in
-                        Text(tenureLabel(months)).tag(months)
-                    }
-                } label: {
-                    Text(tenureLabel(viewModel.tenureMonths))
-                }
-                .pickerStyle(.menu)
-                .tint(.primary)
+                Text(value).font(.subheadline).bold()
             }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Spacing.s) {
-                    ForEach(tenurePresets, id: \.self) { months in
-                        chip(
-                            title: tenureShort(months),
-                            isSelected: viewModel.tenureMonths == months
-                        ) {
-                            viewModel.tenureMonths = months
-                        }
-                    }
-                }
-                .padding(.vertical, 2)
-            }
+            slider.tint(.blue)
         }
-        .padding(Spacing.m)
-        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
-    }
-
-    private var allTenureOptions: [Int] {
-        let maxMonths = calcLoanType == .home ? 360 : (calcLoanType == .business ? 120 : 84)
-        return Array(stride(from: 6, through: maxMonths, by: 6))
-    }
-
-    // MARK: - Rate Card
-    private var rateCard: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: Spacing.xxs) {
-                Text("Interest Rate")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Text("Fixed rate for \(calcLoanType.rawValue.capitalized) loans")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-            Spacer()
-            Text(String(format: "%.2f%%", calcRate))
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(.tint)
-        }
-        .padding(Spacing.m)
-        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
     }
 
     // MARK: - Result Card
-    private var resultCard: some View {
+    var resultCard: some View {
         let emiResult = EMICalculator.calculate(
             principal: Decimal(viewModel.requestedAmount),
             annualInterestRate: calcRate,
             tenureMonths: viewModel.tenureMonths,
             startDate: .now
         )
-
+        
         return VStack(spacing: 0) {
-            VStack(spacing: Spacing.xs) {
+            VStack(spacing: 4) {
                 Text("Monthly EMI")
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.85))
+                    .foregroundStyle(.white.opacity(0.8))
                 Text(Formatting.currency(emiResult.monthlyInstallment))
-                    .font(.lmsHeroAmount)
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
-                    .contentTransition(.numericText())
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, Spacing.l)
-            .background(Color.accentColor)
+            .padding(.vertical, 24)
+            .background(Color.blue)
 
             HStack {
                 resultStat("Principal", Formatting.currency(Decimal(viewModel.requestedAmount)))
-                Divider().frame(height: 36)
+                Divider().frame(height: 40)
                 resultStat("Interest", Formatting.currency(emiResult.totalInterest))
-                Divider().frame(height: 36)
+                Divider().frame(height: 40)
                 resultStat("Total", Formatting.currency(emiResult.totalPayable))
             }
-            .padding(.vertical, Spacing.sm)
-            .background(Color.lmsSurface)
+            .padding(.vertical, 14)
+            .background(Color(.systemBackground))
         }
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.08), radius: 10, y: 3)
     }
 
-    private func resultStat(_ label: String, _ value: String) -> some View {
-        VStack(spacing: Spacing.xxs) {
-            Text(value).font(.footnote.weight(.semibold))
+    func resultStat(_ label: String, _ value: String) -> some View {
+        VStack(spacing: 4) {
+            Text(value).font(.footnote).bold()
             Text(label).font(.caption2).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
     }
 
     // MARK: - Documents Card
-    private var documentsCard: some View {
-        Button {
-            showDocSheet = true
-        } label: {
-            HStack(spacing: Spacing.sm) {
-                Image(systemName: "arrow.up.doc.fill")
-                    .font(.title3)
-                    .foregroundStyle(.tint)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Upload Documents")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
-                    Text("KYC & collateral papers")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+    var documentsCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Documents").font(.headline)
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
             }
-            .padding(Spacing.m)
-            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+
+            Button {
+                showDocSheet = true
+            } label: {
+                HStack {
+                    Image(systemName: "arrow.up.doc.fill").foregroundStyle(.blue)
+                    Text("Upload KYC & Collateral Papers")
+                        .foregroundStyle(.blue)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(12)
+                .background(Color.blue.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
         }
-        .buttonStyle(.plain)
+        .padding()
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
     }
 
     // MARK: - Submit Button
-    private var submitButton: some View {
-        PrimaryButton("Submit Application", isLoading: viewModel.isSubmitting) {
+    var submitButton: some View {
+        Button {
             Task {
-                guard let env, let userID = session.currentUser?.id else { return }
-                let success = await viewModel.submit(
-                    loanService: env.loans,
-                    borrowerID: userID,
-                    loanType: calcLoanType,
-                    interestRate: calcRate
-                )
-                if success { showConfirm = true }
+                guard let env = env, let userID = session.currentUser?.id else { return }
+                let success = await viewModel.submit(loanService: env.loans, borrowerID: userID)
+                if success {
+                    showConfirm = true
+                }
+            }
+        } label: {
+            ZStack {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(viewModel.isSubmitting ? Color.blue.opacity(0.4) : Color.blue)
+                    .frame(height: 52)
+                if viewModel.isSubmitting {
+                    ProgressView().tint(.white)
+                } else {
+                    Text("Submit Application").font(.headline).foregroundStyle(.white)
+                }
             }
         }
+        .disabled(viewModel.isSubmitting)
     }
+}
 
-    // MARK: - Chip
-    private func chip(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.subheadline.weight(.medium))
-                .padding(.horizontal, Spacing.sm)
-                .padding(.vertical, Spacing.s)
-                .background(
-                    isSelected ? Color.accentColor : Color.lmsFill,
-                    in: Capsule()
-                )
-                .foregroundStyle(isSelected ? Color.white : Color.primary)
+// MARK: - Application Success View
+struct ApplicationSuccessView: View {
+    let loanType: String
+    let amount: Double
+    let onDismiss: () -> Void
+    
+    @State private var isAnimating = false
+    
+    var body: some View {
+        ZStack {
+            Color.blue.ignoresSafeArea()
+            
+            VStack(spacing: 24) {
+                Spacer()
+                
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.2))
+                        .frame(width: 120, height: 120)
+                        .scaleEffect(isAnimating ? 1.5 : 0.8)
+                        .opacity(isAnimating ? 0 : 1)
+                        .animation(.easeOut(duration: 1.5).repeatForever(autoreverses: false), value: isAnimating)
+                    
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 90, height: 90)
+                    
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 40, weight: .bold))
+                        .foregroundColor(.blue)
+                }
+                .scaleEffect(isAnimating ? 1 : 0.5)
+                .animation(.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0), value: isAnimating)
+                
+                VStack(spacing: 12) {
+                    Text("Application Submitted!")
+                        .font(.largeTitle)
+                        .bold()
+                        .foregroundStyle(.white)
+                    
+                    Text("Your \(loanType) Loan for \(Formatting.currency(Decimal(amount))) is now under review. We will notify you once it is approved.")
+                        .font(.title3)
+                        .foregroundStyle(.white.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                }
+                .opacity(isAnimating ? 1 : 0)
+                .offset(y: isAnimating ? 0 : 20)
+                .animation(.easeOut(duration: 0.5).delay(0.2), value: isAnimating)
+                
+                Spacer()
+                
+                Button(action: onDismiss) {
+                    Text("Go to Dashboard")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color.white)
+                        .foregroundStyle(.blue)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 32)
+                .opacity(isAnimating ? 1 : 0)
+                .animation(.easeIn(duration: 0.3).delay(0.6), value: isAnimating)
+            }
         }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Helpers
-    private func syncAmountText() {
-        let intVal = Int(viewModel.requestedAmount)
-        amountText = String(intVal)
-    }
-
-    private func clampAmountToBounds() {
-        viewModel.requestedAmount = min(max(viewModel.requestedAmount, amountBounds.lowerBound), amountBounds.upperBound)
-        syncAmountText()
-    }
-
-    private func clampTenureToPresets() {
-        if !tenurePresets.contains(viewModel.tenureMonths) {
-            viewModel.tenureMonths = tenurePresets[tenurePresets.count / 2]
+        .onAppear {
+            isAnimating = true
         }
-    }
-
-    private func shortAmount(_ value: Double) -> String {
-        if value >= 10_000_000 {
-            return String(format: "₹%.1f Cr", value / 10_000_000)
-        } else if value >= 100_000 {
-            let lakhs = value / 100_000
-            return lakhs.truncatingRemainder(dividingBy: 1) == 0
-                ? String(format: "₹%.0f L", lakhs)
-                : String(format: "₹%.1f L", lakhs)
-        } else if value >= 1_000 {
-            return String(format: "₹%.0fK", value / 1_000)
-        }
-        return "₹\(Int(value))"
-    }
-
-    private func tenureShort(_ months: Int) -> String {
-        if months % 12 == 0 { return "\(months / 12)y" }
-        return "\(months)m"
-    }
-
-    private func tenureLabel(_ months: Int) -> String {
-        if months % 12 == 0 {
-            let years = months / 12
-            return "\(years) year\(years == 1 ? "" : "s")"
-        }
-        return "\(months) months"
     }
 }
 
 #Preview {
-    NavigationStack { NewLoanApplicationView() }
+    NewLoanApplicationView()
         .environment(SessionStore(
             currentUser: MockAuthService.seedBorrower,
             borrowerProfile: MockAuthService.seedBorrowerProfile

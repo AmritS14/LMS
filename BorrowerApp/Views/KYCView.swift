@@ -1,154 +1,174 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct KYCView: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.appEnvironment) private var env
-
+    
     @State private var isUploading = false
     @State private var uploadMessage: String?
-    @State private var uploadDidFail = false
     @State private var uploadedDocuments: [DocumentKind] = []
-
+    
+    @State private var isPickerPresented = false
+    @State private var documentKindToUpload: DocumentKind? = nil
+    
     var body: some View {
         List {
-            Section {
-                documentRow(kind: .identityProof, title: "ID Proof", icon: "person.text.rectangle.fill", iconColor: .blue)
-            } header: {
-                Text("Identity")
-            } footer: {
-                Text("Government-issued photo ID, e.g., passport or driver's licence.")
+            Section("Identity") {
+                documentRow(kind: .identityProof, title: "ID Proof", icon: "person.text.rectangle", iconColor: .blue)
             }
-
-            Section {
-                documentRow(kind: .addressProof, title: "Address Proof", icon: "house.fill", iconColor: .teal)
-            } header: {
-                Text("Address")
-            } footer: {
-                Text("Utility bill, lease agreement, or bank statement showing your current address.")
+            Section("Address") {
+                documentRow(kind: .addressProof, title: "Address Proof", icon: "house", iconColor: .teal)
             }
-
-            Section {
-                documentRow(kind: .incomeProof, title: "Salary Slips", icon: "doc.text.fill", iconColor: .orange)
-                documentRow(kind: .bankStatement, title: "Bank Statement", icon: "building.columns.fill", iconColor: .indigo)
-            } header: {
-                Text("Income")
-            } footer: {
-                Text("Last three months' salary slips and bank statements.")
+            Section("Income") {
+                documentRow(kind: .incomeProof, title: "Salary Slips", icon: "doc.text", iconColor: .orange)
+                documentRow(kind: .bankStatement, title: "Bank Statement", icon: "building.columns", iconColor: .indigo)
             }
         }
-        .listStyle(.insetGrouped)
-        .navigationTitle("KYC Documents")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("KYC")
         .disabled(isUploading)
-        .task { await fetchDocuments() }
+        .task {
+            await fetchDocuments()
+        }
         .overlay {
             if isUploading {
-                VStack(spacing: Spacing.s) {
-                    ProgressView()
-                    Text("Uploading…").font(.subheadline)
-                }
-                .padding(Spacing.l)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+                ProgressView("Uploading...")
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }
         .overlay(alignment: .bottom) {
             if let msg = uploadMessage {
-                Label(msg, systemImage: uploadDidFail ? "xmark.circle.fill" : "checkmark.circle.fill")
-                    .font(.subheadline.weight(.medium))
+                Text(msg)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
                     .foregroundStyle(.white)
-                    .padding(.horizontal, Spacing.m)
-                    .padding(.vertical, Spacing.sm)
-                    .background(uploadDidFail ? Color.lmsDanger : Color.lmsSuccess, in: Capsule())
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(msg.contains("Failed") ? Color.red : Color.green)
+                    .clipShape(Capsule())
                     .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
-                    .padding(.bottom, Spacing.xl)
+                    .padding(.bottom, 32)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: uploadMessage)
+        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: uploadMessage)
+        .fileImporter(
+            isPresented: $isPickerPresented,
+            allowedContentTypes: [UTType.pdf, UTType.image, UTType.text, UTType.data],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                guard let url = urls.first, let kind = documentKindToUpload else { return }
+                uploadPickedDocument(url: url, kind: kind)
+            case .failure(let error):
+                uploadMessage = "Selection failed: \(error.localizedDescription)"
+                clearMessageAfterDelay()
+            }
+        }
     }
-
+    
     @ViewBuilder
     private func documentRow(kind: DocumentKind, title: String, icon: String, iconColor: Color) -> some View {
-        let isUploaded = uploadedDocuments.contains(kind)
-        Button(action: { uploadMockDocument(kind: kind) }) {
-            HStack(spacing: Spacing.sm) {
-                Image(systemName: icon)
-                    .font(.system(size: 16))
-                    .foregroundStyle(iconColor)
-                    .frame(width: 30, height: 30)
-                    .background(iconColor.opacity(0.15), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-
+        Button(action: {
+            documentKindToUpload = kind
+            isPickerPresented = true
+        }) {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(iconColor.opacity(0.12))
+                        .frame(width: 32, height: 32)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(iconColor)
+                }
+                
                 Text(title)
                     .foregroundStyle(.primary)
-
+                
                 Spacer()
-
-                if isUploaded {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Color.lmsSuccess)
-                        .symbolEffectIfAvailable(value: isUploaded)
-                } else {
-                    Text("Upload")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.tint)
+                
+                let isUploaded = uploadedDocuments.contains(kind)
+                
+                Group {
+                    if #available(iOS 17.0, *) {
+                        Image(systemName: isUploaded ? "checkmark.circle.fill" : "arrow.up.circle.fill")
+                            .font(.title2)
+                            .symbolEffect(.bounce, value: isUploaded)
+                    } else {
+                        Image(systemName: isUploaded ? "checkmark.circle.fill" : "arrow.up.circle.fill")
+                            .font(.title2)
+                    }
                 }
+                .foregroundStyle(isUploaded ? .green : .red)
             }
         }
         .buttonStyle(.plain)
     }
-
+    
     private func fetchDocuments() async {
-        guard let env, let userID = session.currentUser?.id else { return }
+        guard let env = env, let userID = session.currentUser?.id else { return }
         do {
             let docs = try await env.documents.list(ownerID: userID)
             uploadedDocuments = docs.map { $0.kind }
         } catch {
-            // ignore; UI shows empty
+            print("Failed to fetch documents: \(error)")
         }
     }
-
-    private func uploadMockDocument(kind: DocumentKind) {
-        guard let env, let userID = session.currentUser?.id else { return }
-        isUploading = true
-        uploadMessage = nil
-        Task {
-            do {
-                _ = try await env.documents.upload(
-                    Data(),
-                    fileName: "mock_\(kind.rawValue).pdf",
-                    mimeType: "application/pdf",
-                    kind: kind,
-                    ownerID: userID
-                )
-                uploadDidFail = false
-                uploadMessage = "Uploaded \(kind.rawValue.capitalized)"
-                await fetchDocuments()
-            } catch {
-                uploadDidFail = true
-                uploadMessage = "Upload failed. Please try again."
+    
+    private func uploadPickedDocument(url: URL, kind: DocumentKind) {
+        guard let env = env, let userID = session.currentUser?.id else { return }
+        
+        guard url.startAccessingSecurityScopedResource() else {
+            uploadMessage = "Cannot access file."
+            clearMessageAfterDelay()
+            return
+        }
+        
+        defer { url.stopAccessingSecurityScopedResource() }
+        
+        do {
+            let data = try Data(contentsOf: url)
+            let fileName = url.lastPathComponent
+            let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream"
+            
+            isUploading = true
+            uploadMessage = nil
+            
+            Task {
+                do {
+                    _ = try await env.documents.upload(data, fileName: fileName, mimeType: mimeType, kind: kind, ownerID: userID)
+                    uploadMessage = "Uploaded \(kind.rawValue) successfully!"
+                    await fetchDocuments()
+                } catch {
+                    uploadMessage = "Failed to upload."
+                }
+                isUploading = false
+                clearMessageAfterDelay()
             }
-            isUploading = false
-
+        } catch {
+            uploadMessage = "Failed to read file."
+            clearMessageAfterDelay()
+        }
+    }
+    
+    private func clearMessageAfterDelay() {
+        Task {
             try? await Task.sleep(for: .seconds(3))
-            if !isUploading { uploadMessage = nil }
+            if !isUploading {
+                uploadMessage = nil
+            }
         }
     }
 }
 
-private extension View {
-    @ViewBuilder
-    func symbolEffectIfAvailable<V: Equatable>(value: V) -> some View {
-        if #available(iOS 17.0, *) {
-            self.symbolEffect(.bounce, value: value)
-        } else {
-            self
-        }
-    }
-}
-
-#Preview {
-    NavigationStack {
-        KYCView()
+#Preview { 
+    NavigationStack { 
+        KYCView() 
             .environment(SessionStore(
                 currentUser: MockAuthService.seedBorrower,
                 borrowerProfile: MockAuthService.seedBorrowerProfile

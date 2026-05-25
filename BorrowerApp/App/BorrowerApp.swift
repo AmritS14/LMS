@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 @main
 struct BorrowerApp: App {
@@ -16,11 +15,6 @@ struct BorrowerApp: App {
         messaging: MockMessagingService(),
         keychain: MockKeychainService()
     )
-
-    init() {
-        UIPageControl.appearance().pageIndicatorTintColor = UIColor.systemGray3
-        UIPageControl.appearance().currentPageIndicatorTintColor = UIColor.label
-    }
 
     var body: some Scene {
         WindowGroup {

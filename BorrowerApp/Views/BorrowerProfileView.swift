@@ -3,308 +3,339 @@ import SwiftUI
 struct BorrowerProfileView: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.appEnvironment) private var env
-
+    
     @State private var settledLoans: [Loan] = []
     @State private var uploadedDocumentKinds: [DocumentKind] = []
-    @State private var showSignOutConfirm = false
-    @State private var isCheckingCreditScore = false
-    @State private var creditScoreLastChecked: Date?
-
+    
     private var kycStatusText: String {
-        if session.borrowerProfile?.kycStatus == .verified { return "Verified" }
+        if session.borrowerProfile?.kycStatus == .verified {
+            return "Verified"
+        }
         let required: [(DocumentKind, String)] = [
             (.identityProof, "ID Proof"),
-            (.addressProof,  "Address"),
-            (.incomeProof,   "Income"),
-            (.bankStatement, "Bank Statement")
+            (.addressProof, "Address"),
+            (.incomeProof, "Income"),
+            (.bankStatement, "Bank Stmt")
         ]
         let missing = required.filter { !uploadedDocumentKinds.contains($0.0) }.map { $0.1 }
-        if missing.isEmpty { return "Pending Approval" }
-        if missing.count == 1 { return "\(missing[0]) missing" }
-        return "\(missing.count) documents missing"
+        
+        if missing.isEmpty {
+            return "Pending Approval"
+        } else if missing.count == 1 {
+            return "\(missing[0]) not uploaded"
+        } else {
+            return "\(missing.count) docs missing"
+        }
     }
 
     var body: some View {
-        List {
-            // Profile header
-            Section {
-                profileHeader
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: Spacing.l, leading: 0, bottom: Spacing.s, trailing: 0))
+        ZStack(alignment: .top) {
+            // Clean Background
+            Color(.systemGroupedBackground).ignoresSafeArea()
+            
+            // Subtle top header color accent
+            GeometryReader { proxy in
+                LinearGradient(
+                    colors: [Color.blue.opacity(0.12), Color.indigo.opacity(0.05), Color.clear],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: proxy.size.height * 0.4)
+                .ignoresSafeArea()
             }
 
-            // Account
-            Section("Account") {
-                infoRow(icon: "envelope.fill", iconColor: .blue, title: "Email",
-                        value: session.currentUser?.email ?? "—")
-                infoRow(icon: "phone.fill", iconColor: .green, title: "Phone",
-                        value: session.currentUser?.phone ?? "—")
-            }
-
-            // Credit Score
-            Section {
-                creditScoreRow
-            } header: {
-                Text("Credit Score")
-            } footer: {
-                if let last = creditScoreLastChecked {
-                    Text("Last checked \(last.formatted(.relative(presentation: .named)))")
-                } else {
-                    Text("Tap Check Now for a soft enquiry. This won't affect your score.")
-                }
-            }
-
-            // Verification
-            Section("Verification") {
-                NavigationLink {
-                    KYCView()
-                } label: {
-                    let isVerified = session.borrowerProfile?.kycStatus == .verified
-                    iconLabelRow(
-                        icon: isVerified ? "checkmark.seal.fill" : "exclamationmark.triangle.fill",
-                        iconColor: isVerified ? .teal : .orange,
-                        title: "KYC Status",
-                        detail: kycStatusText
-                    )
-                }
-            }
-
-            // Loans
-            if !settledLoans.isEmpty {
-                Section("Loan History") {
-                    ForEach(settledLoans.prefix(3)) { loan in
-                        NavigationLink {
-                            RepaymentDashboardView(loan: loan)
-                        } label: {
-                            settledLoanRow(loan)
-                        }
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 24) {
+                    profileHeader
+                        .padding(.top, 24)
+                        .padding(.bottom, 8)
+                    
+                    quickStats
+                        .padding(.horizontal)
+                    
+                    menuSection
+                        .padding(.horizontal)
+                    
+                    if !settledLoans.isEmpty {
+                        settledLoansSection
+                            .padding(.horizontal)
                     }
-                    if settledLoans.count > 3 {
-                        NavigationLink("See All \(settledLoans.count) Loans") {
-                            LoanHistoryListView(loans: settledLoans)
-                        }
-                    }
-                }
-            }
-
-            // Sign Out
-            Section {
-                Button(role: .destructive) {
-                    showSignOutConfirm = true
-                } label: {
-                    HStack {
-                        Spacer()
-                        Text("Sign Out")
-                            .fontWeight(.semibold)
-                        Spacer()
-                    }
+                    
+                    signOutButton
+                        .padding(.horizontal)
+                        .padding(.bottom, 40)
                 }
             }
         }
-        .listStyle(.insetGrouped)
         .navigationTitle("Profile")
-        .navigationBarTitleDisplayMode(.large)
-        .task { await loadData() }
-        .confirmationDialog(
-            "Sign out of your account?",
-            isPresented: $showSignOutConfirm,
-            titleVisibility: .visible
-        ) {
-            Button("Sign Out", role: .destructive) { signOut() }
-            Button("Cancel", role: .cancel) {}
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            if let env = env, let userID = session.currentUser?.id {
+                do {
+                    let loans = try await env.loans.fetchActiveLoans(borrowerID: userID)
+                    self.settledLoans = loans.filter { $0.status == .settled }
+                    
+                    let docs = try await env.documents.list(ownerID: userID)
+                    self.uploadedDocumentKinds = docs.map { $0.kind }
+                } catch {
+                    print("Failed to fetch profile data: \(error)")
+                }
+            }
         }
     }
-
-    // MARK: - Header
-    private var profileHeader: some View {
-        VStack(spacing: Spacing.sm) {
+    
+    // MARK: - Refined Header
+    var profileHeader: some View {
+        VStack(spacing: 16) {
             ZStack {
                 Circle()
-                    .fill(Color.accentColor.opacity(0.15))
-                    .frame(width: 88, height: 88)
+                    .fill(Color(.systemBackground))
+                    .frame(width: 104, height: 104)
+                    .shadow(color: Color.black.opacity(0.06), radius: 12, x: 0, y: 6)
+                
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.blue.opacity(0.15), Color.indigo.opacity(0.15)],
+                            startPoint: .topLeading, endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 94, height: 94)
+                
                 Text(session.currentUser?.fullName.prefix(1).uppercased() ?? "U")
-                    .font(.system(size: 36, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.tint)
+                    .font(.system(size: 40, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.indigo)
             }
-
-            VStack(spacing: 2) {
-                Text(session.currentUser?.fullName ?? "User")
-                    .font(.title2.weight(.semibold))
-                Text(session.currentUser?.email ?? "")
+            
+            VStack(spacing: 4) {
+                Text(session.currentUser?.fullName ?? "User Name")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.primary)
+                
+                Text(session.currentUser?.email ?? "user@example.com")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
         }
-        .frame(maxWidth: .infinity)
     }
-
-    // MARK: - Credit Score
-    private var creditScoreRow: some View {
-        HStack(spacing: Spacing.sm) {
-            iconBadge(icon: "speedometer", color: .indigo)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("CIBIL Score")
-                if let score = session.borrowerProfile?.creditScore {
-                    Text("\(score) • \(rating(for: score))")
-                        .font(.caption)
-                        .foregroundStyle(color(for: score))
-                } else {
-                    Text("Not checked yet")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            Spacer()
-            Button {
-                Task { await checkCreditScore() }
+    
+    // MARK: - Quick Stats (Clean Cards)
+    var quickStats: some View {
+        HStack(spacing: 16) {
+            // Credit Score Card
+            statCard(
+                icon: "speedometer",
+                iconColor: .indigo,
+                title: "Credit Score",
+                value: session.borrowerProfile?.creditScore.map(String.init) ?? "—"
+            )
+            
+            // KYC Card
+            let isVerified = session.borrowerProfile?.kycStatus == .verified
+            NavigationLink {
+                KYCView()
             } label: {
-                if isCheckingCreditScore {
-                    ProgressView()
-                        .controlSize(.small)
-                } else {
-                    Text(session.borrowerProfile?.creditScore == nil ? "Check Now" : "Refresh")
-                        .font(.subheadline.weight(.semibold))
-                }
+                statCard(
+                    icon: isVerified ? "checkmark.seal.fill" : "exclamationmark.triangle.fill",
+                    iconColor: isVerified ? .teal : .orange,
+                    title: isVerified ? "KYC is verified" : "KYC not verified",
+                    value: kycStatusText
+                )
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .disabled(isCheckingCreditScore)
+            .buttonStyle(PlainButtonStyle())
         }
     }
-
-    private func checkCreditScore() async {
-        isCheckingCreditScore = true
-        try? await Task.sleep(for: .milliseconds(1200))
-        let newScore = Int.random(in: 680...820)
-        if var profile = session.borrowerProfile {
-            profile.creditScore = newScore
-            session.borrowerProfile = profile
+    
+    private func statCard(icon: String, iconColor: Color, title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(iconColor)
+                .frame(width: 36, height: 36)
+                .background(iconColor.opacity(0.12))
+                .clipShape(Circle())
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                
+                Text(title)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.secondary)
+            }
         }
-        creditScoreLastChecked = .now
-        isCheckingCreditScore = false
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .shadow(color: Color.black.opacity(0.03), radius: 8, x: 0, y: 4)
     }
+    
+    // MARK: - Menu Section
+    var menuSection: some View {
+        VStack(spacing: 0) {
+            menuRow(
+                icon: "phone.fill",
+                iconColor: .blue,
+                title: "Phone Number",
+                subtitle: session.currentUser?.phone ?? "—"
+            )
+            
+            Divider().padding(.leading, 60)
+            
 
-    private func rating(for score: Int) -> String {
-        switch score {
-        case ..<650:   return "Fair"
-        case 650..<700: return "Good"
-        case 700..<750: return "Very Good"
-        default:        return "Excellent"
+            NavigationLink {
+                BorrowerMessagingView()
+            } label: {
+                menuRow(
+                    icon: "bubble.left.and.bubble.right.fill",
+                    iconColor: .teal,
+                    title: "Help and Support",
+                    subtitle: "Get support for your applications",
+                    showChevron: true
+                )
+            }
         }
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .shadow(color: Color.black.opacity(0.03), radius: 8, x: 0, y: 4)
     }
-
-    private func color(for score: Int) -> Color {
-        switch score {
-        case ..<650:   return .lmsWarning
-        case 650..<700: return .lmsInfo
-        default:        return .lmsSuccess
-        }
-    }
-
-    // MARK: - Row components
-    private func infoRow(icon: String, iconColor: Color, title: String, value: String) -> some View {
-        HStack(spacing: Spacing.sm) {
-            iconBadge(icon: icon, color: iconColor)
-            Text(title)
-            Spacer()
-            Text(value)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
-        }
-    }
-
-    private func iconLabelRow(icon: String, iconColor: Color, title: String, detail: String) -> some View {
-        HStack(spacing: Spacing.sm) {
-            iconBadge(icon: icon, color: iconColor)
+    
+    private func menuRow(icon: String, iconColor: Color, title: String, subtitle: String, showChevron: Bool = false) -> some View {
+        HStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(iconColor.opacity(0.12))
+                    .frame(width: 36, height: 36)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(iconColor)
+            }
+            
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                Text(detail)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.primary)
+                Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
             }
-        }
-    }
-
-    private func iconBadge(icon: String, color: Color) -> some View {
-        Image(systemName: icon)
-            .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(.white)
-            .frame(width: 28, height: 28)
-            .background(color, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-    }
-
-    private func settledLoanRow(_ loan: Loan) -> some View {
-        HStack(spacing: Spacing.sm) {
-            iconBadge(icon: "checkmark", color: .lmsSuccess)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("\(loan.loanType.rawValue.capitalized) Loan")
-                    .font(.subheadline.weight(.medium))
-                Text(Formatting.currency(loan.principal))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            
             Spacer()
-            StatusBadge("Settled", tone: .success)
+            
+            if showChevron {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(Color(.tertiaryLabel))
+            }
         }
+        .padding(.vertical, 14)
+        .padding(.horizontal, 16)
+        .contentShape(Rectangle())
     }
-
-    // MARK: - Actions
-    private func loadData() async {
-        guard let env, let userID = session.currentUser?.id else { return }
-        do {
-            let loans = try await env.loans.fetchActiveLoans(borrowerID: userID)
-            settledLoans = loans.filter { $0.status == .settled }
-            let docs = try await env.documents.list(ownerID: userID)
-            uploadedDocumentKinds = docs.map { $0.kind }
-        } catch {
-            // ignore; UI shows defaults
-        }
-    }
-
-    private func signOut() {
-        Task {
-            try? await env?.auth.signOut()
-            session.currentUser = nil
-            session.borrowerProfile = nil
-        }
-    }
-}
-
-// MARK: - Loan History List
-struct LoanHistoryListView: View {
-    let loans: [Loan]
-
-    var body: some View {
-        List {
-            ForEach(loans) { loan in
-                NavigationLink {
-                    RepaymentDashboardView(loan: loan)
-                } label: {
-                    HStack(spacing: Spacing.sm) {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 28, height: 28)
-                            .background(Color.lmsSuccess, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-
+    
+    // MARK: - Settled Loans Section
+    var settledLoansSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Settled Loans")
+                .font(.headline)
+                .padding(.leading, 4)
+            
+            ForEach(settledLoans.prefix(1)) { loan in
+                NavigationLink(destination: RepaymentDashboardView(loan: loan)) {
+                    HStack(spacing: 16) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.green.opacity(0.12))
+                                .frame(width: 40, height: 40)
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(Color.green)
+                        }
+                        
                         VStack(alignment: .leading, spacing: 2) {
                             Text("\(loan.loanType.rawValue.capitalized) Loan")
-                                .font(.subheadline.weight(.medium))
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.primary)
                             Text(Formatting.currency(loan.principal))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-
+                        
                         Spacer()
-                        StatusBadge("Settled", tone: .success)
+                        
+                        Text("Settled")
+                            .font(.caption).bold()
+                            .padding(.horizontal, 8).padding(.vertical, 4)
+                            .background(Color.green.opacity(0.12))
+                            .foregroundStyle(Color.green)
+                            .clipShape(Capsule())
                     }
+                    .padding(14)
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: Color.black.opacity(0.03), radius: 6, x: 0, y: 3)
                 }
+                .buttonStyle(PlainButtonStyle())
+            }
+            
+            if settledLoans.count > 1 {
+                NavigationLink(destination: LoanHistoryListView(loans: settledLoans)) {
+                    HStack {
+                        Text("See All \(settledLoans.count) Loans")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(Color(.tertiaryLabel))
+                    }
+                    .padding(.vertical, 16)
+                    .padding(.horizontal, 16)
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .shadow(color: Color.black.opacity(0.03), radius: 6, x: 0, y: 3)
+                }
+                .buttonStyle(PlainButtonStyle())
             }
         }
-        .listStyle(.insetGrouped)
-        .navigationTitle("Loan History")
-        .navigationBarTitleDisplayMode(.inline)
+    }
+    
+    // MARK: - Sign Out Button
+    var signOutButton: some View {
+        Button(role: .destructive) {
+            Task {
+                try? await env?.auth.signOut()
+                session.currentUser = nil
+                session.borrowerProfile = nil
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "rectangle.portrait.and.arrow.right")
+                    .font(.system(size: 16, weight: .medium))
+                Text("Sign Out")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 16)
+            .padding(.horizontal, 16)
+            .background(Color(.secondarySystemGroupedBackground))
+            .foregroundStyle(Color.red)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .shadow(color: Color.black.opacity(0.03), radius: 8, x: 0, y: 4)
+        }
     }
 }
 
@@ -323,5 +354,58 @@ struct LoanHistoryListView: View {
                 messaging: MockMessagingService(),
                 keychain: MockKeychainService()
             ))
+    }
+}
+
+// MARK: - Loan History List View
+struct LoanHistoryListView: View {
+    let loans: [Loan]
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 12) {
+                ForEach(loans) { loan in
+                    NavigationLink(destination: RepaymentDashboardView(loan: loan)) {
+                        HStack(spacing: 16) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.green.opacity(0.12))
+                                    .frame(width: 40, height: 40)
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundStyle(Color.green)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("\(loan.loanType.rawValue.capitalized) Loan")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.primary)
+                                Text(Formatting.currency(loan.principal))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            Text("Settled")
+                                .font(.caption).bold()
+                                .padding(.horizontal, 8).padding(.vertical, 4)
+                                .background(Color.green.opacity(0.12))
+                                .foregroundStyle(Color.green)
+                                .clipShape(Capsule())
+                        }
+                        .padding(14)
+                        .background(Color(.secondarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .shadow(color: Color.black.opacity(0.03), radius: 6, x: 0, y: 3)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+            .padding()
+        }
+        .navigationTitle("Loan History")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
