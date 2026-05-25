@@ -442,33 +442,6 @@ struct ApplicationCardView: View {
                         }
                         .buttonStyle(.plain)
                         .padding(.top, 12)
-
-                        // MARK: Message Borrower Button
-
-                        Button {
-                            viewModel.selectedApplication = application
-                            viewModel.highlightMessageButton = true
-                            viewModel.navigationPath.append(AppDestination.loanReview)
-                        } label: {
-
-                            HStack(spacing: 6) {
-
-                                Image(systemName: "message.fill")
-                                    .font(.system(size: 13))
-
-                                Text("Message Borrower")
-                                    .font(.system(size: 14, weight: .semibold))
-                            }
-                            .foregroundStyle(.blue)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.blue.opacity(0.1))
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.top, 8)
                     }
                 }
             }
