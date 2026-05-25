@@ -107,7 +107,7 @@ public struct ManagerDashboardView: View {
                         title: "Pending Review",
                         subtitle: "Needs attention",
                         accentColor: .lmsNavyBlue
-                    ) { navigateToApps = true }
+                    ) {}
 
                     priorityCard(
                         icon: "arrow.uturn.backward.circle",
@@ -115,7 +115,7 @@ public struct ManagerDashboardView: View {
                         title: "Sent Back",
                         subtitle: "Awaiting correction",
                         accentColor: .lmsWarning
-                    ) { navigateToApps = true }
+                    ) {}
 
                     priorityCard(
                         icon: "exclamationmark.triangle",
@@ -123,7 +123,7 @@ public struct ManagerDashboardView: View {
                         title: "High Risk",
                         subtitle: "Escalated",
                         accentColor: .lmsDanger
-                    ) { navigateToApps = true }
+                    ) {}
                 }
                 .padding(.horizontal, Spacing.m)
             }
