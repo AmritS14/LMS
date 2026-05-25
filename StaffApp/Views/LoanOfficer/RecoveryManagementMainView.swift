@@ -1,231 +1,104 @@
-//
-//  RecoveryManagementMainView.swift
-//  loan officer
-//
-//  Created by Aadya Tiwari on 21/05/26.
-//
-
-
 import SwiftUI
 
+// Entry-point recovery dashboard summarising overdue accounts. Detailed
+// follow-up workflows live in RecoveryVerificationView (drilled into via
+// the "View Details" link below).
 struct RecoveryManagementMainView: View {
+    @Environment(LoanOfficerStore.self) private var store
 
-    @EnvironmentObject var viewModel: AppViewModel
+    private var overdueAmount: Decimal {
+        store.overdueBorrowers.reduce(Decimal.zero) { $0 + $1.totalOutstanding }
+    }
 
     var body: some View {
+        List {
+            Section {
+                summary
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+            }
 
-        ScrollView(.vertical, showsIndicators: false) {
-
-            VStack(spacing: 20) {
-
-                // MARK: Header
-
-                VStack(alignment: .leading, spacing: 4) {
-
-                    Text("Recovery Management")
-                        .font(
-                            .system(
-                                size: 28,
-                                weight: .bold,
-                                design: .rounded
-                            )
-                        )
-
-                    Text("Track overdue & pending recoveries")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 20)
-                .padding(.top, 10)
-
-                // MARK: Recovery Cards
-
-                VStack(spacing: 14) {
-
-                    ForEach(viewModel.filteredApplications) { application in
-
-                        if application.status == .pending
-                            || application.riskLevel == .critical {
-
-                            VStack(alignment: .leading, spacing: 14) {
-
-                                HStack(spacing: 12) {
-
-                                    AvatarView(
-                                        initials: application.borrowerInitials,
-                                        size: 44,
-                                        colors: [
-                                            .orange,
-                                            .red
-                                        ]
-                                    )
-
-                                    VStack(alignment: .leading, spacing: 4) {
-
-                                        Text(application.borrowerName)
-                                            .font(
-                                                .system(
-                                                    size: 16,
-                                                    weight: .semibold
-                                                )
-                                            )
-
-                                        Text(application.loanType)
-                                            .font(.system(size: 13))
-                                            .foregroundStyle(.secondary)
-                                    }
-
-                                    Spacer()
-
-                                    VStack(alignment: .trailing, spacing: 4) {
-
-                                        Text(
-                                            AppFormatters.formatCurrency(
-                                                application.emiAmount
-                                            )
-                                        )
-                                        .font(
-                                            .system(
-                                                size: 15,
-                                                weight: .bold
-                                            )
-                                        )
-
-                                        Text("Pending EMI")
-                                            .font(.system(size: 11))
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-
-                                HStack(spacing: 8) {
-
-                                    StatusBadge(
-                                        text: application.status.rawValue,
-                                        color: application.status.color,
-                                        icon: application.status.icon,
-                                        size: .small
-                                    )
-
-                                    StatusBadge(
-                                        text: application.riskLevel.rawValue,
-                                        color: application.riskLevel.color,
-                                        icon: application.riskLevel.icon,
-                                        size: .small
-                                    )
-
-                                    Spacer()
-                                }
-
-                                Divider()
-
-                                HStack(spacing: 12) {
-
-                                    Button {
-
-                                        if let conversation =
-                                            viewModel.conversations.first(where: {
-                                                $0.borrowerName == application.borrowerName
-                                            }) {
-
-                                            viewModel.selectedConversation = conversation
-
-                                            viewModel.navigationPath.append(
-                                                AppDestination.communications
-                                            )
-                                        }
-
-                                    } label: {
-
-                                        HStack(spacing: 6) {
-
-                                            Image(systemName: "message.fill")
-
-                                            Text("Message")
-                                        }
-                                        .font(
-                                            .system(
-                                                size: 13,
-                                                weight: .semibold
-                                            )
-                                        )
-                                        .foregroundStyle(.blue)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 10)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 10)
-                                                .fill(
-                                                    Color.blue.opacity(0.1)
-                                                )
-                                        )
-                                    }
-                                    .buttonStyle(.plain)
-
-                                    Button {
-
-                                        viewModel.selectedApplication =
-                                            application
-
-                                        viewModel.navigationPath.append(
-                                            AppDestination.recovery
-                                        )
-
-                                    } label: {
-
-                                        HStack(spacing: 6) {
-
-                                            Image(
-                                                systemName: "arrow.right.circle.fill"
-                                            )
-
-                                            Text("View Details")
-                                        }
-                                        .font(
-                                            .system(
-                                                size: 13,
-                                                weight: .semibold
-                                            )
-                                        )
-                                        .foregroundStyle(.white)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 10)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 10)
-                                                .fill(Color.orange)
-                                        )
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                            .padding(16)
-                            .background(
-                                RoundedRectangle(cornerRadius: 18)
-                                    .fill(
-                                        Color(
-                                            .secondarySystemGroupedBackground
-                                        )
-                                    )
-                            )
-                            .padding(.horizontal, 20)
+            Section("Overdue Accounts") {
+                if store.overdueBorrowers.isEmpty {
+                    ContentUnavailableView("Nothing overdue",
+                                           systemImage: "checkmark.seal.fill",
+                                           description: Text("All assigned accounts are current."))
+                } else {
+                    ForEach(store.overdueBorrowers) { borrower in
+                        NavigationLink(value: OfficerRoute.recoveryDetail) {
+                            row(borrower)
                         }
                     }
                 }
-
-                Spacer(minLength: 40)
             }
-            .padding(.bottom, 20)
         }
-        .background(Color(.systemGroupedBackground))
+        .listStyle(.insetGrouped)
         .navigationTitle("Recovery")
-        .navigationBarTitleDisplayMode(.inline)
     }
-}
 
-#Preview {
+    private var summary: some View {
+        VStack(spacing: Spacing.sm) {
+            HStack(spacing: Spacing.m) {
+                metric(label: "Overdue", value: OfficerFormat.currency(overdueAmount),
+                       icon: "indianrupeesign.circle.fill", color: .lmsDanger)
+                metric(label: "Accounts", value: "\(store.overdueBorrowers.count)",
+                       icon: "person.3.fill", color: .lmsWarning)
+            }
+            HStack(spacing: Spacing.m) {
+                metric(label: "Urgent",
+                       value: "\(store.overdueBorrowers.filter { $0.priority == .urgent }.count)",
+                       icon: "exclamationmark.triangle.fill", color: .lmsDanger)
+                metric(label: "Contacted",
+                       value: "\(store.overdueBorrowers.filter { $0.contacted }.count)",
+                       icon: "phone.fill", color: .lmsSuccess)
+            }
+        }
+        .padding(Spacing.m)
+    }
 
-    NavigationStack {
+    private func metric(label: String, value: String, icon: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.s) {
+            Image(systemName: icon)
+                .foregroundStyle(color)
+                .frame(width: 32, height: 32)
+                .background(color.opacity(0.12),
+                            in: RoundedRectangle(cornerRadius: CornerRadius.small))
+            Text(value)
+                .font(.system(.title3, design: .rounded).weight(.bold))
+                .foregroundStyle(color)
+            Text(label).font(.caption).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.m)
+        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card))
+    }
 
-        RecoveryManagementMainView()
-            .environmentObject(AppViewModel())
+    private func row(_ borrower: OverdueBorrower) -> some View {
+        HStack(spacing: Spacing.sm) {
+            AvatarView(initials: borrower.borrowerInitials,
+                       size: 44,
+                       colors: borrower.priority.gradient)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(borrower.borrowerName).font(.headline)
+                    Spacer()
+                    StatusBadge("\(borrower.dpdDays) DPD",
+                                tone: borrower.dpdDays > 30 ? .danger : .warning,
+                                size: .small)
+                }
+                Text(borrower.loanID)
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                HStack {
+                    Text(OfficerFormat.currency(borrower.totalOutstanding))
+                        .font(.subheadline.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(Color.lmsDanger)
+                    Spacer()
+                    StatusBadge(borrower.priority.rawValue,
+                                tone: borrower.priority.tone, size: .small)
+                }
+            }
+        }
+        .padding(.vertical, Spacing.xs)
     }
 }

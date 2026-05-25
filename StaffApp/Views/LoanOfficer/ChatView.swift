@@ -1,152 +1,103 @@
-//
-//  ChatView.swift
-//  loan officer
-//
-
 import SwiftUI
 
 struct ChatView: View {
+    @Environment(LoanOfficerStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
 
-    @Environment(\.dismiss) var dismiss
-    @EnvironmentObject var viewModel: AppViewModel
+    let conversationID: UUID
+    @State private var draft: String = ""
+    @FocusState private var inputFocused: Bool
 
-    let conversation: BorrowerConversation
-
-    @State private var messageText = ""
+    private var conversation: OfficerConversation? {
+        store.conversations.first { $0.id == conversationID }
+    }
 
     var body: some View {
+        Group {
+            if let conversation {
+                content(for: conversation)
+            } else {
+                ContentUnavailableView(
+                    "Conversation unavailable",
+                    systemImage: "bubble.left.and.exclamationmark.bubble.right"
+                )
+            }
+        }
+        .navigationTitle(conversation?.borrowerName ?? "Chat")
+        .navigationBarTitleDisplayMode(.inline)
+    }
 
-        NavigationStack {
-
-            VStack(spacing: 0) {
-
-                // MARK: Messages
-
+    @ViewBuilder
+    private func content(for conversation: OfficerConversation) -> some View {
+        VStack(spacing: 0) {
+            ScrollViewReader { proxy in
                 ScrollView {
-
-                    LazyVStack(spacing: 12) {
-
+                    LazyVStack(spacing: Spacing.s) {
                         ForEach(conversation.messages) { message in
-
-                            HStack {
-
-                                if message.sender == .officer {
-
-                                    Spacer()
-
-                                    messageBubble(
-                                        text: message.text,
-                                        color: .blue,
-                                        textColor: .white,
-                                        alignment: .trailing
-                                    )
-
-                                } else {
-
-                                    messageBubble(
-                                        text: message.text,
-                                        color: Color(.secondarySystemBackground),
-                                        textColor: .primary,
-                                        alignment: .leading
-                                    )
-
-                                    Spacer()
-                                }
-                            }
-                            .padding(.horizontal, 16)
+                            bubble(message)
+                                .id(message.id)
                         }
                     }
-                    .padding(.top, 16)
+                    .padding(.horizontal, Spacing.m)
+                    .padding(.top, Spacing.m)
                 }
-
-                Divider()
-
-                // MARK: Bottom Input
-
-                HStack(spacing: 12) {
-
-                    TextField(
-                        "Type a message...",
-                        text: $messageText
-                    )
-                    .padding(12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14)
-                            .fill(Color(.secondarySystemBackground))
-                    )
-
-                    Button {
-
-                        sendMessage()
-
-                    } label: {
-
-                        Image(systemName: "paperplane.fill")
-                            .font(.system(size: 18))
-                            .foregroundColor(.white)
-                            .frame(width: 46, height: 46)
-                            .background(Color.blue)
-                            .clipShape(Circle())
-                    }
-                }
-                .padding()
-                .background(Color(.systemBackground))
-            }
-            .navigationTitle(conversation.borrowerName)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-
-                ToolbarItem(placement: .topBarLeading) {
-
-                    Button("Close") {
-                        dismiss()
+                .onChange(of: conversation.messages.count) { _, _ in
+                    if let last = conversation.messages.last {
+                        withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
                     }
                 }
             }
+
+            Divider()
+
+            HStack(spacing: Spacing.s) {
+                TextField("Message…", text: $draft, axis: .vertical)
+                    .focused($inputFocused)
+                    .lineLimit(1...4)
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.vertical, Spacing.s)
+                    .background(Color.lmsTertiarySurface,
+                                in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+
+                Button {
+                    send(in: conversation.id)
+                } label: {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(draft.trimmingCharacters(in: .whitespaces).isEmpty
+                                         ? Color.lmsGray4 : Color.lmsAccent)
+                }
+                .disabled(draft.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            .padding(Spacing.sm)
+            .background(.bar)
         }
     }
 
-    // MARK: - Message Bubble
-
-    private func messageBubble(
-        text: String,
-        color: Color,
-        textColor: Color,
-        alignment: HorizontalAlignment
-    ) -> some View {
-
-        VStack(alignment: alignment, spacing: 4) {
-
-            Text(text)
-                .font(.system(size: 15))
-                .foregroundColor(textColor)
-                .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(color)
-                )
+    private func bubble(_ message: ConversationMessage) -> some View {
+        HStack {
+            if message.sender == .officer { Spacer(minLength: 40) }
+            VStack(alignment: message.sender == .officer ? .trailing : .leading,
+                   spacing: 2) {
+                Text(message.text)
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.vertical, Spacing.s)
+                    .background(message.sender == .officer
+                                ? Color.lmsAccent : Color.lmsFill,
+                                in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+                    .foregroundStyle(message.sender == .officer ? .white : .primary)
+                Text(OfficerFormat.timeAgo(message.sentAt))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            if message.sender == .borrower { Spacer(minLength: 40) }
         }
-        .frame(maxWidth: 260, alignment: alignment == .leading ? .leading : .trailing)
     }
 
-    // MARK: - Send Message
-
-    private func sendMessage() {
-
-        guard !messageText.trimmingCharacters(in: .whitespaces).isEmpty else {
-            return
-        }
-
-        print("Message Sent: \(messageText)")
-
-        messageText = ""
+    private func send(in id: UUID) {
+        let trimmed = draft.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        draft = ""
+        Task { await store.sendMessage(trimmed, in: id) }
     }
-}
-
-#Preview {
-
-    ChatView(
-        conversation: SampleData.conversations[0]
-    )
-    .environmentObject(AppViewModel())
 }

@@ -1,349 +1,118 @@
-//
-//  AllApplicationsView.swift
-//  loan officer
-//
-//  Created by Aadya Tiwari on 22/05/26.
-//
-
-
-//
-//  AllApplicationsView.swift
-//  loan officer
-//
-//  Created by Aadya Tiwari on 22/05/26.
-//
-
 import SwiftUI
 
 struct AllApplicationsView: View {
+    @Environment(LoanOfficerStore.self) private var store
+    @State private var searchText: String = ""
+    @State private var statusFilter: ApplicationStatus?
 
-    @EnvironmentObject var viewModel: AppViewModel
-
-    @State private var searchText = ""
-    @State private var selectedFilter: LoanStatus? = nil
-
-    private var filteredApplications: [LoanApplication] {
-
-        viewModel.filteredApplications.filter { application in
-
-            let matchesSearch =
-                searchText.isEmpty
-                || application.borrowerName.localizedCaseInsensitiveContains(searchText)
-                || application.loanType.localizedCaseInsensitiveContains(searchText)
-
-            let matchesFilter =
-                selectedFilter == nil
-                || application.status == selectedFilter
-
-            return matchesSearch && matchesFilter
+    private var filtered: [OfficerApplication] {
+        store.applications.filter { app in
+            let matchesSearch = searchText.isEmpty
+                || app.borrowerName.localizedCaseInsensitiveContains(searchText)
+                || app.loanTypeLabel.localizedCaseInsensitiveContains(searchText)
+            let matchesStatus = statusFilter == nil || app.status == statusFilter
+            return matchesSearch && matchesStatus
         }
     }
 
     var body: some View {
-
-        ScrollView(.vertical, showsIndicators: false) {
-
-            VStack(spacing: 20) {
-
-                searchSection
-
-                filterSection
-
-                applicationsSection
+        List {
+            Section {
+                filterStrip
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 32)
-            .padding(.top, 8)
-        }
-        .background(Color(.systemGroupedBackground))
-        .navigationTitle("Applications")
-        .navigationBarTitleDisplayMode(.large)
-    }
-}
 
-// MARK: - Search Section
-
-extension AllApplicationsView {
-
-    private var searchSection: some View {
-
-        HStack(spacing: 10) {
-
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
-
-            TextField(
-                "Search borrower or loan type",
-                text: $searchText
-            )
-            .textInputAutocapitalization(.words)
-            .disableAutocorrection(true)
-
-            if !searchText.isEmpty {
-
-                Button {
-
-                    searchText = ""
-
-                } label: {
-
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
+            if filtered.isEmpty {
+                Section {
+                    ContentUnavailableView(
+                        "No applications",
+                        systemImage: "doc.text.magnifyingglass",
+                        description: Text("Adjust filters or search to see more results.")
+                    )
                 }
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(Color(.secondarySystemGroupedBackground))
-        )
-    }
-}
-
-// MARK: - Filter Section
-
-extension AllApplicationsView {
-
-    private var filterSection: some View {
-
-        ScrollView(.horizontal, showsIndicators: false) {
-
-            HStack(spacing: 10) {
-
-                filterChip(
-                    title: "All",
-                    isSelected: selectedFilter == nil
-                ) {
-
-                    selectedFilter = nil
-                }
-
-                ForEach(LoanStatus.allCases, id: \.self) { status in
-
-                    filterChip(
-                        title: status.rawValue,
-                        isSelected: selectedFilter == status
-                    ) {
-
-                        selectedFilter = status
+            } else {
+                Section {
+                    ForEach(filtered) { app in
+                        NavigationLink(value: OfficerRoute.review(app.id)) {
+                            applicationRow(app)
+                        }
                     }
                 }
             }
         }
+        .listStyle(.insetGrouped)
+        .navigationTitle("Applications")
+        .searchable(text: $searchText, prompt: "Borrower or loan type")
     }
 
-    private func filterChip(
-        title: String,
-        isSelected: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-
-        Button {
-
-            withAnimation(.spring(response: 0.3)) {
-
-                action()
+    private var filterStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Spacing.s) {
+                chip(label: "All", isSelected: statusFilter == nil) {
+                    statusFilter = nil
+                }
+                ForEach([ApplicationStatus.submitted, .underReview,
+                         .additionalInfoRequired, .recommended,
+                         .approved, .rejected], id: \.self) { status in
+                    chip(label: status.displayLabel,
+                         isSelected: statusFilter == status,
+                         icon: status.icon) {
+                        statusFilter = (statusFilter == status) ? nil : status
+                    }
+                }
             }
+            .padding(.horizontal, Spacing.m)
+            .padding(.vertical, Spacing.s)
+        }
+    }
 
-        } label: {
-
-            Text(title)
-                .font(
-                    .system(
-                        size: 13,
-                        weight: .semibold
-                    )
-                )
-                .foregroundStyle(
-                    isSelected
-                    ? .white
-                    : .primary
-                )
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(
-                    Capsule()
-                        .fill(
-                            isSelected
-                            ? Color.blue
-                            : Color(.tertiarySystemGroupedBackground)
-                        )
-                )
+    private func chip(label: String, isSelected: Bool, icon: String? = nil,
+                      action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                if let icon {
+                    Image(systemName: icon)
+                        .font(.caption2.weight(.semibold))
+                }
+                Text(label)
+                    .font(.subheadline.weight(.semibold))
+            }
+            .padding(.horizontal, Spacing.sm)
+            .padding(.vertical, Spacing.xs)
+            .background(isSelected ? Color.lmsAccent : Color.lmsFill,
+                        in: Capsule())
+            .foregroundStyle(isSelected ? .white : .primary)
         }
         .buttonStyle(.plain)
     }
-}
 
-// MARK: - Applications Section
-
-extension AllApplicationsView {
-    
-    private var applicationsSection: some View {
-        
-        VStack(spacing: 14) {
-            
-            if filteredApplications.isEmpty {
-                
-                emptyStateView
-                
-            } else {
-                
-                ForEach(filteredApplications) { application in
-                    
-                    Button {
-                        
-                        viewModel.selectedApplication = application
-                        
-                        viewModel.navigationPath.append(
-                            AppDestination.loanReview
-                        )
-                        
-                    } label: {
-                        
-                        applicationCard(application)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-    
-    // MARK: Application Card
-    
-    private func applicationCard(
-        _ application: LoanApplication
-    ) -> some View {
-        
-        PremiumCard {
-            
-            VStack(alignment: .leading, spacing: 14) {
-                
-                HStack(alignment: .top, spacing: 12) {
-                    
-                    AvatarView(
-                        initials: application.borrowerInitials,
-                        size: 48,
-                        colors:
-                            application.riskLevel == .critical
-                        ? [.red, .pink]
-                        : [.blue, .cyan]
-                    )
-                    
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        
-                        HStack(spacing: 6) {
-                            
-                            Text(application.borrowerName)
-                                .font(
-                                    .system(
-                                        size: 16,
-                                        weight: .semibold
-                                    )
-                                )
-                            
-                            if application.fraudFlag {
-                                
-                                Image(systemName: "exclamationmark.shield.fill")
-                                    .font(.system(size: 13))
-                                    .foregroundStyle(.red)
-                            }
-                        }
-                        
-                        Text(application.loanType)
-                            .font(.system(size: 13))
-                            .foregroundStyle(.secondary)
-                        
-                        Text(
-                            AppFormatters.formatCurrency(
-                                application.loanAmount
-                            )
-                        )
-                        .font(
-                            .system(
-                                size: 14,
-                                weight: .bold,
-                                design: .rounded
-                            )
-                        )
-                    }
-                    Spacer()
-                    
-                    VStack(alignment: .trailing, spacing: 6)
-                    {
-                        Image(systemName: "chevron.right")
-                            .font(
-                                .system(
-                                    size: 12,
-                                    weight: .semibold
-                                )
-                            )
-                            .foregroundStyle(.tertiary)
+    private func applicationRow(_ app: OfficerApplication) -> some View {
+        HStack(spacing: Spacing.sm) {
+            AvatarView(initials: app.borrowerInitials,
+                       size: 44,
+                       colors: app.riskLevel.gradient)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 4) {
+                    Text(app.borrowerName)
+                        .font(.headline)
+                    if app.fraudFlag {
+                        Image(systemName: "exclamationmark.shield.fill")
+                            .foregroundStyle(.red)
+                            .font(.footnote)
                     }
                 }
-                HStack(spacing: 8) {
-                    
-                    StatusBadge(
-                        text: application.status.rawValue,
-                        color: application.status.color,
-                        icon: application.status.icon,
-                        size: .small
-                    )
-                    
-                    StatusBadge(
-                        text: application.riskLevel.rawValue,
-                        color: application.riskLevel.color,
-                        icon: application.riskLevel.icon,
-                        size: .small
-                    )
-                    
-                    Spacer()
-                    
-                }
-    
-            }
-            
-        }
-    }
-    
-    // MARK: Empty State
-    
-    private var emptyStateView: some View {
-        
-        VStack(spacing: 14) {
-            
-            Image(systemName: "doc.text.magnifyingglass")
-                .font(.system(size: 42))
-                .foregroundStyle(.secondary)
-            
-            VStack(spacing: 4) {
-                
-                Text("No Applications Found")
-                    .font(
-                        .system(
-                            size: 18,
-                            weight: .semibold
-                        )
-                    )
-                
-                Text("Try changing your filters")
-                    .font(.system(size: 13))
+                Text("\(app.loanTypeLabel) • \(OfficerFormat.currency(app.loanAmount))")
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
+                HStack(spacing: Spacing.xs) {
+                    StatusBadge(app.status.displayLabel, tone: app.status.tone,
+                                icon: app.status.icon, size: .small)
+                    StatusBadge(app.riskLevel.rawValue, tone: app.riskLevel.tone,
+                                icon: app.riskLevel.icon, size: .small)
+                }
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
-    }
-    
-}
-// MARK: - Preview
-
-#Preview {
-
-    NavigationStack {
-
-        AllApplicationsView()
-            .environmentObject(AppViewModel())
+        .padding(.vertical, Spacing.xs)
     }
 }

@@ -1,24 +1,53 @@
 import SwiftUI
 
-// Pill-shaped status indicator, sized for inline use next to titles.
+// Pill-shaped status indicator. Tone drives the colour; an optional icon
+// is rendered before the text when supplied.
 struct StatusBadge: View {
     enum Tone { case neutral, info, success, warning, danger }
+    enum Size { case small, medium }
 
     private let text: String
     private let tone: Tone
+    private let icon: String?
+    private let size: Size
 
-    init(_ text: String, tone: Tone = .neutral) {
+    init(_ text: String,
+         tone: Tone = .neutral,
+         icon: String? = nil,
+         size: Size = .medium) {
         self.text = text
         self.tone = tone
+        self.icon = icon
+        self.size = size
     }
 
     var body: some View {
-        Text(text)
-            .font(.caption.weight(.semibold))
-            .padding(.horizontal, Spacing.s)
-            .padding(.vertical, Spacing.xs)
-            .background(background, in: Capsule())
-            .foregroundStyle(foreground)
+        HStack(spacing: 4) {
+            if let icon {
+                Image(systemName: icon)
+                    .font(iconFont)
+            }
+            Text(text)
+                .font(textFont)
+        }
+        .padding(.horizontal, size == .small ? Spacing.s : Spacing.sm)
+        .padding(.vertical, size == .small ? Spacing.xxs : Spacing.xs)
+        .background(background, in: Capsule())
+        .foregroundStyle(foreground)
+    }
+
+    private var textFont: Font {
+        switch size {
+        case .small: .caption.weight(.semibold)
+        case .medium: .footnote.weight(.semibold)
+        }
+    }
+
+    private var iconFont: Font {
+        switch size {
+        case .small: .caption2.weight(.semibold)
+        case .medium: .caption.weight(.semibold)
+        }
     }
 
     private var background: Color {

@@ -1,896 +1,437 @@
 import SwiftUI
 
-// MARK: - Loan Review View
 struct LoanReviewView: View {
-    @EnvironmentObject var viewModel: AppViewModel
+    @Environment(LoanOfficerStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
 
-    // MARK: Local State
+    let applicationID: UUID
+
     @State private var officerRemarks: String = ""
-    @State private var expandedDocumentIDs: Set<UUID> = []
-    @State private var showShareSheet = false
-    @State private var showSendBackAlert = false
+    @State private var showApproveConfirmation = false
+    @State private var showRejectConfirmation = false
+    @State private var showEscalateSheet = false
+    @State private var showDocumentRequestSheet = false
     @State private var escalationNotes: String = ""
     @State private var requestedDocumentName: String = ""
     @State private var requestedDocumentNote: String = ""
-    @State private var animateIn = false
 
-    /// The application under review — uses selectedApplication or falls back to the first recent one.
-    private var application: LoanApplication {
-        viewModel.selectedApplication ?? viewModel.recentApplications.first ?? SampleData.recentApplications[0]
+    private var application: OfficerApplication? {
+        store.application(id: applicationID)
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 20) {
-                    borrowerProfileSection
-                    loanDetailsSection
-                    documentKYCSection
-                    collateralSection
-                    recommendationSection
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 120) // room for floating action bar
+        Group {
+            if let app = application {
+                content(for: app)
+            } else {
+                ContentUnavailableView(
+                    "Application not found",
+                    systemImage: "questionmark.folder",
+                    description: Text("The selected application is no longer available.")
+                )
             }
-            .background(Color(.systemGroupedBackground))
-
-            // Floating decision action bar
-            floatingActionBar
         }
         .navigationTitle("Loan Review")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showShareSheet = true
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 15, weight: .medium))
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    @ViewBuilder
+    private func content(for app: OfficerApplication) -> some View {
+        ZStack(alignment: .bottom) {
+            ScrollView {
+                VStack(spacing: Spacing.m) {
+                    borrowerSection(app)
+                    loanDetailsSection(app)
+                    documentsSection
+                    collateralSection
+                    recommendationSection(app)
                 }
+                .padding(.horizontal, Spacing.m)
+                .padding(.bottom, 120)
             }
+            .background(Color.lmsBackground)
+
+            actionBar(for: app)
         }
-        .alert("Share Application", isPresented: $showShareSheet) {
-            Button("Copy Link", role: nil) {}
+        .confirmationDialog("Approve Application",
+                            isPresented: $showApproveConfirmation,
+                            titleVisibility: .visible) {
+            Button("Approve") { store.approveApplication(app); dismiss() }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Share \(application.borrowerName)'s loan application details.")
+            Text("Approve \(app.borrowerName)'s \(app.loanTypeLabel) of \(OfficerFormat.currency(app.loanAmount))?")
         }
-        .confirmationDialog("Approve Application", isPresented: $viewModel.showApproveConfirmation, titleVisibility: .visible) {
-            Button("Approve Loan") {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                    viewModel.approveApplication(application)
-                }
-            }
+        .confirmationDialog("Reject Application",
+                            isPresented: $showRejectConfirmation,
+                            titleVisibility: .visible) {
+            Button("Reject", role: .destructive) { store.rejectApplication(app); dismiss() }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Are you sure you want to approve \(application.borrowerName)'s \(application.loanType) application for \(AppFormatters.formatCurrency(application.loanAmount))?")
+            Text("This will notify \(app.borrowerName).")
         }
-        .confirmationDialog("Reject Application", isPresented: $viewModel.showRejectConfirmation, titleVisibility: .visible) {
-            Button("Reject Loan", role: .destructive) {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                    viewModel.rejectApplication(application)
-                }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Are you sure you want to reject \(application.borrowerName)'s application? This action will notify the borrower.")
-        }
-        .sheet(isPresented: $viewModel.showEscalateSheet) {
-            escalateSheetContent
-        }
-        .sheet(isPresented: $viewModel.showDocumentRequest) {
-            requestDocumentSheetContent
-        }
-        .alert("Send Back for Revision", isPresented: $showSendBackAlert) {
-            Button("Send Back") {}
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This application will be sent back to the borrower for additional information.")
-        }
-        .onAppear {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
-                animateIn = true
-            }
-        }
-    }
-}
-
-// MARK: - Borrower Profile Section
-extension LoanReviewView {
-    private var borrowerProfileSection: some View {
-        PremiumCard {
-            VStack(spacing: 16) {
-                // Header row: avatar + name + status
-                HStack(spacing: 16) {
-                    AvatarView(
-                        initials: application.borrowerInitials,
-                        size: 72,
-                        colors: avatarGradient(for: application.riskLevel)
-                    )
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(application.borrowerName)
-                            .font(.system(size: 22, weight: .bold, design: .rounded))
-                            .foregroundStyle(.primary)
-
-                        HStack(spacing: 8) {
-                            StatusBadge(
-                                text: application.employmentType,
-                                color: .blue,
-                                icon: "briefcase.fill",
-                                size: .medium
-                            )
-                            StatusBadge(
-                                text: application.status.rawValue,
-                                color: application.status.color,
-                                icon: application.status.icon,
-                                size: .medium
-                            )
-                        }
-                    }
-
-                    Spacer()
-                }
-
-                // Credit score gauge centered
-                HStack {
-                    Spacer()
-                    CreditScoreGauge(score: application.creditScore)
-                    Spacer()
-                }
-
-                Divider()
-
-                // Detail rows
-                DetailRow(icon: "building.2.fill", title: "Employer", value: application.employer)
-                DetailRow(
-                    icon: "indianrupeesign.circle.fill",
-                    title: "Monthly Income",
-                    value: AppFormatters.formatCurrency(application.monthlyIncome),
-                    valueColor: .green
-                )
-                DetailRow(
-                    icon: "chart.line.downtrend.xyaxis",
-                    title: "Existing Liabilities",
-                    value: AppFormatters.formatCurrency(application.existingLiabilities),
-                    valueColor: application.existingLiabilities > 0 ? .orange : .green
-                )
-                DetailRow(
-                    icon: "star.fill",
-                    title: "Eligibility Score",
-                    value: "\(application.eligibilityScore)/100",
-                    valueColor: application.eligibilityScore >= 70 ? .green : (application.eligibilityScore >= 50 ? .orange : .red)
-                )
-
-                Divider()
-
-                // Contact row
-                HStack(spacing: 20) {
-                    contactButton(icon: "phone.fill", label: application.phoneNumber, color: .green)
-                    contactButton(icon: "envelope.fill", label: application.email, color: .blue)
-                }
-            }
-        }
-        .opacity(animateIn ? 1 : 0)
-        .offset(y: animateIn ? 0 : 20)
+        .sheet(isPresented: $showEscalateSheet) { escalateSheet(for: app) }
+        .sheet(isPresented: $showDocumentRequestSheet) { requestDocumentSheet }
     }
 
-    private func contactButton(icon: String, label: String, color: Color) -> some View {
-        Button {
-            // Tap action
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(color)
-                    .frame(width: 32, height: 32)
-                    .background(color.opacity(0.12))
-                    .clipShape(Circle())
+    // MARK: Sections
 
-                Text(label)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func avatarGradient(for risk: RiskLevel) -> [Color] {
-        switch risk {
-        case .low: return [Color(red: 0.2, green: 0.7, blue: 0.4), Color(red: 0.1, green: 0.55, blue: 0.3)]
-        case .medium: return [Color(red: 0.9, green: 0.6, blue: 0.1), Color(red: 0.8, green: 0.45, blue: 0.05)]
-        case .high: return [Color(red: 0.9, green: 0.3, blue: 0.2), Color(red: 0.75, green: 0.2, blue: 0.15)]
-        case .critical: return [Color(red: 0.75, green: 0.05, blue: 0.05), Color(red: 0.55, green: 0.0, blue: 0.0)]
-        }
-    }
-}
-
-// MARK: - Loan Details Section
-extension LoanReviewView {
-    private var loanDetailsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "Loan Details", icon: "banknote")
-
-            PremiumCard {
-                VStack(spacing: 0) {
-                    DetailRow(icon: "doc.text.fill", title: "Loan Type", value: application.loanType)
-                    DetailRow(
-                        icon: "indianrupeesign.circle",
-                        title: "Requested Amount",
-                        value: AppFormatters.formatCurrency(application.loanAmount),
-                        valueColor: .primary
-                    )
-                    DetailRow(
-                        icon: "calendar.badge.clock",
-                        title: "EMI",
-                        value: AppFormatters.formatCurrency(application.emiAmount),
-                        valueColor: .blue
-                    )
-                    DetailRow(
-                        icon: "percent",
-                        title: "Interest Rate",
-                        value: String(format: "%.2f%%", application.interestRate)
-                    )
-                    DetailRow(
-                        icon: "clock.fill",
-                        title: "Tenure",
-                        value: "\(application.tenure) months"
-                    )
-                    DetailRow(
-                        icon: "text.quote",
-                        title: "Purpose",
-                        value: application.purpose
-                    )
-
-                    Divider()
-                        .padding(.vertical, 8)
-
-                    // Repayment summary
-                    repaymentSummaryCard
-
-                    Divider()
-                        .padding(.vertical, 8)
-
-                    // Risk bar
-                    riskAnalysisBar
+    private func borrowerSection(_ app: OfficerApplication) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(spacing: Spacing.m) {
+                AvatarView(initials: app.borrowerInitials,
+                           size: 72,
+                           colors: app.riskLevel.gradient)
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text(app.borrowerName)
+                        .font(.lmsTitle2)
+                    StatusBadge(app.status.displayLabel, tone: app.status.tone,
+                                icon: app.status.icon)
                 }
+                Spacer()
             }
-        }
-        .opacity(animateIn ? 1 : 0)
-        .offset(y: animateIn ? 0 : 20)
-    }
 
-    private var repaymentSummaryCard: some View {
-        let totalPayable = application.emiAmount * Double(application.tenure)
-        let totalInterest = totalPayable - application.loanAmount
-
-        return VStack(spacing: 8) {
             HStack {
-                Text("Repayment Summary")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.primary)
+                Spacer()
+                CircularProgress(progress: Double(app.creditScore) / 900.0,
+                                 color: creditScoreColor(app.creditScore),
+                                 lineWidth: 10,
+                                 size: 96)
                 Spacer()
             }
 
-            HStack(spacing: 0) {
-                summaryColumn(label: "Principal", value: AppFormatters.formatCurrency(application.loanAmount), color: .blue)
-                Spacer()
-                summaryColumn(label: "Interest", value: AppFormatters.formatCurrency(totalInterest), color: .orange)
-                Spacer()
-                summaryColumn(label: "Total Payable", value: AppFormatters.formatCurrency(totalPayable), color: .green)
+            Divider()
+            DetailRow(icon: "building.2.fill", title: "Employer", value: app.employer)
+            DetailRow(icon: "indianrupeesign.circle.fill", title: "Monthly Income",
+                      value: OfficerFormat.currency(app.monthlyIncome),
+                      valueColor: .lmsSuccess)
+            DetailRow(icon: "chart.line.downtrend.xyaxis", title: "Existing Liabilities",
+                      value: OfficerFormat.currency(app.existingLiabilities),
+                      valueColor: app.existingLiabilities > 0 ? .lmsWarning : .lmsSuccess)
+            DetailRow(icon: "star.fill", title: "Eligibility Score",
+                      value: "\(app.eligibilityScore)/100",
+                      valueColor: eligibilityColor(app.eligibilityScore))
+            Divider()
+            HStack(spacing: Spacing.m) {
+                contactButton(icon: "phone.fill", label: app.phoneNumber, color: .lmsSuccess)
+                contactButton(icon: "envelope.fill", label: app.email, color: .lmsInfo)
             }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 4)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(.tertiarySystemGroupedBackground))
-            )
+        }
+        .padding(Spacing.m)
+        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card))
+    }
+
+    private func loanDetailsSection(_ app: OfficerApplication) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            SectionHeader(title: "Loan Details", icon: "banknote.fill")
+            VStack(spacing: 0) {
+                DetailRow(icon: "doc.text.fill", title: "Loan Type", value: app.loanTypeLabel)
+                DetailRow(icon: "indianrupeesign.circle", title: "Requested",
+                          value: OfficerFormat.currency(app.loanAmount))
+                DetailRow(icon: "calendar.badge.clock", title: "EMI",
+                          value: OfficerFormat.currency(app.emiAmount),
+                          valueColor: .lmsAccent)
+                DetailRow(icon: "percent", title: "Interest Rate",
+                          value: String(format: "%.2f%%", app.interestRate))
+                DetailRow(icon: "clock.fill", title: "Tenure",
+                          value: "\(app.tenure) months")
+                DetailRow(icon: "text.quote", title: "Purpose", value: app.purpose)
+
+                Divider().padding(.vertical, Spacing.xs)
+                repaymentRow(app)
+                Divider().padding(.vertical, Spacing.xs)
+                riskBar(app)
+            }
+            .padding(Spacing.m)
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card))
         }
     }
 
-    private func summaryColumn(label: String, value: String, color: Color) -> some View {
-        VStack(spacing: 4) {
-            Text(label)
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+    private func repaymentRow(_ app: OfficerApplication) -> some View {
+        HStack {
+            repaymentColumn(label: "Principal",
+                            value: OfficerFormat.currency(app.loanAmount),
+                            color: .lmsAccent)
+            Spacer()
+            repaymentColumn(label: "Interest",
+                            value: OfficerFormat.currency(app.totalInterest),
+                            color: .lmsWarning)
+            Spacer()
+            repaymentColumn(label: "Total Payable",
+                            value: OfficerFormat.currency(app.totalPayable),
+                            color: .lmsSuccess)
+        }
+        .padding(.vertical, Spacing.xs)
+        .padding(.horizontal, Spacing.s)
+        .background(Color.lmsTertiarySurface, in: RoundedRectangle(cornerRadius: CornerRadius.small))
+    }
+
+    private func repaymentColumn(label: String, value: String, color: Color) -> some View {
+        VStack(spacing: 2) {
+            Text(label).font(.caption).foregroundStyle(.secondary)
+            Text(value).font(.subheadline.weight(.bold).monospacedDigit())
                 .foregroundStyle(color)
         }
-        .frame(maxWidth: .infinity)
     }
 
-    private var riskAnalysisBar: some View {
-        VStack(alignment: .leading, spacing: 8) {
+    private func riskBar(_ app: OfficerApplication) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.s) {
             HStack {
-                Text("Risk Analysis")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.primary)
+                Text("Risk Analysis").font(.subheadline.weight(.semibold))
                 Spacer()
-                StatusBadge(
-                    text: application.riskLevel.rawValue,
-                    color: application.riskLevel.color,
-                    icon: application.riskLevel.icon,
-                    size: .medium
-                )
+                StatusBadge(app.riskLevel.rawValue, tone: app.riskLevel.tone,
+                            icon: app.riskLevel.icon)
             }
-
-            // Horizontal risk bar
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(Color(.systemGray5))
-                        .frame(height: 12)
-
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(
-                            LinearGradient(
-                                colors: [application.riskLevel.color.opacity(0.7), application.riskLevel.color],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(width: geo.size.width * riskBarProgress, height: 12)
-                        .animation(.spring(response: 0.8, dampingFraction: 0.7), value: animateIn)
+                    Capsule().fill(Color.lmsGray5).frame(height: 10)
+                    Capsule()
+                        .fill(toneColor(app.riskLevel.tone))
+                        .frame(width: geo.size.width * app.riskLevel.progress, height: 10)
                 }
             }
-            .frame(height: 12)
-
+            .frame(height: 10)
             HStack {
-                Text("Low")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.secondary)
+                Text("Low").font(.caption2).foregroundStyle(.secondary)
                 Spacer()
-                Text("Critical")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.secondary)
+                Text("Critical").font(.caption2).foregroundStyle(.secondary)
             }
         }
     }
 
-    private var riskBarProgress: CGFloat {
-        guard animateIn else { return 0 }
-        switch application.riskLevel {
-        case .low: return 0.25
-        case .medium: return 0.50
-        case .high: return 0.75
-        case .critical: return 1.0
-        }
-    }
-}
-
-// MARK: - Document & KYC Section
-extension LoanReviewView {
-    private var documentKYCSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private var documentsSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             SectionHeader(
                 title: "Documents & KYC",
-                subtitle: "\(viewModel.documents.filter { $0.status == .verified }.count)/\(viewModel.documents.count) verified",
+                subtitle: "\(store.reviewDocuments.filter { $0.status == .verified }.count)/\(store.reviewDocuments.count) verified",
                 icon: "doc.text.fill"
             )
-
-            PremiumCard {
-                VStack(spacing: 10) {
-                    ForEach(viewModel.documents) { document in
-                        documentCard(document)
-                    }
+            VStack(spacing: 0) {
+                ForEach(store.reviewDocuments) { doc in
+                    documentRow(doc)
+                    if doc.id != store.reviewDocuments.last?.id { Divider() }
                 }
             }
-        }
-        .opacity(animateIn ? 1 : 0)
-        .offset(y: animateIn ? 0 : 20)
-    }
-
-    private func documentCard(_ document: LoanDocument) -> some View {
-        let isExpanded = expandedDocumentIDs.contains(document.id)
-
-        return VStack(spacing: 0) {
-            // Main row — always visible
-            Button {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                    if isExpanded {
-                        expandedDocumentIDs.remove(document.id)
-                    } else {
-                        expandedDocumentIDs.insert(document.id)
-                    }
-                }
-            } label: {
-                HStack(spacing: 12) {
-                    // Icon
-                    Image(systemName: document.icon)
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(document.status.color)
-                        .frame(width: 36, height: 36)
-                        .background(document.status.color.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(document.name)
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(.primary)
-                        Text(document.type)
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer()
-
-                    // OCR badge
-                    if document.ocrVerified {
-                        Text("OCR ✓")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(.green)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(
-                                Capsule().fill(Color.green.opacity(0.12))
-                            )
-                    }
-
-                    StatusBadge(
-                        text: document.status.rawValue,
-                        color: document.status.color,
-                        icon: document.status.icon,
-                        size: .small
-                    )
-
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.tertiary)
-                }
-                .padding(.vertical, 8)
-            }
-            .buttonStyle(.plain)
-
-            // Expanded details
-            if isExpanded {
-                VStack(alignment: .leading, spacing: 8) {
-                    // Alert banners based on status
-                    if document.status == .tampered {
-                        alertBanner(
-                            icon: "exclamationmark.octagon.fill",
-                            message: "⚠️ Tampering detected! This document has been flagged for potential fraud. Immediate review is required.",
-                            color: .red
-                        )
-                    }
-
-                    if document.status == .duplicate {
-                        alertBanner(
-                            icon: "doc.on.doc.fill",
-                            message: "Duplicate document detected. A previous version of this document already exists in the system.",
-                            color: .purple
-                        )
-                    }
-
-                    if document.status == .missing {
-                        alertBanner(
-                            icon: "arrow.up.doc.fill",
-                            message: "Upload Required — This document has not been submitted by the borrower.",
-                            color: .red
-                        )
-                    }
-
-                    if let uploadDate = document.uploadDate {
-                        HStack {
-                            Image(systemName: "calendar")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.secondary)
-                            Text("Uploaded: \(AppFormatters.formatDate(uploadDate))")
-                                .font(.system(size: 12))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    HStack {
-                        Image(systemName: "checkmark.shield")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                        Text("OCR Verification: \(document.ocrVerified ? "Completed" : "Not Verified")")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding(.leading, 48)
-                .padding(.bottom, 8)
-                .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-
-            if document.id != viewModel.documents.last?.id {
-                Divider()
-            }
+            .padding(Spacing.m)
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card))
         }
     }
 
-    private func alertBanner(icon: String, message: String, color: Color) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(color)
-            Text(message)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(color)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(color.opacity(0.08))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(color.opacity(0.2), lineWidth: 0.5)
-        )
-    }
-}
-
-// MARK: - Collateral Section
-extension LoanReviewView {
-    private var collateralSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "Collateral", icon: "building.2.fill")
-
-            PremiumCard {
-                VStack(spacing: 12) {
-                    DetailRow(icon: "house.fill", title: "Property Type", value: viewModel.collateral.propertyType)
-                    DetailRow(icon: "mappin.circle.fill", title: "Address", value: viewModel.collateral.address)
-                    DetailRow(
-                        icon: "indianrupeesign.circle.fill",
-                        title: "Current Valuation",
-                        value: AppFormatters.formatCurrency(viewModel.collateral.currentValuation),
-                        valueColor: .green
-                    )
-                    DetailRow(
-                        icon: "calendar",
-                        title: "Last Valuation",
-                        value: AppFormatters.formatDate(viewModel.collateral.lastValuationDate)
-                    )
-
-                    Divider()
-
-                    // Coverage ratio visualization
-                    HStack(spacing: 16) {
-                        CircularProgress(
-                            progress: min(viewModel.collateral.coverageRatio / 2.0, 1.0),
-                            color: viewModel.collateral.coverageRatio >= 1.5 ? .green : (viewModel.collateral.coverageRatio >= 1.0 ? .orange : .red),
-                            size: 72
-                        )
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Coverage Ratio")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(.primary)
-                            Text(String(format: "%.2fx", viewModel.collateral.coverageRatio))
-                                .font(.system(size: 24, weight: .bold, design: .rounded))
-                                .foregroundStyle(viewModel.collateral.coverageRatio >= 1.5 ? .green : (viewModel.collateral.coverageRatio >= 1.0 ? .orange : .red))
-                            Text(viewModel.collateral.coverageRatio >= 1.5 ? "Adequate collateral" : "Marginal coverage")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer()
-                    }
-                    .padding(.vertical, 4)
-
-                    Divider()
-
-                    // Revaluation history
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Revaluation History")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.primary)
-
-                        ForEach(Array(viewModel.collateral.revaluationHistory.enumerated()), id: \.offset) { index, entry in
-                            HStack(spacing: 12) {
-                                Circle()
-                                    .fill(index == viewModel.collateral.revaluationHistory.count - 1 ? Color.green : Color(.systemGray4))
-                                    .frame(width: 8, height: 8)
-                                Text(AppFormatters.formatDate(entry.date))
-                                    .font(.system(size: 13))
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                Text(AppFormatters.formatCurrency(entry.value))
-                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                                    .foregroundStyle(index == viewModel.collateral.revaluationHistory.count - 1 ? .green : .primary)
-                            }
-                            .padding(.vertical, 2)
-                        }
-                    }
-                }
+    private func documentRow(_ doc: ReviewDocument) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: doc.icon)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(toneColor(doc.status.tone))
+                .frame(width: 36, height: 36)
+                .background(toneColor(doc.status.tone).opacity(0.12),
+                            in: RoundedRectangle(cornerRadius: CornerRadius.small))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(doc.name).font(.subheadline.weight(.semibold))
+                Text(doc.type).font(.caption).foregroundStyle(.secondary)
             }
-        }
-        .opacity(animateIn ? 1 : 0)
-        .offset(y: animateIn ? 0 : 20)
-    }
-}
-
-// MARK: - Recommendation Section
-extension LoanReviewView {
-    private var recommendationSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "Recommendation", icon: "text.bubble.fill")
-
-            PremiumCard {
-                VStack(spacing: 16) {
-                    // Risk summary card
-                    riskSummaryCard
-
-                    // Text editor for remarks
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Officer Remarks")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.primary)
-
-                        ZStack(alignment: .topLeading) {
-                            if officerRemarks.isEmpty {
-                                Text("Enter your assessment, observations, and recommendation...")
-                                    .font(.system(size: 14))
-                                    .foregroundStyle(Color(.placeholderText))
-                                    .padding(.horizontal, 4)
-                                    .padding(.vertical, 8)
-                            }
-                            TextEditor(text: $officerRemarks)
-                                .font(.system(size: 14))
-                                .frame(minHeight: 100)
-                                .scrollContentBackground(.hidden)
-                                .background(Color.clear)
-                        }
-                        .padding(8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color(.tertiarySystemGroupedBackground))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                        )
-                    }
-
-                    // Submit button
-                    Button {
-                        // Submit recommendation action
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "paperplane.fill")
-                                .font(.system(size: 15, weight: .semibold))
-                            Text("Submit Recommendation")
-                                .font(.system(size: 16, weight: .semibold))
-                        }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(
-                            RoundedRectangle(cornerRadius: 14)
-                                .fill(
-                                    LinearGradient(
-                                        colors: [Color(red: 0.2, green: 0.5, blue: 1.0), Color(red: 0.15, green: 0.35, blue: 0.9)],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                                .shadow(color: Color.blue.opacity(0.3), radius: 8, x: 0, y: 4)
-                        )
-                    }
-                }
-            }
-        }
-        .opacity(animateIn ? 1 : 0)
-        .offset(y: animateIn ? 0 : 20)
-    }
-
-    private var riskSummaryCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Image(systemName: application.riskLevel.icon)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(application.riskLevel.color)
-                Text("Risk Assessment Summary")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.primary)
-                Spacer()
-                StatusBadge(
-                    text: application.riskLevel.rawValue,
-                    color: application.riskLevel.color,
-                    icon: application.riskLevel.icon,
-                    size: .medium
-                )
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                riskFactorRow(label: "Credit Score", detail: "\(application.creditScore)/900", isPositive: application.creditScore >= 650)
-                riskFactorRow(label: "Debt-to-Income Ratio", detail: debtToIncomeRatio, isPositive: application.monthlyIncome > 0 && (application.existingLiabilities + application.emiAmount) / application.monthlyIncome < 0.5)
-                riskFactorRow(label: "KYC Status", detail: application.kycStatus.rawValue, isPositive: application.kycStatus == .verified)
-                riskFactorRow(label: "Fraud Flag", detail: application.fraudFlag ? "Detected" : "Clear", isPositive: !application.fraudFlag)
-                riskFactorRow(label: "Collateral Coverage", detail: String(format: "%.2fx", viewModel.collateral.coverageRatio), isPositive: viewModel.collateral.coverageRatio >= 1.5)
-            }
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(application.riskLevel.color.opacity(0.05))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(application.riskLevel.color.opacity(0.15), lineWidth: 0.5)
-        )
-    }
-
-    private var debtToIncomeRatio: String {
-        guard application.monthlyIncome > 0 else { return "N/A" }
-        let ratio = (application.existingLiabilities + application.emiAmount) / application.monthlyIncome * 100
-        return String(format: "%.1f%%", ratio)
-    }
-
-    private func riskFactorRow(label: String, detail: String, isPositive: Bool) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: isPositive ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
-                .font(.system(size: 12))
-                .foregroundStyle(isPositive ? .green : .orange)
-            Text(label)
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
             Spacer()
-            Text(detail)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(isPositive ? .green : .orange)
+            if doc.ocrVerified {
+                Text("OCR")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Color.lmsSuccess)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(Color.lmsSuccess.opacity(0.12), in: Capsule())
+            }
+            StatusBadge(doc.status.rawValue, tone: doc.status.tone,
+                        icon: doc.status.icon, size: .small)
         }
+        .padding(.vertical, Spacing.xs)
     }
-}
 
-// MARK: - Floating Action Bar
-extension LoanReviewView {
-    private var floatingActionBar: some View {
-        VStack(spacing: 0) {
-            // Top fade
-            LinearGradient(
-                colors: [Color(.systemGroupedBackground).opacity(0), Color(.systemGroupedBackground)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: 20)
+    private var collateralSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            SectionHeader(title: "Collateral", icon: "building.2.fill")
+            VStack(spacing: 0) {
+                DetailRow(icon: "house.fill", title: "Property Type",
+                          value: store.collateral.propertyType)
+                DetailRow(icon: "mappin.circle.fill", title: "Address",
+                          value: store.collateral.address)
+                DetailRow(icon: "indianrupeesign.circle.fill", title: "Current Valuation",
+                          value: OfficerFormat.currency(store.collateral.currentValuation),
+                          valueColor: .lmsSuccess)
+                DetailRow(icon: "calendar", title: "Last Valuation",
+                          value: OfficerFormat.date(store.collateral.lastValuationDate))
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    actionPill(icon: "checkmark.circle.fill", text: "Approve", gradient: [.green, Color(red: 0.15, green: 0.7, blue: 0.3)]) {
-                        viewModel.showApproveConfirmation = true
+                Divider().padding(.vertical, Spacing.xs)
+
+                HStack(spacing: Spacing.m) {
+                    CircularProgress(progress: min(store.collateral.coverageRatio / 2.0, 1.0),
+                                     color: coverageColor(store.collateral.coverageRatio),
+                                     size: 72)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Coverage Ratio").font(.subheadline.weight(.semibold))
+                        Text(String(format: "%.2fx", store.collateral.coverageRatio))
+                            .font(.system(.title3, design: .rounded).weight(.bold))
+                            .foregroundStyle(coverageColor(store.collateral.coverageRatio))
+                        Text(store.collateral.coverageRatio >= 1.5 ? "Adequate" : "Marginal")
+                            .font(.caption).foregroundStyle(.secondary)
                     }
+                    Spacer()
+                }
 
-                    actionPill(icon: "xmark.circle.fill", text: "Reject", gradient: [.red, Color(red: 0.85, green: 0.15, blue: 0.15)]) {
-                        viewModel.showRejectConfirmation = true
-                    }
+                Divider().padding(.vertical, Spacing.xs)
 
-                    actionPill(icon: "arrow.up.circle.fill", text: "Escalate", gradient: [.purple, Color(red: 0.6, green: 0.2, blue: 0.85)]) {
-                        viewModel.showEscalateSheet = true
-                    }
-
-                    actionPill(icon: "doc.badge.plus", text: "Request Docs", gradient: [.blue, Color(red: 0.15, green: 0.4, blue: 0.95)]) {
-                        viewModel.showDocumentRequest = true
-                    }
-
-                    actionPill(icon: "arrow.uturn.backward.circle.fill", text: "Send Back", gradient: [.orange, Color(red: 0.9, green: 0.5, blue: 0.1)]) {
-                        showSendBackAlert = true
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text("Revaluation History").font(.subheadline.weight(.semibold))
+                    ForEach(Array(store.collateral.revaluationHistory.enumerated()), id: \.offset) { idx, entry in
+                        HStack {
+                            Circle()
+                                .fill(idx == store.collateral.revaluationHistory.count - 1
+                                      ? Color.lmsSuccess : Color.lmsGray4)
+                                .frame(width: 8, height: 8)
+                            Text(OfficerFormat.date(entry.date))
+                                .font(.footnote).foregroundStyle(.secondary)
+                            Spacer()
+                            Text(OfficerFormat.currency(entry.value))
+                                .font(.footnote.weight(.semibold).monospacedDigit())
+                        }
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
             }
-            .background(
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                    .ignoresSafeArea(.container, edges: .bottom)
-            )
+            .padding(Spacing.m)
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card))
         }
     }
 
-    private func actionPill(icon: String, text: String, gradient: [Color], action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
-                Text(text)
-                    .font(.system(size: 13, weight: .semibold))
+    private func recommendationSection(_ app: OfficerApplication) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            SectionHeader(title: "Recommendation", icon: "text.bubble.fill")
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                riskSummary(app)
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text("Officer Remarks").font(.subheadline.weight(.semibold))
+                    TextEditor(text: $officerRemarks)
+                        .scrollContentBackground(.hidden)
+                        .frame(minHeight: 100)
+                        .padding(Spacing.s)
+                        .background(Color.lmsTertiarySurface,
+                                    in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+                }
+                PrimaryButton("Submit Recommendation") {
+                    store.recommendApplication(app)
+                    dismiss()
+                }
             }
-            .foregroundColor(.white)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(
-                Capsule()
-                    .fill(
-                        LinearGradient(
-                            colors: gradient,
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .shadow(color: gradient.first?.opacity(0.35) ?? .clear, radius: 6, x: 0, y: 3)
-            )
+            .padding(Spacing.m)
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card))
+        }
+    }
+
+    private func riskSummary(_ app: OfficerApplication) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.s) {
+            HStack {
+                Image(systemName: app.riskLevel.icon)
+                    .foregroundStyle(toneColor(app.riskLevel.tone))
+                Text("Risk Summary").font(.subheadline.weight(.semibold))
+                Spacer()
+                StatusBadge(app.riskLevel.rawValue, tone: app.riskLevel.tone,
+                            icon: app.riskLevel.icon)
+            }
+            riskFactor(label: "Credit Score",
+                       detail: "\(app.creditScore)/900",
+                       isPositive: app.creditScore >= 650)
+            riskFactor(label: "Debt-to-Income",
+                       detail: String(format: "%.1f%%", app.debtToIncomeRatio * 100),
+                       isPositive: app.debtToIncomeRatio < 0.5)
+            riskFactor(label: "KYC",
+                       detail: app.kycStatus.displayLabel,
+                       isPositive: app.kycStatus == .verified)
+            riskFactor(label: "Fraud Flag",
+                       detail: app.fraudFlag ? "Detected" : "Clear",
+                       isPositive: !app.fraudFlag)
+            riskFactor(label: "Collateral",
+                       detail: String(format: "%.2fx", store.collateral.coverageRatio),
+                       isPositive: store.collateral.coverageRatio >= 1.5)
+        }
+        .padding(Spacing.m)
+        .background(toneColor(app.riskLevel.tone).opacity(0.06),
+                    in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+    }
+
+    private func riskFactor(label: String, detail: String, isPositive: Bool) -> some View {
+        HStack {
+            Image(systemName: isPositive ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                .foregroundStyle(isPositive ? Color.lmsSuccess : Color.lmsWarning)
+                .font(.caption)
+            Text(label).font(.caption).foregroundStyle(.secondary)
+            Spacer()
+            Text(detail).font(.caption.weight(.semibold))
+                .foregroundStyle(isPositive ? Color.lmsSuccess : Color.lmsWarning)
+        }
+    }
+
+    // MARK: Action Bar
+
+    private func actionBar(for app: OfficerApplication) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Spacing.s) {
+                actionPill("Approve", icon: "checkmark.circle.fill", tint: .lmsSuccess) {
+                    showApproveConfirmation = true
+                }
+                actionPill("Reject", icon: "xmark.circle.fill", tint: .lmsDanger) {
+                    showRejectConfirmation = true
+                }
+                actionPill("Escalate", icon: "arrow.up.circle.fill", tint: .lmsAccent) {
+                    showEscalateSheet = true
+                }
+                actionPill("Request Docs", icon: "doc.badge.plus", tint: .lmsInfo) {
+                    showDocumentRequestSheet = true
+                }
+                actionPill("Send Back", icon: "arrow.uturn.backward", tint: .lmsWarning) {
+                    store.requestAdditionalInfo(for: app)
+                }
+            }
+            .padding(.horizontal, Spacing.m)
+            .padding(.vertical, Spacing.s)
+        }
+        .background(.ultraThinMaterial)
+    }
+
+    private func actionPill(_ title: String, icon: String, tint: Color,
+                            action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: icon)
+                .font(.subheadline.weight(.semibold))
+                .labelStyle(.titleAndIcon)
+                .padding(.horizontal, Spacing.sm)
+                .padding(.vertical, Spacing.s)
+                .background(tint, in: Capsule())
+                .foregroundStyle(.white)
         }
         .buttonStyle(.plain)
     }
-}
 
-// MARK: - Escalate Sheet
-extension LoanReviewView {
-    private var escalateSheetContent: some View {
+    // MARK: Sheets
+
+    private func escalateSheet(for app: OfficerApplication) -> some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Escalation Reason")
-                        .font(.system(size: 14, weight: .semibold))
-
-                    ZStack(alignment: .topLeading) {
-                        if escalationNotes.isEmpty {
-                            Text("Describe the reason for escalation to the senior officer...")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(.placeholderText))
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 8)
-                        }
-                        TextEditor(text: $escalationNotes)
-                            .font(.system(size: 14))
-                            .frame(minHeight: 120)
-                            .scrollContentBackground(.hidden)
-                            .background(Color.clear)
-                    }
-                    .padding(8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(.tertiarySystemGroupedBackground))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                    )
+            Form {
+                Section("Reason") {
+                    TextEditor(text: $escalationNotes)
+                        .frame(minHeight: 120)
                 }
-
-                // Escalation level
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Escalation Level")
-                        .font(.system(size: 14, weight: .semibold))
-
-                    HStack(spacing: 10) {
-                        escalationLevelOption(title: "Senior Officer", icon: "person.fill", isSelected: true)
-                        escalationLevelOption(title: "Branch Manager", icon: "person.2.fill", isSelected: false)
-                        escalationLevelOption(title: "Regional Head", icon: "building.2.fill", isSelected: false)
+                Section("Escalation Level") {
+                    Picker("Level", selection: .constant("Senior Officer")) {
+                        Text("Senior Officer").tag("Senior Officer")
+                        Text("Branch Manager").tag("Branch Manager")
+                        Text("Regional Head").tag("Regional Head")
                     }
-                }
-
-                Spacer()
-
-                Button {
-                    viewModel.escalateApplication(application)
-                    viewModel.showEscalateSheet = false
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 15, weight: .semibold))
-                        Text("Submit Escalation")
-                            .font(.system(size: 16, weight: .semibold))
-                    }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14)
-                            .fill(
-                                LinearGradient(
-                                    colors: [.purple, Color(red: 0.6, green: 0.2, blue: 0.85)],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                    )
+                    .pickerStyle(.menu)
                 }
             }
-            .padding(20)
-            .navigationTitle("Escalate Application")
+            .navigationTitle("Escalate")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") {
-                        viewModel.showEscalateSheet = false
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { showEscalateSheet = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Submit") {
+                        showEscalateSheet = false
                     }
                 }
             }
@@ -898,159 +439,93 @@ extension LoanReviewView {
         .presentationDetents([.medium, .large])
     }
 
-    private func escalationLevelOption(title: String, icon: String, isSelected: Bool) -> some View {
-        VStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 18, weight: .medium))
-                .foregroundStyle(isSelected ? .white : .secondary)
-                .frame(width: 44, height: 44)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(isSelected ? Color.purple : Color(.tertiarySystemGroupedBackground))
-                )
-            Text(title)
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(isSelected ? .primary : .secondary)
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
-
-// MARK: - Request Document Sheet
-extension LoanReviewView {
-    private var requestDocumentSheetContent: some View {
+    private var requestDocumentSheet: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Document Name")
-                        .font(.system(size: 14, weight: .semibold))
-
+            Form {
+                Section("Document Name") {
                     TextField("e.g. Bank Statement (6 months)", text: $requestedDocumentName)
-                        .font(.system(size: 14))
-                        .padding(12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color(.tertiarySystemGroupedBackground))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                        )
                 }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Note to Borrower")
-                        .font(.system(size: 14, weight: .semibold))
-
-                    ZStack(alignment: .topLeading) {
-                        if requestedDocumentNote.isEmpty {
-                            Text("Add any specific instructions for the borrower...")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(.placeholderText))
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 8)
-                        }
-                        TextEditor(text: $requestedDocumentNote)
-                            .font(.system(size: 14))
-                            .frame(minHeight: 100)
-                            .scrollContentBackground(.hidden)
-                            .background(Color.clear)
-                    }
-                    .padding(8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(.tertiarySystemGroupedBackground))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                    )
+                Section("Note to Borrower") {
+                    TextEditor(text: $requestedDocumentNote).frame(minHeight: 100)
                 }
-
-                // Quick select common docs
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Quick Select")
-                        .font(.system(size: 14, weight: .semibold))
-
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                        quickDocOption(name: "Bank Statement", icon: "building.columns.fill")
-                        quickDocOption(name: "Salary Slip", icon: "doc.text.fill")
-                        quickDocOption(name: "IT Returns", icon: "doc.on.doc.fill")
-                        quickDocOption(name: "Property Docs", icon: "house.fill")
-                    }
-                }
-
-                Spacer()
-
-                Button {
-                    viewModel.showDocumentRequest = false
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "doc.badge.plus")
-                            .font(.system(size: 15, weight: .semibold))
-                        Text("Send Request")
-                            .font(.system(size: 16, weight: .semibold))
-                    }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14)
-                            .fill(
-                                LinearGradient(
-                                    colors: [.blue, Color(red: 0.15, green: 0.4, blue: 0.95)],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                    )
+                Section("Quick Select") {
+                    quickDocOption("Bank Statement", icon: "building.columns.fill")
+                    quickDocOption("Salary Slip", icon: "doc.text.fill")
+                    quickDocOption("IT Returns", icon: "doc.on.doc.fill")
+                    quickDocOption("Property Documents", icon: "house.fill")
                 }
             }
-            .padding(20)
             .navigationTitle("Request Documents")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") {
-                        viewModel.showDocumentRequest = false
-                    }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { showDocumentRequestSheet = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Send") { showDocumentRequestSheet = false }
+                        .disabled(requestedDocumentName.isEmpty)
                 }
             }
         }
         .presentationDetents([.medium, .large])
     }
 
-    private func quickDocOption(name: String, icon: String) -> some View {
+    private func quickDocOption(_ name: String, icon: String) -> some View {
         Button {
             requestedDocumentName = name
         } label: {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 13))
-                    .foregroundStyle(.blue)
-                Text(name)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.primary)
+            HStack {
+                Image(systemName: icon).foregroundStyle(Color.lmsAccent)
+                Text(name).foregroundStyle(.primary)
                 Spacer()
+                if requestedDocumentName == name {
+                    Image(systemName: "checkmark").foregroundStyle(Color.lmsAccent)
+                }
             }
-            .padding(10)
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(.tertiarySystemGroupedBackground))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(requestedDocumentName == name ? Color.blue.opacity(0.5) : Color.clear, lineWidth: 1)
-            )
+        }
+    }
+
+    // MARK: Helpers
+
+    private func contactButton(icon: String, label: String, color: Color) -> some View {
+        Button {} label: {
+            HStack(spacing: Spacing.s) {
+                Image(systemName: icon)
+                    .foregroundStyle(color)
+                    .frame(width: 28, height: 28)
+                    .background(color.opacity(0.12), in: Circle())
+                Text(label).font(.footnote).foregroundStyle(.secondary).lineLimit(1)
+            }
         }
         .buttonStyle(.plain)
     }
-}
 
-// MARK: - Preview
-#Preview {
-    NavigationStack {
-        LoanReviewView()
-            .environmentObject(AppViewModel())
+    private func toneColor(_ tone: StatusBadge.Tone) -> Color {
+        switch tone {
+        case .neutral: .primary
+        case .info: .lmsInfo
+        case .success: .lmsSuccess
+        case .warning: .lmsWarning
+        case .danger: .lmsDanger
+        }
+    }
+
+    private func creditScoreColor(_ score: Int) -> Color {
+        if score >= 750 { return .lmsSuccess }
+        if score >= 650 { return .lmsInfo }
+        if score >= 550 { return .lmsWarning }
+        return .lmsDanger
+    }
+
+    private func eligibilityColor(_ score: Int) -> Color {
+        if score >= 70 { return .lmsSuccess }
+        if score >= 50 { return .lmsWarning }
+        return .lmsDanger
+    }
+
+    private func coverageColor(_ ratio: Double) -> Color {
+        if ratio >= 1.5 { return .lmsSuccess }
+        if ratio >= 1.0 { return .lmsWarning }
+        return .lmsDanger
     }
 }
