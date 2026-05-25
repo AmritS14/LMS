@@ -7,6 +7,15 @@ enum UserRole: String, Codable, Sendable, CaseIterable {
     case loanOfficer
     case manager
     case admin
+
+    var displayName: String {
+        switch self {
+        case .borrower: return "Borrower"
+        case .loanOfficer: return "Loan Officer"
+        case .manager: return "Manager"
+        case .admin: return "Admin"
+        }
+    }
 }
 
 struct User: Identifiable, Codable, Sendable, Hashable {
@@ -15,7 +24,12 @@ struct User: Identifiable, Codable, Sendable, Hashable {
     var email: String
     var phone: String
     var role: UserRole
+    var isActive: Bool = true
     var createdAt: Date = .now
+
+    var uniqueID: String {
+        "USR-\(id.uuidString.prefix(8).uppercased())"
+    }
 }
 
 // MARK: - Borrower-only profile (KYC, credit, personal details)
@@ -57,6 +71,16 @@ struct StaffProfile: Identifiable, Codable, Sendable, Hashable {
     var branchID: UUID?
     var department: String?
     var reportsToID: UUID?
+    var permissions: Set<Permission> = []
+}
+
+enum Permission: String, Codable, Sendable, CaseIterable, Identifiable {
+    case viewUsers = "View Users"
+    case editUsers = "Edit Users"
+    case viewAudit = "View Audit"
+    case manageSettings = "Manage Settings"
+
+    var id: String { rawValue }
 }
 
 // MARK: - Loan Application
@@ -70,12 +94,56 @@ enum ApplicationStatus: String, Codable, Sendable {
     case draft
     case submitted
     case underReview
+    case escalated
     case additionalInfoRequired
     case recommended
     case approved
     case rejected
     case disbursed
     case closed
+}
+
+extension ApplicationStatus {
+    var displayLabel: String {
+        switch self {
+        case .draft: "Draft"
+        case .submitted: "Submitted"
+        case .underReview: "Under Review"
+        case .escalated: "Escalated"
+        case .additionalInfoRequired: "Info Needed"
+        case .recommended: "Recommended"
+        case .approved: "Approved"
+        case .rejected: "Rejected"
+        case .disbursed: "Disbursed"
+        case .closed: "Closed"
+        }
+    }
+
+    var tone: StatusBadge.Tone {
+        switch self {
+        case .draft: .neutral
+        case .submitted, .underReview: .info
+        case .escalated, .additionalInfoRequired: .warning
+        case .recommended, .approved, .disbursed: .success
+        case .rejected: .danger
+        case .closed: .neutral
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .draft: "doc.text"
+        case .submitted: "tray.and.arrow.up"
+        case .underReview: "magnifyingglass"
+        case .escalated: "arrow.up.right.circle.fill"
+        case .additionalInfoRequired: "exclamationmark.bubble"
+        case .recommended: "hand.thumbsup"
+        case .approved: "checkmark.seal.fill"
+        case .rejected: "xmark.octagon.fill"
+        case .disbursed: "banknote.fill"
+        case .closed: "lock.fill"
+        }
+    }
 }
 
 struct LoanApplication: Identifiable, Codable, Sendable, Hashable {

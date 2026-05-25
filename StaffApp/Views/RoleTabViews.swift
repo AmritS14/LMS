@@ -1,50 +1,123 @@
 import SwiftUI
 
-// MARK: - Loan Officer Root View
-// Mirrors the standalone loan-officer app: a single NavigationStack with
-// DashboardView as root. All screens are pushed, no tab bar.
-
 struct OfficerTabView: View {
-    @State private var viewModel = AppViewModel()
-
     var body: some View {
-        ContentView()
-            .environment(viewModel)
-        
+        TabView {
+            Tab("Dashboard", systemImage: "rectangle.grid.2x2.fill") {
+                OfficerNavigationStack { DashboardView() }
+            }
+            Tab("Queue", systemImage: "tray.full") {
+                OfficerNavigationStack { AllApplicationsView() }
+            }
+            Tab("Documents", systemImage: "doc.richtext") {
+                OfficerNavigationStack { DocumentsView() }
+            }
+            Tab("Messages", systemImage: "bubble.left.and.bubble.right") {
+                OfficerNavigationStack { CommunicationsMainView() }
+            }
+            Tab("Profile", systemImage: "person.crop.circle") {
+                NavigationStack { StaffProfileView() }
+            }
+        }
     }
 }
-//#Preview {
-//       ContentView()
-//           .environment(AppViewModel())
-//   }
 
-// MARK: - Manager Tab View
+// Wraps a tab root in a NavigationStack that knows how to resolve every
+// OfficerRoute. Centralising destinations keeps each view free of
+// `navigationDestination` boilerplate.
+struct OfficerNavigationStack<Root: View>: View {
+    @ViewBuilder var root: () -> Root
+
+    var body: some View {
+        NavigationStack {
+            root()
+                .navigationDestination(for: OfficerRoute.self) { route in
+                    destination(for: route)
+                }
+        }
+    }
+
+    @ViewBuilder
+    private func destination(for route: OfficerRoute) -> some View {
+        switch route {
+        case .allApplications: AllApplicationsView()
+        case .review(let id): LoanReviewView(applicationID: id)
+        case .communications: CommunicationsMainView()
+        case .conversation(let id): ChatView(conversationID: id)
+        case .notifications: NotificationsTabView()
+        case .recovery: RecoveryManagementMainView()
+        case .recoveryDetail: RecoveryVerificationView()
+        case .documents: DocumentsView()
+        }
+    }
+}
 
 struct ManagerTabView: View {
     var body: some View {
         TabView {
-            Tab("Portfolio", systemImage: "chart.pie") { PortfolioDashboardView() }
-            Tab("Approvals", systemImage: "checkmark.seal") { ApprovalsQueueView() }
+            Tab("Dashboard", systemImage: "rectangle.grid.2x2.fill") {
+                ManagerNavigationStack { ManagerDashboardView() }
+            }
+//            Tab("Applications", systemImage: "tray.full") {
+//                ManagerNavigationStack { ManagerApplicationsView() }
+//            }
             Tab("Reports", systemImage: "doc.text.magnifyingglass") { ReportsView() }
-            Tab("Products", systemImage: "slider.horizontal.3") { ProductConfigView() }
-            Tab("Profile", systemImage: "person.crop.circle") { StaffProfileView() }
+            Tab("Profile", systemImage: "person.crop.circle") {
+                NavigationStack { StaffProfileView() }
+            }
         }
     }
 }
-
-// MARK: - Admin Tab View
 
 struct AdminTabView: View {
+    @State private var userManagementViewModel = UserManagementViewModel()
+    @State private var templateViewModel = TemplateViewModel()
+    @State private var loanConfigViewModel = LoanConfigViewModel()
+    @State private var dashboardViewModel = DashboardViewModel()
+
     var body: some View {
         TabView {
-            Tab("Users", systemImage: "person.3") { UserManagementView() }
-            Tab("Settings", systemImage: "gearshape.2") { SystemSettingsView() }
-            Tab("Audit", systemImage: "list.clipboard") { AuditTrailView() }
-            Tab("Profile", systemImage: "person.crop.circle") { StaffProfileView() }
+            Tab("Dashboard", systemImage: "rectangle.grid.2x2.fill") {
+                NavigationStack {
+                    AdminDashboardView(viewModel: dashboardViewModel, userVM: userManagementViewModel)
+                }
+            }
+            Tab("Users", systemImage: "person.3") {
+                NavigationStack {
+                    UserListView(viewModel: userManagementViewModel)
+                }
+            }
+            Tab("Settings", systemImage: "gearshape.2") {
+                NavigationStack {
+                    SystemSettingsView(
+                        templateViewModel: templateViewModel,
+                        loanConfigViewModel: loanConfigViewModel
+                    )
+                }
+            }
+            Tab("Audit", systemImage: "list.clipboard") {
+                NavigationStack {
+                    AuditTrailView()
+                }
+            }
         }
     }
 }
 
-#Preview {
+#Preview("Manager") {
+    ManagerTabView()
+        .environment(ManagerStore.preview)
+        .environment(SessionStore())
+}
+
+#Preview("Officer") {
     OfficerTabView()
+        .environment(LoanOfficerStore())
+        .environment(SessionStore())
+}
+
+#Preview("Admin") {
+    AdminTabView()
+        .environment(LoanOfficerStore())
+        .environment(SessionStore())
 }

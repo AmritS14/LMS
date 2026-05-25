@@ -23,3 +23,8 @@ enum CornerRadius {
     static let large: CGFloat = 20
     static let extraLarge: CGFloat = 22
 }
+
+enum AdminSpacing {
+    static let cardPadding: CGFloat = Spacing.m
+    static let cardGap: CGFloat = Spacing.m
+}
