@@ -19,7 +19,6 @@ struct HomeDashboardView: View {
         .background(Color.lmsBackground.ignoresSafeArea())
         .navigationTitle("Dashboard")
         .navigationBarTitleDisplayMode(.large)
-        .toolbar { toolbarContent }
         .task { await loadData() }
         .onChange(of: selectedLoanID) { _, newID in
             guard let newID,
@@ -55,18 +54,6 @@ struct HomeDashboardView: View {
         }
     }
 
-    @ToolbarContentBuilder
-    private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            Button {
-                showSupportSheet = true
-            } label: {
-                Image(systemName: "bubble.left.and.bubble.right")
-            }
-            .accessibilityLabel("Contact Support")
-        }
-    }
-
     private func paySheet(emi: EMI) -> some View {
         let loan = viewModel.activeLoans.first(where: { $0.id == selectedLoanID })
         return PayEMISheet(emi: emi, loan: loan) {
@@ -84,15 +71,31 @@ struct HomeDashboardView: View {
     @ViewBuilder
     private var contentSections: some View {
         let pendingApps = viewModel.applications.filter { $0.status != .disbursed && $0.status != .closed }
-        if let app = pendingApps.first {
-            statusTrackerCard(app)
+        if !pendingApps.isEmpty {
+            VStack(alignment: .leading, spacing: Spacing.s) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Pending Applications")
+                        .font(.title3.bold())
+                    Spacer()
+                }
                 .padding(.horizontal, Spacing.m)
+                
+                ForEach(pendingApps) { app in
+                    NavigationLink(destination: ApplicationTrackingView()) {
+                        statusTrackerCard(app)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.horizontal, Spacing.m)
+                    .padding(.bottom, Spacing.s)
+                }
+            }
+            .padding(.top, Spacing.s)
         }
 
         if !viewModel.activeLoans.isEmpty {
             HStack(alignment: .firstTextBaseline) {
                 Text("Active Loans")
-                    .font(.lmsHeadline)
+                    .font(.title3.bold())
                 Spacer()
                 if viewModel.activeLoans.count > 1 {
                     Text("\(activeLoanIndex + 1) of \(viewModel.activeLoans.count)")
@@ -106,28 +109,41 @@ struct HomeDashboardView: View {
             if viewModel.activeLoans.count > 1 {
                 TabView(selection: $selectedLoanID) {
                     ForEach(viewModel.activeLoans) { loan in
-                        loanHeroCard(loan)
-                            .padding(.horizontal, Spacing.m)
-                            .padding(.bottom, Spacing.xl)
-                            .tag(loan.id as UUID?)
+                        NavigationLink(destination: RepaymentDashboardView(loan: loan)) {
+                            loanHeroCard(loan)
+                                .padding(.horizontal, Spacing.m)
+                                .padding(.bottom, Spacing.xl)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .tag(loan.id as UUID?)
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .always))
                 .indexViewStyle(.page(backgroundDisplayMode: .never))
-                .frame(height: 340)
-
-                if let selectedID = selectedLoanID,
-                   let selectedLoan = viewModel.activeLoans.first(where: { $0.id == selectedID }) {
-                    emiListSection(for: selectedLoan)
-                        .padding(.horizontal, Spacing.m)
-                }
+                .frame(height: 250)
             } else if let loan = viewModel.activeLoans.first {
-                VStack(spacing: Spacing.l) {
+                NavigationLink(destination: RepaymentDashboardView(loan: loan)) {
                     loanHeroCard(loan)
-                    emiListSection(for: loan)
                 }
+                .buttonStyle(PlainButtonStyle())
                 .padding(.horizontal, Spacing.m)
             }
+            
+            // Apply for a New Loan Button (as seen in screenshot)
+            NavigationLink(destination: NewLoanApplicationView()) {
+                HStack {
+                    Image(systemName: "plus.circle.fill")
+                    Text("Apply for a New Loan")
+                        .fontWeight(.medium)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.m)
+                .background(Color.blue.opacity(0.1))
+                .foregroundColor(.blue)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            .padding(.horizontal, Spacing.m)
+            .padding(.top, Spacing.s)
         }
     }
 
@@ -232,7 +248,7 @@ struct HomeDashboardView: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text("\(app.loanType.rawValue.capitalized) Loan Application")
-                        .font(.lmsHeadline)
+                        .font(.subheadline.weight(.semibold))
                     Text(Formatting.currency(app.requestedAmount))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
