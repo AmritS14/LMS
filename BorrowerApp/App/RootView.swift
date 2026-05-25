@@ -38,9 +38,6 @@ struct BorrowerTabView: View {
             Tab("Messages", systemImage: "bubble.left.and.bubble.right.fill") {
                 NavigationStack { BorrowerMessagingView() }
             }
-            Tab("Profile", systemImage: "person.crop.circle.fill") {
-                NavigationStack { BorrowerProfileView() }
-            }
         }
     }
 }

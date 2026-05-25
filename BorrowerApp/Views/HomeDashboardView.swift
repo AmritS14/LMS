@@ -13,13 +13,22 @@ struct HomeDashboardView: View {
     var body: some View {
         ScrollView {
             mainContent
-                .padding(.bottom, Spacing.xl)
+                .padding(.bottom, 100)
         }
         .scrollIndicators(.hidden)
+        .scrollBounceBehavior(.basedOnSize)
         .background(Color.lmsBackground.ignoresSafeArea())
         .navigationTitle("Dashboard")
         .navigationBarTitleDisplayMode(.large)
-        .toolbar { toolbarContent }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink(destination: BorrowerProfileView()) {
+                    Image(systemName: "person.crop.circle")
+                        .font(.title3)
+                }
+                .accessibilityLabel("Profile")
+            }
+        }
         .task { await loadData() }
         .onChange(of: selectedLoanID) { _, newID in
             guard let newID,
@@ -55,18 +64,6 @@ struct HomeDashboardView: View {
         }
     }
 
-    @ToolbarContentBuilder
-    private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            Button {
-                showSupportSheet = true
-            } label: {
-                Image(systemName: "bubble.left.and.bubble.right")
-            }
-            .accessibilityLabel("Contact Support")
-        }
-    }
-
     private func paySheet(emi: EMI) -> some View {
         let loan = viewModel.activeLoans.first(where: { $0.id == selectedLoanID })
         return PayEMISheet(emi: emi, loan: loan) {
@@ -84,15 +81,31 @@ struct HomeDashboardView: View {
     @ViewBuilder
     private var contentSections: some View {
         let pendingApps = viewModel.applications.filter { $0.status != .disbursed && $0.status != .closed }
-        if let app = pendingApps.first {
-            statusTrackerCard(app)
+        if !pendingApps.isEmpty {
+            VStack(alignment: .leading, spacing: Spacing.m) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Pending Applications")
+                        .font(.title3.bold())
+                    Spacer()
+                }
                 .padding(.horizontal, Spacing.m)
+                
+                ForEach(pendingApps) { app in
+                    NavigationLink(destination: ApplicationTrackingView()) {
+                        statusTrackerCard(app)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.horizontal, Spacing.m)
+                    .padding(.bottom, Spacing.xs)
+                }
+            }
+            .padding(.top, Spacing.m)
         }
 
         if !viewModel.activeLoans.isEmpty {
             HStack(alignment: .firstTextBaseline) {
                 Text("Active Loans")
-                    .font(.lmsHeadline)
+                    .font(.title3.bold())
                 Spacer()
                 if viewModel.activeLoans.count > 1 {
                     Text("\(activeLoanIndex + 1) of \(viewModel.activeLoans.count)")
@@ -106,28 +119,28 @@ struct HomeDashboardView: View {
             if viewModel.activeLoans.count > 1 {
                 TabView(selection: $selectedLoanID) {
                     ForEach(viewModel.activeLoans) { loan in
-                        loanHeroCard(loan)
-                            .padding(.horizontal, Spacing.m)
-                            .padding(.bottom, Spacing.xl)
-                            .tag(loan.id as UUID?)
+                        NavigationLink(destination: RepaymentDashboardView(loan: loan)) {
+                            loanHeroCard(loan)
+                                .padding(.horizontal, Spacing.m)
+                                .padding(.bottom, 25)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .tag(loan.id as UUID?)
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .always))
                 .indexViewStyle(.page(backgroundDisplayMode: .never))
-                .frame(height: 340)
-
-                if let selectedID = selectedLoanID,
-                   let selectedLoan = viewModel.activeLoans.first(where: { $0.id == selectedID }) {
-                    emiListSection(for: selectedLoan)
-                        .padding(.horizontal, Spacing.m)
-                }
+                .frame(height: 350)
             } else if let loan = viewModel.activeLoans.first {
-                VStack(spacing: Spacing.l) {
+                NavigationLink(destination: RepaymentDashboardView(loan: loan)) {
                     loanHeroCard(loan)
-                    emiListSection(for: loan)
                 }
+                .buttonStyle(PlainButtonStyle())
                 .padding(.horizontal, Spacing.m)
+                .padding(.top, Spacing.s)
+                .padding(.bottom, Spacing.xs)
             }
+
         }
     }
 
@@ -151,7 +164,7 @@ struct HomeDashboardView: View {
         ).monthlyInstallment
         let nextEMI = nextUpcomingEMI(for: loan)
 
-        return VStack(alignment: .leading, spacing: Spacing.m) {
+        return VStack(alignment: .leading, spacing: Spacing.l) {
             HStack {
                 Label("\(loan.loanType.rawValue.capitalized) Loan", systemImage: icon(for: loan.loanType))
                     .font(.subheadline.weight(.semibold))
@@ -185,34 +198,23 @@ struct HomeDashboardView: View {
 
             Divider()
 
-            HStack {
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
                 stat(title: "Monthly EMI", value: Formatting.currency(emiAmount))
+                Spacer(minLength: 0)
                 Divider().frame(height: 32)
+                Spacer(minLength: 0)
                 stat(title: "Rate", value: Formatting.percent(loan.interestRate))
+                Spacer(minLength: 0)
                 Divider().frame(height: 32)
+                Spacer(minLength: 0)
                 stat(title: "Tenure", value: "\(loan.tenureMonths) mo")
+                Spacer(minLength: 0)
             }
 
-            if let nextEMI {
-                Button {
-                    emiToPay = nextEMI
-                } label: {
-                    HStack {
-                        Image(systemName: nextEMI.status == .overdue ? "exclamationmark.circle.fill" : "creditcard.fill")
-                        Text(nextEMI.status == .overdue ? "Pay Overdue EMI" : "Pay Next EMI")
-                            .fontWeight(.semibold)
-                        Spacer()
-                        Text(Formatting.currency(nextEMI.totalAmount))
-                            .fontWeight(.semibold)
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(nextEMI.status == .overdue ? .lmsDanger : .accentColor)
-                .controlSize(.large)
-                .buttonBorderShape(.roundedRectangle(radius: CornerRadius.button))
-            }
+
         }
-        .padding(Spacing.m)
+        .padding(Spacing.l)
         .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
     }
 
@@ -232,7 +234,7 @@ struct HomeDashboardView: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text("\(app.loanType.rawValue.capitalized) Loan Application")
-                        .font(.lmsHeadline)
+                        .font(.subheadline.weight(.semibold))
                     Text(Formatting.currency(app.requestedAmount))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -250,10 +252,9 @@ struct HomeDashboardView: View {
             } else {
                 HStack(spacing: 0) {
                     let order: [ApplicationStatus] = [.draft, .submitted, .underReview, .approved, .disbursed]
-                    let trackerStatus = trackerStatus(for: app.status)
                     ForEach(Array(order.enumerated()), id: \.offset) { idx, step in
-                        let isDone = isStepDone(current: trackerStatus, step: step, order: order)
-                        let isCurrent = trackerStatus == step
+                        let isDone = isStepDone(current: app.status, step: step, order: order)
+                        let isCurrent = app.status == step
 
                         VStack(spacing: Spacing.xs) {
                             ZStack {
@@ -352,17 +353,6 @@ struct HomeDashboardView: View {
         guard let ci = order.firstIndex(of: current),
               let si = order.firstIndex(of: step) else { return false }
         return si < ci
-    }
-
-    private func trackerStatus(for status: ApplicationStatus) -> ApplicationStatus {
-        switch status {
-        case .draft, .submitted, .underReview, .approved, .disbursed:
-            return status
-        case .escalated, .additionalInfoRequired, .recommended:
-            return .underReview
-        case .rejected, .closed:
-            return .underReview
-        }
     }
 
     private func icon(for type: LoanType) -> String {

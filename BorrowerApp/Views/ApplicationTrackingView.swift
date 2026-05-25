@@ -64,15 +64,17 @@ struct ApplicationTrackingView: View {
     private func statusBadge(for status: ApplicationStatus) -> some View {
         switch status {
         case .draft, .submitted:
-            return StatusBadge(status.displayLabel, tone: .neutral)
-        case .underReview, .escalated, .additionalInfoRequired, .recommended:
-            return StatusBadge(status.displayLabel, tone: .warning)
+            return StatusBadge(status.rawValue.capitalized, tone: .neutral)
+        case .underReview, .additionalInfoRequired, .recommended:
+            return StatusBadge(status.rawValue.capitalized, tone: .warning)
         case .approved, .disbursed:
-            return StatusBadge(status.displayLabel, tone: .success)
+            return StatusBadge(status.rawValue.capitalized, tone: .success)
         case .rejected:
-            return StatusBadge(status.displayLabel, tone: .danger)
+            return StatusBadge(status.rawValue.capitalized, tone: .danger)
         case .closed:
-            return StatusBadge(status.displayLabel, tone: .neutral)
+            return StatusBadge(status.rawValue.capitalized, tone: .neutral)
+        case .escalated:
+            return StatusBadge(status.rawValue.capitalized, tone: .warning)
         }
     }
 }
