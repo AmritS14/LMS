@@ -55,11 +55,16 @@ struct OfficerNavigationStack<Root: View>: View {
 struct ManagerTabView: View {
     var body: some View {
         TabView {
-            Tab("Portfolio", systemImage: "chart.pie") { PortfolioDashboardView() }
-            Tab("Approvals", systemImage: "checkmark.seal") { ApprovalsQueueView() }
+            Tab("Dashboard", systemImage: "rectangle.grid.2x2.fill") {
+                ManagerNavigationStack { ManagerDashboardView() }
+            }
+//            Tab("Applications", systemImage: "tray.full") {
+//                ManagerNavigationStack { ManagerApplicationsView() }
+//            }
             Tab("Reports", systemImage: "doc.text.magnifyingglass") { ReportsView() }
-            Tab("Products", systemImage: "slider.horizontal.3") { ProductConfigView() }
-            Tab("Profile", systemImage: "person.crop.circle") { StaffProfileView() }
+            Tab("Profile", systemImage: "person.crop.circle") {
+                NavigationStack { StaffProfileView() }
+            }
         }
     }
 }
@@ -75,7 +80,14 @@ struct AdminTabView: View {
     }
 }
 
-#Preview {
+#Preview("Manager") {
+    ManagerTabView()
+        .environment(ManagerStore.preview)
+        .environment(SessionStore())
+}
+
+#Preview("Officer") {
     OfficerTabView()
         .environment(LoanOfficerStore())
+        .environment(SessionStore())
 }

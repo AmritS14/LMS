@@ -191,7 +191,7 @@ enum MockOfficerData {
                 requestedAmount: 1_500_000,
                 tenureMonths: 84,
                 interestRate: 12.0,
-                status: .additionalInfoRequired,
+                status: .escalated,
                 createdAt: calendar.date(byAdding: .day, value: -9, to: now)!,
                 updatedAt: calendar.date(byAdding: .day, value: -3, to: now)!
             ),

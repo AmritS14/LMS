@@ -250,9 +250,10 @@ struct HomeDashboardView: View {
             } else {
                 HStack(spacing: 0) {
                     let order: [ApplicationStatus] = [.draft, .submitted, .underReview, .approved, .disbursed]
+                    let trackerStatus = trackerStatus(for: app.status)
                     ForEach(Array(order.enumerated()), id: \.offset) { idx, step in
-                        let isDone = isStepDone(current: app.status, step: step, order: order)
-                        let isCurrent = app.status == step
+                        let isDone = isStepDone(current: trackerStatus, step: step, order: order)
+                        let isCurrent = trackerStatus == step
 
                         VStack(spacing: Spacing.xs) {
                             ZStack {
@@ -351,6 +352,17 @@ struct HomeDashboardView: View {
         guard let ci = order.firstIndex(of: current),
               let si = order.firstIndex(of: step) else { return false }
         return si < ci
+    }
+
+    private func trackerStatus(for status: ApplicationStatus) -> ApplicationStatus {
+        switch status {
+        case .draft, .submitted, .underReview, .approved, .disbursed:
+            return status
+        case .escalated, .additionalInfoRequired, .recommended:
+            return .underReview
+        case .rejected, .closed:
+            return .underReview
+        }
     }
 
     private func icon(for type: LoanType) -> String {

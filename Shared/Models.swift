@@ -70,6 +70,7 @@ enum ApplicationStatus: String, Codable, Sendable {
     case draft
     case submitted
     case underReview
+    case escalated
     case additionalInfoRequired
     case recommended
     case approved

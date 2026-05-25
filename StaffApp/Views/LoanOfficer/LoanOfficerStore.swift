@@ -167,6 +167,10 @@ final class LoanOfficerStore {
         updateStatus(for: application, to: .additionalInfoRequired)
     }
 
+    func escalateApplication(_ application: OfficerApplication, note: String?) {
+        updateStatus(for: application, to: .escalated, note: note)
+    }
+
     func markBorrowerContacted(_ borrower: OverdueBorrower) {
         guard let idx = overdueBorrowers.firstIndex(of: borrower) else { return }
         overdueBorrowers[idx].contacted = true
@@ -197,7 +201,8 @@ final class LoanOfficerStore {
     // MARK: Helpers
 
     private func updateStatus(for application: OfficerApplication,
-                              to status: ApplicationStatus) {
+                              to status: ApplicationStatus,
+                              note: String? = nil) {
         guard let idx = applications.firstIndex(of: application) else { return }
         var updated = applications[idx].application
         updated.status = status
@@ -217,7 +222,7 @@ final class LoanOfficerStore {
                 try? await environment.loans.updateStatus(
                     applicationID: updated.id,
                     to: status,
-                    note: nil
+                    note: note
                 )
             }
         }

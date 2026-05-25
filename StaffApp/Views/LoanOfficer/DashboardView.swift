@@ -244,6 +244,8 @@ struct DashboardView: View {
 }
 
 #Preview {
-    DashboardView()
-        .environment(LoanOfficerStore())
+    NavigationStack {
+        DashboardView()
+            .environment(LoanOfficerStore())
+    }
 }

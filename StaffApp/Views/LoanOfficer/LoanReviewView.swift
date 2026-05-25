@@ -431,7 +431,10 @@ struct LoanReviewView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Submit") {
+                        let note = escalationNotes.trimmingCharacters(in: .whitespacesAndNewlines)
+                        store.escalateApplication(app, note: note.isEmpty ? nil : note)
                         showEscalateSheet = false
+                        escalationNotes = ""
                     }
                 }
             }

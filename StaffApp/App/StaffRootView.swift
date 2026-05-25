@@ -5,6 +5,7 @@ struct StaffRootView: View {
     @Environment(\.appEnvironment) private var appEnvironment
 
     @State private var officerStore = LoanOfficerStore()
+    @State private var managerStore = ManagerStore()
 
     var body: some View {
         if let role = session.role {
@@ -17,7 +18,14 @@ struct StaffRootView: View {
                             officerStore.configure(environment: appEnvironment)
                         }
                     }
-            case .manager: ManagerTabView()
+            case .manager:
+                ManagerTabView()
+                    .environment(managerStore)
+                    .task {
+                        if let appEnvironment {
+                            managerStore.configure(environment: appEnvironment)
+                        }
+                    }
             case .admin: AdminTabView()
             case .borrower: UnsupportedRoleView()
             }

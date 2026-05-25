@@ -53,7 +53,7 @@ struct AllApplicationsView: View {
                     statusFilter = nil
                 }
                 ForEach([ApplicationStatus.submitted, .underReview,
-                         .additionalInfoRequired, .recommended,
+                        .escalated, .additionalInfoRequired, .recommended,
                          .approved, .rejected], id: \.self) { status in
                     chip(label: status.displayLabel,
                          isSelected: statusFilter == status,

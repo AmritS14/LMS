@@ -131,6 +131,7 @@ extension ApplicationStatus {
         case .draft: "Draft"
         case .submitted: "Submitted"
         case .underReview: "Under Review"
+        case .escalated: "Escalated"
         case .additionalInfoRequired: "Info Needed"
         case .recommended: "Recommended"
         case .approved: "Approved"
@@ -144,7 +145,7 @@ extension ApplicationStatus {
         switch self {
         case .draft: .neutral
         case .submitted, .underReview: .info
-        case .additionalInfoRequired: .warning
+        case .escalated, .additionalInfoRequired: .warning
         case .recommended, .approved, .disbursed: .success
         case .rejected: .danger
         case .closed: .neutral
@@ -156,6 +157,7 @@ extension ApplicationStatus {
         case .draft: "doc.text"
         case .submitted: "tray.and.arrow.up"
         case .underReview: "magnifyingglass"
+        case .escalated: "arrow.up.right.circle.fill"
         case .additionalInfoRequired: "exclamationmark.bubble"
         case .recommended: "hand.thumbsup"
         case .approved: "checkmark.seal.fill"
