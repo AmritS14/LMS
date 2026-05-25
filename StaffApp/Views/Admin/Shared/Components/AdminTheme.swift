@@ -6,7 +6,8 @@ struct AdminColor {
 
     static let cardBackground = Color(uiColor: UIColor.secondarySystemGroupedBackground)
 
-    static let accent = Color(hex: "#E24901")
+//    static let accent = Color(hex: "#E24901")
+    static let accent = Color.blue
 
     static let text = Color(uiColor: UIColor { traitCollection in
         if traitCollection.userInterfaceStyle == .dark {
@@ -18,15 +19,24 @@ struct AdminColor {
 
     static let secondaryText = Color(uiColor: UIColor { traitCollection in
         if traitCollection.userInterfaceStyle == .dark {
-            return UIColor(hex: "#A19EB0")
+//            return UIColor(hex: "#A19EB0")
+            return UIColor.systemGray2
         } else {
-            return UIColor(hex: "#6E6986")
+//            return UIColor(hex: "#6E6986")
+            return UIColor.systemGray
         }
     })
 
+//    static var accentGradient: LinearGradient {
+//        LinearGradient(
+//            colors: [accent, Color(hex: "#FFA238")],
+//            startPoint: .topLeading,
+//            endPoint: .bottomTrailing
+//        )
+//    }
     static var accentGradient: LinearGradient {
         LinearGradient(
-            colors: [accent, Color(hex: "#FFA238")],
+            colors: [accent, Color.blue.opacity(0.5)],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )

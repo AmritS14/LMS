@@ -39,18 +39,7 @@ struct TemplateRowView: View {
             }
 
             Spacer()
-
-            // Trailing chevron inside the card
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
         }
-        .padding(AdminSpacing.cardPadding)
-        .background(
-            AdminColor.cardBackground,
-            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-        )
-        .contentShape(Rectangle())
     }
 
     // MARK: - Subviews

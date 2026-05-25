@@ -23,47 +23,26 @@ struct LoanConfigFormView: View {
         List {
             // Product sections grouped by category
             ForEach(viewModel.activeCategories) { category in
-                // Category Header Row
-                SectionHeaderView(
-                    title: category.rawValue,
-                    systemImage: category.systemImage
-                )
-                .listRowInsets(EdgeInsets(
-                    top: AdminSpacing.headerTopInset,
-                    leading: AdminSpacing.cardRowHorizontalInset,
-                    bottom: AdminSpacing.headerBottomInset,
-                    trailing: AdminSpacing.cardRowHorizontalInset
-                ))
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                
-                // Category Products Rows
-                if let products = viewModel.productsByCategory[category] {
-                    ForEach(products) { product in
-                        LoanProductRowView(
-                            product: product,
-                            action: {
-                                selectedProduct = product
-                            }
-                        )
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-                        .listRowInsets(EdgeInsets(
-                            top: AdminSpacing.cardRowVerticalInset,
-                            leading: AdminSpacing.cardRowHorizontalInset,
-                            bottom: AdminSpacing.cardRowVerticalInset,
-                            trailing: AdminSpacing.cardRowHorizontalInset
-                        ))
+                Section {
+                    if let products = viewModel.productsByCategory[category] {
+                        ForEach(products) { product in
+                            LoanProductRowView(
+                                product: product,
+                                action: {
+                                    selectedProduct = product
+                                }
+                            )
+                        }
+                        .onDelete { offsets in
+                            viewModel.deleteLoans(category: category, at: offsets)
+                        }
                     }
-                    .onDelete { offsets in
-                        viewModel.deleteLoans(category: category, at: offsets)
-                    }
+                } header: {
+                    Text(category.rawValue).font(.title3).fontWeight(.bold).foregroundStyle(.primary).textCase(nil)
                 }
             }
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .background(AdminColor.background)
+        .listStyle(.insetGrouped)
         .sheet(item: $selectedProduct) { product in
             if let binding = viewModel.binding(for: product.id) {
                 LoanProductEditorSheet(

@@ -37,17 +37,7 @@ struct LoanProductRowView: View {
                 }
 
                 Spacer()
-
-                // Trailing chevron
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
             }
-            .padding(AdminSpacing.cardPadding)
-            .background(
-                AdminColor.cardBackground,
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

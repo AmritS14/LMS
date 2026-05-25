@@ -19,12 +19,19 @@ struct TemplateListView: View {
 
     var body: some View {
         List {
-            // Template list grouped by trigger category
-            templatesSection
+            ForEach(viewModel.filteredTemplates) { template in
+                NavigationLink(value: template) {
+                    TemplateRowView(
+                        template: template,
+                        isSelected: viewModel.selectedTemplate?.id == template.id
+                    )
+                }
+            }
+            .onDelete { offsets in
+                viewModel.deleteTemplates(at: offsets)
+            }
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .background(AdminColor.background)
+        .listStyle(.insetGrouped)
         .searchable(
             text: $viewModel.searchText,
             placement: .navigationBarDrawer(displayMode: .always),
@@ -52,38 +59,6 @@ struct TemplateListView: View {
         .sheet(isPresented: $showAddTemplateSheet) {
             AddTemplateSheet(viewModel: viewModel) {
                 showAddTemplateSheet = false
-            }
-        }
-    }
-
-    // MARK: - Sections
-
-    /// The scrollable list of template rows with navigation links.
-    private var templatesSection: some View {
-        Section {
-            ForEach(viewModel.filteredTemplates) { template in
-                ZStack {
-                    NavigationLink(value: template) {
-                        EmptyView()
-                    }
-                    .opacity(0)
-
-                    TemplateRowView(
-                        template: template,
-                        isSelected: viewModel.selectedTemplate?.id == template.id
-                    )
-                }
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(
-                    top: AdminSpacing.cardRowVerticalInset,
-                    leading: AdminSpacing.cardRowHorizontalInset,
-                    bottom: AdminSpacing.cardRowVerticalInset,
-                    trailing: AdminSpacing.cardRowHorizontalInset
-                ))
-            }
-            .onDelete { offsets in
-                viewModel.deleteTemplates(at: offsets)
             }
         }
     }

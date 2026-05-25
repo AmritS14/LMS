@@ -15,33 +15,41 @@ struct UserListView: View {
     @Bindable var viewModel: UserManagementViewModel
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: AdminSpacing.headerToCardGap) {
-                // Horizontal filter pills
-                filterPills
+        List {
+            // Horizontal filter pills
+            filterPills
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+                .padding(.bottom, Spacing.m)
 
-                // User list section
-                LazyVStack(spacing: AdminSpacing.cardGap) {
-                    if viewModel.filteredUsers.isEmpty {
-                        EmptyStateView(
-                            title: "No Users Found",
-                            subtitle: "No users match your criteria.",
-                            systemImage: "person.slash"
-                        )
-                        .padding(.top, 40)
-                    } else {
-                        ForEach(viewModel.filteredUsers) { user in
-                            NavigationLink(destination: UserDetailsView(viewModel: viewModel, user: user)) {
-                                UserRowView(user: user, profile: viewModel.staffProfiles[user.id])
-                            }
-                            .buttonStyle(.plain)
+            // User list section
+            if viewModel.filteredUsers.isEmpty {
+                EmptyStateView(
+                    title: "No Users Found",
+                    subtitle: "No users match your criteria.",
+                    systemImage: "person.slash"
+                )
+                .padding(.top, 40)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+            } else {
+                ForEach(viewModel.filteredUsers) { user in
+                    ZStack {
+                        NavigationLink(destination: UserDetailsView(viewModel: viewModel, user: user)) {
+                            EmptyView()
                         }
+                        .opacity(0)
+                        
+                        UserRowView(user: user, profile: viewModel.staffProfiles[user.id])
                     }
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 0, leading: Spacing.m, bottom: AdminSpacing.cardGap, trailing: Spacing.m))
                 }
-                .padding(.horizontal, Spacing.m)
             }
-            .padding(.vertical, Spacing.m)
         }
+        .listStyle(.plain)
         .background(AdminColor.background)
         .searchable(
             text: $viewModel.searchText,
@@ -97,7 +105,7 @@ struct UserListView: View {
                 .padding(.vertical, Spacing.s)
                 .foregroundStyle(isSelected ? .white : .primary)
                 .background(
-                    isSelected ? AdminColor.accent : AdminColor.cardBackground,
+                    isSelected ? AdminColor.accent : Color(.secondarySystemGroupedBackground),
                     in: Capsule()
                 )
                 .overlay(

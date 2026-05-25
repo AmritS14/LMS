@@ -16,30 +16,22 @@ struct DashboardView: View {
     @State private var showDetails: Bool = false
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: AdminSpacing.sectionGap) {
-                // Total Distribution Card
-                Button {
-                    showDetails = true
-                } label: {
-                    distributionCard
-                }
-                .buttonStyle(.plain)
-
-                // Recent Applications List
-                VStack(alignment: .leading, spacing: AdminSpacing.headerToCardGap) {
-                    Text("Recent Applications")
-                        .font(.lmsTitle2)
-                        .foregroundStyle(.primary)
-
-                    recentApplicationsList
-                }
+        List {
+            // Total Distribution Card
+            Button {
+                showDetails = true
+            } label: {
+                distributionCard
             }
-            .padding(.horizontal, Spacing.m)
-            .padding(.top, Spacing.m)
-            .padding(.bottom, Spacing.xl)
+            .buttonStyle(.plain)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
+            .padding(.bottom, Spacing.m)
+
+            // Recent Applications List
+            recentApplicationsList
         }
-        .background(AdminColor.background)
+        .listStyle(.insetGrouped)
         .navigationTitle("Dashboard")
         .navigationDestination(isPresented: $showDetails) {
             DistributionDetailsView(viewModel: viewModel, userVM: userVM)
@@ -61,14 +53,14 @@ struct DashboardView: View {
 
     /// Card for Total Distribution
     private var distributionCard: some View {
-        VStack(alignment: .leading, spacing: Spacing.m) {
+        VStack(alignment: .leading, spacing: 20) {
             HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: Spacing.xs) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text("TOTAL DISTRIBUTION")
-                        .font(.lmsSubheadline)
+                        .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.8))
                     Text(isAmountVisible ? viewModel.snapshot.stats.totalAmount : "••••••")
-                        .font(.lmsTitle)
+                        .font(.system(size: 34, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                 }
                 
@@ -95,21 +87,21 @@ struct DashboardView: View {
                 statColumn(title: "Application", value: "\(viewModel.snapshot.stats.applications)")
             }
         }
-        .padding(Spacing.m)
+        .padding(20)
         .background(
-            AdminColor.accentGradient,
-            in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+            Color.blue.gradient,
+            in: RoundedRectangle(cornerRadius: 24, style: .continuous)
         )
-        .shadow(color: AdminColor.accent.opacity(0.25), radius: 10, x: 0, y: 5)
     }
     
     private func statColumn(title: String, value: String) -> some View {
-        VStack(spacing: Spacing.s) {
+        VStack(spacing: 6) {
             Text(title)
-                .font(.lmsCaption)
+                .font(.caption)
                 .foregroundStyle(.white.opacity(0.85))
             Text(value)
-                .font(.lmsTitle2)
+                .font(.title2)
+                .fontWeight(.bold)
                 .foregroundStyle(.white)
         }
         .frame(maxWidth: .infinity)
@@ -117,7 +109,7 @@ struct DashboardView: View {
 
     /// List of separate Recent Application cards
     private var recentApplicationsList: some View {
-        VStack(spacing: AdminSpacing.cardGap) {
+        Section {
             ForEach(viewModel.snapshot.recentApplications) { app in
                 HStack(alignment: .center) {
                     VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -142,12 +134,9 @@ struct DashboardView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .padding(AdminSpacing.cardPadding)
-                .background(
-                    AdminColor.cardBackground,
-                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                )
             }
+        } header: {
+            Text("Recent Applications").font(.title3).fontWeight(.bold).foregroundStyle(.primary).textCase(nil)
         }
     }
 }
