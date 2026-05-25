@@ -13,12 +13,22 @@ struct HomeDashboardView: View {
     var body: some View {
         ScrollView {
             mainContent
-                .padding(.bottom, Spacing.xl)
+                .padding(.bottom, 100)
         }
         .scrollIndicators(.hidden)
+        .scrollBounceBehavior(.basedOnSize)
         .background(Color.lmsBackground.ignoresSafeArea())
         .navigationTitle("Dashboard")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink(destination: BorrowerProfileView()) {
+                    Image(systemName: "person.crop.circle")
+                        .font(.title3)
+                }
+                .accessibilityLabel("Profile")
+            }
+        }
         .task { await loadData() }
         .onChange(of: selectedLoanID) { _, newID in
             guard let newID,
@@ -72,7 +82,7 @@ struct HomeDashboardView: View {
     private var contentSections: some View {
         let pendingApps = viewModel.applications.filter { $0.status != .disbursed && $0.status != .closed }
         if !pendingApps.isEmpty {
-            VStack(alignment: .leading, spacing: Spacing.s) {
+            VStack(alignment: .leading, spacing: Spacing.m) {
                 HStack(alignment: .firstTextBaseline) {
                     Text("Pending Applications")
                         .font(.title3.bold())
@@ -86,10 +96,10 @@ struct HomeDashboardView: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                     .padding(.horizontal, Spacing.m)
-                    .padding(.bottom, Spacing.s)
+                    .padding(.bottom, Spacing.xs)
                 }
             }
-            .padding(.top, Spacing.s)
+            .padding(.top, Spacing.m)
         }
 
         if !viewModel.activeLoans.isEmpty {
@@ -112,7 +122,7 @@ struct HomeDashboardView: View {
                         NavigationLink(destination: RepaymentDashboardView(loan: loan)) {
                             loanHeroCard(loan)
                                 .padding(.horizontal, Spacing.m)
-                                .padding(.bottom, Spacing.xl)
+                                .padding(.bottom, 25)
                         }
                         .buttonStyle(PlainButtonStyle())
                         .tag(loan.id as UUID?)
@@ -120,30 +130,17 @@ struct HomeDashboardView: View {
                 }
                 .tabViewStyle(.page(indexDisplayMode: .always))
                 .indexViewStyle(.page(backgroundDisplayMode: .never))
-                .frame(height: 250)
+                .frame(height: 350)
             } else if let loan = viewModel.activeLoans.first {
                 NavigationLink(destination: RepaymentDashboardView(loan: loan)) {
                     loanHeroCard(loan)
                 }
                 .buttonStyle(PlainButtonStyle())
                 .padding(.horizontal, Spacing.m)
+                .padding(.top, Spacing.s)
+                .padding(.bottom, Spacing.xs)
             }
-            
-            // Apply for a New Loan Button (as seen in screenshot)
-            NavigationLink(destination: NewLoanApplicationView()) {
-                HStack {
-                    Image(systemName: "plus.circle.fill")
-                    Text("Apply for a New Loan")
-                        .fontWeight(.medium)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, Spacing.m)
-                .background(Color.blue.opacity(0.1))
-                .foregroundColor(.blue)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-            .padding(.horizontal, Spacing.m)
-            .padding(.top, Spacing.s)
+
         }
     }
 
@@ -167,7 +164,7 @@ struct HomeDashboardView: View {
         ).monthlyInstallment
         let nextEMI = nextUpcomingEMI(for: loan)
 
-        return VStack(alignment: .leading, spacing: Spacing.m) {
+        return VStack(alignment: .leading, spacing: Spacing.l) {
             HStack {
                 Label("\(loan.loanType.rawValue.capitalized) Loan", systemImage: icon(for: loan.loanType))
                     .font(.subheadline.weight(.semibold))
@@ -201,34 +198,23 @@ struct HomeDashboardView: View {
 
             Divider()
 
-            HStack {
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
                 stat(title: "Monthly EMI", value: Formatting.currency(emiAmount))
+                Spacer(minLength: 0)
                 Divider().frame(height: 32)
+                Spacer(minLength: 0)
                 stat(title: "Rate", value: Formatting.percent(loan.interestRate))
+                Spacer(minLength: 0)
                 Divider().frame(height: 32)
+                Spacer(minLength: 0)
                 stat(title: "Tenure", value: "\(loan.tenureMonths) mo")
+                Spacer(minLength: 0)
             }
 
-            if let nextEMI {
-                Button {
-                    emiToPay = nextEMI
-                } label: {
-                    HStack {
-                        Image(systemName: nextEMI.status == .overdue ? "exclamationmark.circle.fill" : "creditcard.fill")
-                        Text(nextEMI.status == .overdue ? "Pay Overdue EMI" : "Pay Next EMI")
-                            .fontWeight(.semibold)
-                        Spacer()
-                        Text(Formatting.currency(nextEMI.totalAmount))
-                            .fontWeight(.semibold)
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(nextEMI.status == .overdue ? .lmsDanger : .accentColor)
-                .controlSize(.large)
-                .buttonBorderShape(.roundedRectangle(radius: CornerRadius.button))
-            }
+
         }
-        .padding(Spacing.m)
+        .padding(Spacing.l)
         .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
     }
 
