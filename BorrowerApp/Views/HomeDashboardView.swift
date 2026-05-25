@@ -89,7 +89,18 @@ struct HomeDashboardView: View {
                                 .padding(.horizontal)
                                 
                                 if let app = pendingApps.first {
-                                    statusTrackerCard(app).padding(.horizontal)
+                                    VStack(spacing: 8) {
+                                        HStack(alignment: .bottom) {
+                                            Text("Pending Application")
+                                                .font(.headline)
+                                                .foregroundStyle(.primary)
+                                            Spacer()
+                                        }
+                                        .padding(.horizontal)
+                                        .padding(.bottom, 4)
+                                        
+                                        statusTrackerCard(app).padding(.horizontal)
+                                    }
                                 }
                             }
                         }
