@@ -113,7 +113,7 @@ actor SupabaseMessagingService: MessagingService {
             .from("chat_messages")
             .update(updateData)
             .eq("thread_id", value: threadID)
-            .is("read_at", value: "null")
+            .is("read_at", value: nil)
             .execute()
     }
 }

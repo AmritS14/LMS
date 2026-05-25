@@ -1,0 +1,548 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -workspace LMS.xcodeproj/project.xcworkspace -scheme BorrowerApp build -destination "platform=iOS Simulator,name=iPhone 17" CODE_SIGNING_ALLOWED=NO -derivedDataPath build
+
+Build settings from command line:
+    CODE_SIGNING_ALLOWED = NO
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  swift-http-types: https://github.com/apple/swift-http-types.git @ 1.5.1
+  swift-asn1: https://github.com/apple/swift-asn1.git @ 1.7.0
+  swift-crypto: https://github.com/apple/swift-crypto.git @ 4.5.0
+  swift-concurrency-extras: https://github.com/pointfreeco/swift-concurrency-extras @ 1.3.2
+  Supabase: https://github.com/supabase-community/supabase-swift.git @ 2.46.0
+  xctest-dynamic-overlay: https://github.com/pointfreeco/xctest-dynamic-overlay @ 1.9.0
+  swift-clocks: https://github.com/pointfreeco/swift-clocks @ 1.0.6
+
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (23 targets)
+    Target 'BorrowerApp' in project 'LMS'
+        ➜ Explicit dependency on target 'Supabase' in project 'Supabase'
+    Target 'Supabase' in project 'Supabase'
+        ➜ Explicit dependency on target 'Supabase' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'Auth' in project 'Supabase'
+        ➜ Explicit dependency on target 'Functions' in project 'Supabase'
+        ➜ Explicit dependency on target 'PostgREST' in project 'Supabase'
+        ➜ Explicit dependency on target 'Realtime' in project 'Supabase'
+        ➜ Explicit dependency on target 'Storage' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'Crypto' in project 'swift-crypto'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Supabase' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'Auth' in project 'Supabase'
+        ➜ Explicit dependency on target 'Functions' in project 'Supabase'
+        ➜ Explicit dependency on target 'PostgREST' in project 'Supabase'
+        ➜ Explicit dependency on target 'Realtime' in project 'Supabase'
+        ➜ Explicit dependency on target 'Storage' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'Crypto' in project 'swift-crypto'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Storage' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+    Target 'Realtime' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'PostgREST' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+    Target 'Functions' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+    Target 'Auth' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'Crypto' in project 'swift-crypto'
+    Target 'Crypto' in project 'swift-crypto'
+        ➜ Explicit dependency on target 'Crypto' in project 'swift-crypto'
+        ➜ Explicit dependency on target 'swift-crypto_Crypto' in project 'swift-crypto'
+    Target 'Crypto' in project 'swift-crypto'
+        ➜ Explicit dependency on target 'swift-crypto_Crypto' in project 'swift-crypto'
+    Target 'swift-crypto_Crypto' in project 'swift-crypto' (no dependencies)
+    Target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+    Target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReportingPackageSupport' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReportingPackageSupport' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'IssueReporting' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReportingPackageSupport' in project 'xctest-dynamic-overlay'
+    Target 'IssueReporting' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReportingPackageSupport' in project 'xctest-dynamic-overlay'
+    Target 'IssueReportingPackageSupport' in project 'xctest-dynamic-overlay' (no dependencies)
+    Target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+    Target 'HTTPTypes' in project 'swift-http-types' (no dependencies)
+    Target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+    Target 'ConcurrencyExtras' in project 'swift-concurrency-extras' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.4.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Resources/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+ReadFileContents /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/share/docc/features.json
+
+Build description signature: 98f15a152ebc8701bd7a475d4a2c44a5
+Build description path: /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/XCBuildData/98f15a152ebc8701bd7a475d4a2c44a5.xcbuilddata
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.4.sdk /Users/arshitsinghal/Documents/GitHub/LMS/build/SDKStatCaches.noindex/iphonesimulator26.4-23E252-686eebb5dc1d8ecb277353a59184f4aa.sdkstatcache
+    cd /Users/arshitsinghal/Documents/GitHub/LMS/LMS.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.4.sdk -o /Users/arshitsinghal/Documents/GitHub/LMS/build/SDKStatCaches.noindex/iphonesimulator26.4-23E252-686eebb5dc1d8ecb277353a59184f4aa.sdkstatcache
+
+ProcessInfoPlistFile /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/swift-crypto_Crypto.bundle/Info.plist /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/swift-crypto_Crypto.build/empty-swift-crypto_Crypto.plist (in target 'swift-crypto_Crypto' from project 'swift-crypto')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS/build/SourcePackages/checkouts/swift-crypto
+    builtin-infoPlistUtility /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/swift-crypto_Crypto.build/empty-swift-crypto_Crypto.plist -producttype com.apple.product-type.bundle -expandbuildsettings -format binary -platform iphonesimulator -o /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/swift-crypto_Crypto.bundle/Info.plist
+
+SwiftDriver BorrowerApp normal arm64 com.apple.xcode.tools.swift.compiler (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    builtin-SwiftDriver -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name BorrowerApp -Onone @/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp.SwiftFileList -DDEBUG -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.4.sdk -target arm64-apple-ios26.0-simulator -g -module-cache-path /Users/arshitsinghal/Documents/GitHub/LMS/build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/arshitsinghal/Documents/GitHub/LMS/build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 6 -I /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/arshitsinghal/Documents/GitHub/LMS/build/SDKStatCaches.noindex/iphonesimulator26.4-23E252-686eebb5dc1d8ecb277353a59184f4aa.sdkstatcache -output-file-map /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/arshitsinghal/Documents/GitHub/LMS/build/ModuleCache.noindex -sdk-module-cache-path /Users/arshitsinghal/Documents/GitHub/LMS/build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/arshitsinghal/Documents/GitHub/LMS/build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp_const_extract_protocols.json -Xcc -iquote -Xcc /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp-generated-files.hmap -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp-own-target-headers.hmap -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/LMS-7c7ac6d5575d6d61900bb354995e8f2d-VFS-iphonesimulator/all-product-headers.yaml -Xcc -iquote -Xcc /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp-project-headers.hmap -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/DerivedSources-normal/arm64 -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/DerivedSources/arm64 -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp-Swift.h -working-directory /Users/arshitsinghal/Documents/GitHub/LMS -experimental-emit-module-separately -disable-cmo
+
+ProcessInfoPlistFile /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/Info.plist /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/empty-BorrowerApp.plist (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    builtin-infoPlistUtility /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/empty-BorrowerApp.plist -producttype com.apple.product-type.application -genpkginfo /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/assetcatalog_generated_info.plist -scanforprivacyfile /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/swift-crypto_Crypto.bundle -o /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/Info.plist
+
+SwiftCompile normal arm64 Compiling\ AuthViewModel.swift,\ BorrowerApp.swift,\ BorrowerMessagingView.swift,\ BorrowerProfileView.swift /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/ViewModels/AuthViewModel.swift /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/App/BorrowerApp.swift /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/BorrowerMessagingView.swift /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/BorrowerProfileView.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/ViewModels/AuthViewModel.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/App/BorrowerApp.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/BorrowerMessagingView.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/BorrowerProfileView.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 Compiling\ NotificationService.swift,\ NotificationsView.swift,\ PersistenceController.swift,\ PrimaryButton.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/NotificationService.swift /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/NotificationsView.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Utilities/PersistenceController.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/PrimaryButton.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/NotificationService.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/NotificationsView.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Utilities/PersistenceController.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/PrimaryButton.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 Compiling\ LoginView.swift,\ MessagingService.swift,\ Models.swift,\ NewLoanApplicationView.swift /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/LoginView.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/MessagingService.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Models.swift /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/NewLoanApplicationView.swift (in target 'BorrowerApp' from project 'LMS')
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/LoginView.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/MessagingService.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Models.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/NewLoanApplicationView.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ BorrowerApp (in target 'BorrowerApp' from project 'LMS')
+
+EmitSwiftModule normal arm64 (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 Compiling\ SupabaseAuthService.swift,\ SupabaseMessagingService.swift,\ SupabaseDocumentService.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/Supabase/SupabaseAuthService.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/Supabase/SupabaseMessagingService.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/Supabase/SupabaseDocumentService.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/Supabase/SupabaseAuthService.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/Supabase/SupabaseMessagingService.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/Supabase/SupabaseDocumentService.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+/Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/Supabase/SupabaseDocumentService.swift:86:14: warning: 'upload(path:file:options:)' is deprecated: renamed to 'upload(_:data:options:)'
+            .upload(
+             ^
+/Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/Supabase/SupabaseDocumentService.swift:86:14: note: use 'upload(_:data:options:)' instead
+            .upload(
+             ^
+
+SwiftCompile normal arm64 Compiling\ RepaymentDashboardView.swift,\ RootView.swift,\ SectionCard.swift,\ SessionStore.swift /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/RepaymentDashboardView.swift /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/App/RootView.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/SectionCard.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/SessionStore.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/RepaymentDashboardView.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/App/RootView.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/SectionCard.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/SessionStore.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 Compiling\ DashboardViewModel.swift,\ RepaymentViewModel.swift,\ MessagingViewModel.swift /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/ViewModels/DashboardViewModel.swift /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/ViewModels/RepaymentViewModel.swift /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/ViewModels/MessagingViewModel.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/ViewModels/DashboardViewModel.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/ViewModels/RepaymentViewModel.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/ViewModels/MessagingViewModel.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 Compiling\ MockAuthService.swift,\ MockLoanService.swift,\ MockSupportServices.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/Mocks/MockAuthService.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/Mocks/MockLoanService.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/Mocks/MockSupportServices.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/Mocks/MockAuthService.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/Mocks/MockLoanService.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/Mocks/MockSupportServices.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 Compiling\ KYCView.swift,\ KeychainService.swift,\ LoanApplicationViewModel.swift,\ LoanService.swift /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/KYCView.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/KeychainService.swift /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/ViewModels/LoanApplicationViewModel.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/LoanService.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/KYCView.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/KeychainService.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/ViewModels/LoanApplicationViewModel.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+/Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/ViewModels/LoanApplicationViewModel.swift:32:17: warning: initialization of immutable value 'created' was never used; consider replacing with assignment to '_' or removing it
+            let created = try await loanService.createApplication(app)
+            ~~~~^~~~~~~
+            _
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/LoanService.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 Compiling\ RegisterView.swift,\ DetailRow.swift,\ CountBadge.swift /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/RegisterView.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/DetailRow.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/CountBadge.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/RegisterView.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/DetailRow.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/CountBadge.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 Compiling\ Colors.swift,\ Formatting.swift,\ LMSTextFieldStyle.swift,\ HomeDashboardView.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/Colors.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Utilities/Formatting.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/LMSTextFieldStyle.swift /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/HomeDashboardView.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/Colors.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Utilities/Formatting.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/LMSTextFieldStyle.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/HomeDashboardView.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling DashboardViewModel.swift, RepaymentViewModel.swift, MessagingViewModel.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 Compiling\ ApplicationTrackingView.swift /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/ApplicationTrackingView.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/ApplicationTrackingView.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling MockAuthService.swift, MockLoanService.swift, MockSupportServices.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 Compiling\ EMICalculatorView.swift /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/EMICalculatorView.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/EMICalculatorView.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling SupabaseAuthService.swift, SupabaseMessagingService.swift, SupabaseDocumentService.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 Compiling\ ForgotPasswordView.swift /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/ForgotPasswordView.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/BorrowerApp/Views/ForgotPasswordView.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for BorrowerApp (in target 'BorrowerApp' from project 'LMS')
+
+SwiftDriver\ Compilation\ Requirements BorrowerApp normal arm64 com.apple.xcode.tools.swift.compiler (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name BorrowerApp -Onone @/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp.SwiftFileList -DDEBUG -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.4.sdk -target arm64-apple-ios26.0-simulator -g -module-cache-path /Users/arshitsinghal/Documents/GitHub/LMS/build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/arshitsinghal/Documents/GitHub/LMS/build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 6 -I /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/arshitsinghal/Documents/GitHub/LMS/build/SDKStatCaches.noindex/iphonesimulator26.4-23E252-686eebb5dc1d8ecb277353a59184f4aa.sdkstatcache -output-file-map /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/arshitsinghal/Documents/GitHub/LMS/build/ModuleCache.noindex -sdk-module-cache-path /Users/arshitsinghal/Documents/GitHub/LMS/build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/arshitsinghal/Documents/GitHub/LMS/build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp_const_extract_protocols.json -Xcc -iquote -Xcc /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp-generated-files.hmap -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp-own-target-headers.hmap -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/LMS-7c7ac6d5575d6d61900bb354995e8f2d-VFS-iphonesimulator/all-product-headers.yaml -Xcc -iquote -Xcc /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp-project-headers.hmap -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/DerivedSources-normal/arm64 -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/DerivedSources/arm64 -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp-Swift.h -working-directory /Users/arshitsinghal/Documents/GitHub/LMS -experimental-emit-module-separately -disable-cmo
+
+SwiftDriverJobDiscovery normal arm64 Compiling RegisterView.swift, DetailRow.swift, CountBadge.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 Compiling\ Typography.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/Typography.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/Typography.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftMergeGeneratedHeaders /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/DerivedSources/BorrowerApp-Swift.h /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp-Swift.h (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    builtin-swiftHeaderTool -arch arm64 /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp-Swift.h -o /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/DerivedSources/BorrowerApp-Swift.h
+
+SwiftDriverJobDiscovery normal arm64 Compiling NotificationService.swift, NotificationsView.swift, PersistenceController.swift, PrimaryButton.swift (in target 'BorrowerApp' from project 'LMS')
+
+Copy /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.swiftmodule/arm64-apple-ios-simulator.swiftmodule /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp.swiftmodule (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp.swiftmodule /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.swiftmodule/arm64-apple-ios-simulator.swiftmodule
+
+Copy /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.swiftmodule/arm64-apple-ios-simulator.swiftdoc /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp.swiftdoc (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp.swiftdoc /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.swiftmodule/arm64-apple-ios-simulator.swiftdoc
+
+Copy /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.swiftmodule/arm64-apple-ios-simulator.abi.json /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp.abi.json (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp.abi.json /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+Copy /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp.swiftsourceinfo (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp.swiftsourceinfo /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+SwiftCompile normal arm64 Compiling\ SectionHeader.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/SectionHeader.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/SectionHeader.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 Compiling\ AvatarView.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/AvatarView.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/AvatarView.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling KYCView.swift, KeychainService.swift, LoanApplicationViewModel.swift, LoanService.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 Compiling\ AppEnvironment.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/AppEnvironment.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/AppEnvironment.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling Typography.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftDriverJobDiscovery normal arm64 Compiling SectionHeader.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 Compiling\ StatusBadge.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/StatusBadge.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/StatusBadge.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 Compiling\ EmptyStateView.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/EmptyStateView.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/DesignSystem/EmptyStateView.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling EMICalculatorView.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 Compiling\ SupabaseLoanService.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/Supabase/SupabaseLoanService.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/Supabase/SupabaseLoanService.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling AvatarView.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftDriverJobDiscovery normal arm64 Compiling AppEnvironment.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftDriverJobDiscovery normal arm64 Compiling StatusBadge.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftDriverJobDiscovery normal arm64 Compiling EmptyStateView.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftDriverJobDiscovery normal arm64 Compiling ApplicationTrackingView.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftDriverJobDiscovery normal arm64 Compiling SupabaseLoanService.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftDriverJobDiscovery normal arm64 Compiling ForgotPasswordView.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftDriverJobDiscovery normal arm64 Compiling RepaymentDashboardView.swift, RootView.swift, SectionCard.swift, SessionStore.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftDriverJobDiscovery normal arm64 Compiling AuthViewModel.swift, BorrowerApp.swift, BorrowerMessagingView.swift, BorrowerProfileView.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftDriverJobDiscovery normal arm64 Compiling Colors.swift, Formatting.swift, LMSTextFieldStyle.swift, HomeDashboardView.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftDriverJobDiscovery normal arm64 Compiling LoginView.swift, MessagingService.swift, Models.swift, NewLoanApplicationView.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 Compiling\ AdminService.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/AdminService.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/AdminService.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 Compiling\ AuthService.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/AuthService.swift (in target 'BorrowerApp' from project 'LMS')
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/AuthService.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 Compiling\ EMICalculator.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Utilities/EMICalculator.swift (in target 'BorrowerApp' from project 'LMS')
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Utilities/EMICalculator.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftCompile normal arm64 Compiling\ DocumentService.swift /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/DocumentService.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftCompile normal arm64 /Users/arshitsinghal/Documents/GitHub/LMS/Shared/Services/DocumentService.swift (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling DocumentService.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftDriverJobDiscovery normal arm64 Compiling AuthService.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftDriverJobDiscovery normal arm64 Compiling AdminService.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftDriverJobDiscovery normal arm64 Compiling EMICalculator.swift (in target 'BorrowerApp' from project 'LMS')
+
+SwiftDriver\ Compilation BorrowerApp normal arm64 com.apple.xcode.tools.swift.compiler (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    builtin-Swift-Compilation -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name BorrowerApp -Onone @/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp.SwiftFileList -DDEBUG -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.4.sdk -target arm64-apple-ios26.0-simulator -g -module-cache-path /Users/arshitsinghal/Documents/GitHub/LMS/build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/arshitsinghal/Documents/GitHub/LMS/build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 6 -I /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/arshitsinghal/Documents/GitHub/LMS/build/SDKStatCaches.noindex/iphonesimulator26.4-23E252-686eebb5dc1d8ecb277353a59184f4aa.sdkstatcache -output-file-map /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/arshitsinghal/Documents/GitHub/LMS/build/ModuleCache.noindex -sdk-module-cache-path /Users/arshitsinghal/Documents/GitHub/LMS/build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/arshitsinghal/Documents/GitHub/LMS/build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp_const_extract_protocols.json -Xcc -iquote -Xcc /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp-generated-files.hmap -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp-own-target-headers.hmap -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/LMS-7c7ac6d5575d6d61900bb354995e8f2d-VFS-iphonesimulator/all-product-headers.yaml -Xcc -iquote -Xcc /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp-project-headers.hmap -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/DerivedSources-normal/arm64 -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/DerivedSources/arm64 -Xcc -I/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp-Swift.h -working-directory /Users/arshitsinghal/Documents/GitHub/LMS -experimental-emit-module-separately -disable-cmo
+
+Ld /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/BorrowerApp.debug.dylib normal (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios26.0-simulator -dynamiclib -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.4.sdk -O0 -L/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator -filelist /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp.LinkFileList -install_name @rpath/BorrowerApp.debug.dylib -Xlinker -rpath -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp_dependency_info.dat -fobjc-link-runtime -L/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp.swiftmodule @/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp-linker-args.resp -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Xlinker -alias -Xlinker _main -Xlinker ___debug_main_executable_dylib_entry_point -o /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/BorrowerApp.debug.dylib -Xlinker -add_ast_path -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Supabase.build/Objects-normal/arm64/Supabase.swiftmodule @/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Supabase.build/Objects-normal/arm64/Supabase-linker-args.resp -Xlinker -add_ast_path -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/swift-concurrency-extras.build/Debug-iphonesimulator/ConcurrencyExtras.build/Objects-normal/arm64/ConcurrencyExtras.swiftmodule @/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/swift-concurrency-extras.build/Debug-iphonesimulator/ConcurrencyExtras.build/Objects-normal/arm64/ConcurrencyExtras-linker-args.resp -Xlinker -add_ast_path -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/swift-http-types.build/Debug-iphonesimulator/HTTPTypes.build/Objects-normal/arm64/HTTPTypes.swiftmodule @/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/swift-http-types.build/Debug-iphonesimulator/HTTPTypes.build/Objects-normal/arm64/HTTPTypes-linker-args.resp -Xlinker -add_ast_path -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/swift-clocks.build/Debug-iphonesimulator/Clocks.build/Objects-normal/arm64/Clocks.swiftmodule @/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/swift-clocks.build/Debug-iphonesimulator/Clocks.build/Objects-normal/arm64/Clocks-linker-args.resp -Xlinker -add_ast_path -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/xctest-dynamic-overlay.build/Debug-iphonesimulator/IssueReporting.build/Objects-normal/arm64/IssueReporting.swiftmodule @/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/xctest-dynamic-overlay.build/Debug-iphonesimulator/IssueReporting.build/Objects-normal/arm64/IssueReporting-linker-args.resp -Xlinker -add_ast_path -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/xctest-dynamic-overlay.build/Debug-iphonesimulator/IssueReportingPackageSupport.build/Objects-normal/arm64/IssueReportingPackageSupport.swiftmodule @/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/xctest-dynamic-overlay.build/Debug-iphonesimulator/IssueReportingPackageSupport.build/Objects-normal/arm64/IssueReportingPackageSupport-linker-args.resp -Xlinker -add_ast_path -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/xctest-dynamic-overlay.build/Debug-iphonesimulator/XCTestDynamicOverlay.build/Objects-normal/arm64/XCTestDynamicOverlay.swiftmodule @/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/xctest-dynamic-overlay.build/Debug-iphonesimulator/XCTestDynamicOverlay.build/Objects-normal/arm64/XCTestDynamicOverlay-linker-args.resp -Xlinker -add_ast_path -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Helpers.build/Objects-normal/arm64/Helpers.swiftmodule @/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Helpers.build/Objects-normal/arm64/Helpers-linker-args.resp -Xlinker -add_ast_path -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/Crypto.swiftmodule @/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/Crypto-linker-args.resp -Xlinker -add_ast_path -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Auth.build/Objects-normal/arm64/Auth.swiftmodule @/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Auth.build/Objects-normal/arm64/Auth-linker-args.resp -Xlinker -add_ast_path -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Functions.build/Objects-normal/arm64/Functions.swiftmodule @/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Functions.build/Objects-normal/arm64/Functions-linker-args.resp -Xlinker -add_ast_path -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/PostgREST.build/Objects-normal/arm64/PostgREST.swiftmodule @/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/PostgREST.build/Objects-normal/arm64/PostgREST-linker-args.resp -Xlinker -add_ast_path -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Realtime.build/Objects-normal/arm64/Realtime.swiftmodule @/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Realtime.build/Objects-normal/arm64/Realtime-linker-args.resp -Xlinker -add_ast_path -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Storage.build/Objects-normal/arm64/Storage.swiftmodule @/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Storage.build/Objects-normal/arm64/Storage-linker-args.resp
+
+ConstructStubExecutorLinkFileList /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp-ExecutorLinkFileList-normal-arm64.txt (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    construct-stub-executor-link-file-list /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/BorrowerApp.debug.dylib /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor_no_swift_entry_point.a /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor.a --output /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp-ExecutorLinkFileList-normal-arm64.txt
+note: Using stub executor library with Swift entry point. (in target 'BorrowerApp' from project 'LMS')
+
+Ld /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/BorrowerApp normal (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios26.0-simulator -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.4.sdk -O0 -L/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator -Xlinker -rpath -Xlinker @executable_path -Xlinker -rpath -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/PackageFrameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -e ___debug_blank_executor_main -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_dylib -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp-DebugDylibPath-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_instlnm -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp-DebugDylibInstallName-normal-arm64.txt -Xlinker -filelist -Xlinker /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp-ExecutorLinkFileList-normal-arm64.txt /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/BorrowerApp.debug.dylib -o /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/BorrowerApp
+
+CopySwiftLibs /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/BorrowerApp.debug.dylib --scan-folder /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/Frameworks --scan-folder /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/PlugIns --scan-folder /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/SystemExtensions --scan-folder /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+ExtractAppIntentsMetadata (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name BorrowerApp --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.4.sdk --xcode-version 17E202 --platform-family iOS --deployment-target 26.0 --bundle-identifier infosys.team3.lms.borrower --output /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app --target-triple arm64-apple-ios26.0-simulator --binary-file /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/BorrowerApp --dependency-file /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp_dependency_info.dat --stringsdata-file /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp.SwiftFileList --metadata-file-list /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp.DependencyMetadataFileList --static-metadata-file-list /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp.DependencyStaticMetadataFileList --swift-const-vals-list /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/Objects-normal/arm64/BorrowerApp.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-05-26 01:44:24.755 appintentsmetadataprocessor[66317:4841721] Starting appintentsmetadataprocessor export
+2026-05-26 01:44:24.758 appintentsmetadataprocessor[66317:4841721] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+AppIntentsSSUTraining (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/Info.plist --temp-dir-path /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/ssu --bundle-id infosys.team3.lms.borrower --product-path /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app --extracted-metadata-path /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/Metadata.appintents --metadata-file-list /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/BorrowerApp.build/BorrowerApp.DependencyMetadataFileList --source-file /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app/Info.plist --archive-ssu-assets
+2026-05-26 01:44:24.774 appintentsnltrainingprocessor[66320:4841731] Parsing options for appintentsnltrainingprocessor
+2026-05-26 01:44:24.775 appintentsnltrainingprocessor[66320:4841731] Starting AppIntents SSU YAML Generation
+2026-05-26 01:44:24.776 appintentsnltrainingprocessor[66320:4841731] No AppShortcuts found - Skipping.
+
+RegisterExecutionPolicyException /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    builtin-RegisterExecutionPolicyException /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app
+
+Validate /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    builtin-validationUtility /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app -shallow-bundle -infoplist-subpath Info.plist
+
+Touch /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app (in target 'BorrowerApp' from project 'LMS')
+    cd /Users/arshitsinghal/Documents/GitHub/LMS
+    /usr/bin/touch -c /Users/arshitsinghal/Documents/GitHub/LMS/build/Build/Products/Debug-iphonesimulator/BorrowerApp.app
+
+** BUILD SUCCEEDED **
+

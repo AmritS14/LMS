@@ -90,7 +90,7 @@ actor SupabaseDocumentService: DocumentService {
             )
             
         // Get public URL or authenticated URL
-        let remoteURLString = try client.storage.from("documents").getPublicUrl(path: storagePath).absoluteString
+        let remoteURLString = try client.storage.from("documents").getPublicURL(path: storagePath).absoluteString
         
         // Insert metadata into loan_documents table
         let insertData: [String: AnyJSON] = [

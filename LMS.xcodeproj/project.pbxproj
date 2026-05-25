@@ -11,6 +11,7 @@
 		03DE92A1FCB0BB66DB5D94C7 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE98171A238045C22C2F9E8 /* AppEnvironment.swift */; };
 		06D2003DAE7684963CD1D12A /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = B07AD9174280E67995096E93 /* Typography.swift */; };
 		10763574BC09806E93C4652B /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E3BA31DFDF4BBB9114F3C4 /* SessionStore.swift */; };
+		11E257368809C6692698BD2B /* SupabaseDocumentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19A749024376B4E1C30F4B83 /* SupabaseDocumentService.swift */; };
 		14709A63F344F7FD1D8264FF /* MockSupportServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77E37F22B749EB4CF963D0B3 /* MockSupportServices.swift */; };
 		1498870D378AA154011348C5 /* RepaymentDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FF7914A86ED65B6282042EF /* RepaymentDashboardView.swift */; };
 		1622FD72ADC7841D53ED4087 /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E121B25741BC258047859E /* PrimaryButton.swift */; };
@@ -36,6 +37,7 @@
 		5AAD19A5CCD179034CEA8C1D /* KYCView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0D234D5F91C703EA095E10 /* KYCView.swift */; };
 		5B7824982BD4DC6AD0E87D54 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93417E4CF1AF5336D0BDA3F7 /* AuthService.swift */; };
 		5B900C06FEC98C16A1BCC79D /* SupabaseAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C310B8B938438DAE6F4F90E0 /* SupabaseAuthService.swift */; };
+		5C1375C47BBBB9A4EE2FC938 /* SupabaseMessagingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9459DAEBCBCB9D3C2250C401 /* SupabaseMessagingService.swift */; };
 		610C7AC52D28556867E7C7C3 /* SectionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B906761D8C52A50034E4A58 /* SectionCard.swift */; };
 		65806DE55B096D1831BF4A12 /* StaffRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92084DACBFEC7A60525C2925 /* StaffRootView.swift */; };
 		66143A3B9FE6F60EA68A1A8F /* SupabaseAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C310B8B938438DAE6F4F90E0 /* SupabaseAuthService.swift */; };
@@ -114,6 +116,7 @@
 		11538E6ED3D89A812369BF88 /* HomeDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeDashboardView.swift; sourceTree = "<group>"; };
 		16751F7EF73D594F9FAEA39E /* Endpoints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Endpoints.swift; sourceTree = "<group>"; };
 		184B7DA69FBEA8EB6C17F07D /* BorrowerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BorrowerApp.swift; sourceTree = "<group>"; };
+		19A749024376B4E1C30F4B83 /* SupabaseDocumentService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseDocumentService.swift; path = Supabase/SupabaseDocumentService.swift; sourceTree = "<group>"; };
 		1FF7914A86ED65B6282042EF /* RepaymentDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepaymentDashboardView.swift; sourceTree = "<group>"; };
 		211DE72674707B85B3C3C40A /* MockLoanService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockLoanService.swift; sourceTree = "<group>"; };
 		21BD57C4D8DB9DBFBAA0A3F9 /* Spacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spacing.swift; sourceTree = "<group>"; };
@@ -145,6 +148,7 @@
 		914A1BB4F51D4F5C31806EFD /* SupabaseLoanService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseLoanService.swift; path = Supabase/SupabaseLoanService.swift; sourceTree = "<group>"; };
 		92084DACBFEC7A60525C2925 /* StaffRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaffRootView.swift; sourceTree = "<group>"; };
 		93417E4CF1AF5336D0BDA3F7 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		9459DAEBCBCB9D3C2250C401 /* SupabaseMessagingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseMessagingService.swift; path = Supabase/SupabaseMessagingService.swift; sourceTree = "<group>"; };
 		98E0B31BAE1F58E40563D25B /* SupabaseManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseManager.swift; path = Supabase/SupabaseManager.swift; sourceTree = "<group>"; };
 		9AA2A2DE47232F5AA8A071B1 /* DocumentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentService.swift; sourceTree = "<group>"; };
 		A1AA0000000000000001AA01 /* AvatarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarView.swift; sourceTree = "<group>"; };
@@ -305,6 +309,8 @@
 				C310B8B938438DAE6F4F90E0 /* SupabaseAuthService.swift */,
 				98E0B31BAE1F58E40563D25B /* SupabaseManager.swift */,
 				914A1BB4F51D4F5C31806EFD /* SupabaseLoanService.swift */,
+				9459DAEBCBCB9D3C2250C401 /* SupabaseMessagingService.swift */,
+				19A749024376B4E1C30F4B83 /* SupabaseDocumentService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -573,6 +579,8 @@
 				5B900C06FEC98C16A1BCC79D /* SupabaseAuthService.swift in Sources */,
 				B5736CA276F2155E52E5FF29 /* SupabaseManager.swift in Sources */,
 				D1A96A5D5B9276150793483D /* SupabaseLoanService.swift in Sources */,
+				5C1375C47BBBB9A4EE2FC938 /* SupabaseMessagingService.swift in Sources */,
+				11E257368809C6692698BD2B /* SupabaseDocumentService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
