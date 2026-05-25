@@ -265,4 +265,40 @@ final class UserManagementViewModel {
         successMessage = "Permissions for \(users[index].fullName) updated successfully."
         showSuccessAlert = true
     }
+
+    func createUser(fullName: String, email: String, phone: String, role: UserRole) {
+        let newUser = User(
+            fullName: fullName,
+            email: email,
+            phone: phone,
+            role: role,
+            isActive: true
+        )
+        self.users.insert(newUser, at: 0)
+        
+        if role != .borrower {
+            let employeeID = "EMP-\(Int.random(in: 400...999))"
+            let initialPermissions: Set<Permission>
+            switch role {
+            case .admin:
+                initialPermissions = Set(Permission.allCases)
+            case .manager:
+                initialPermissions = [.processLoans, .manageLoans]
+            case .loanOfficer:
+                initialPermissions = [.processLoans]
+            case .borrower:
+                initialPermissions = []
+            }
+            
+            staffProfiles[newUser.id] = StaffProfile(
+                id: newUser.id,
+                employeeID: employeeID,
+                permissions: initialPermissions
+            )
+        }
+        
+        AuditLogger.log(action: "User Created", details: "Name: \(fullName), Role: \(role.rawValue)")
+        successMessage = "\(fullName) created successfully as \(role.displayName)."
+        showSuccessAlert = true
+    }
 }
