@@ -348,6 +348,44 @@ final class UserManagementViewModel {
         successMessage = "Permissions updated."
     }
 
+    func createUser(fullName: String, email: String, phone: String, role: UserRole) {
+        let newUser = User(
+            fullName: fullName,
+            email: email,
+            phone: phone,
+            role: role,
+            isActive: true
+        )
+        self.users.insert(newUser, at: 0)
+        
+        if role != .borrower {
+            let employeeID = "ST-\(newUser.id.uuidString.prefix(6).uppercased())"
+            let initialPermissions: Set<Permission>
+            switch role {
+            case .admin:
+                initialPermissions = Set(Permission.allCases)
+            case .manager:
+                initialPermissions = [.viewUsers, .viewAudit]
+            case .loanOfficer:
+                initialPermissions = [.viewUsers]
+            case .borrower:
+                initialPermissions = []
+            }
+            
+            staffProfiles[newUser.id] = StaffProfile(
+                id: newUser.id,
+                employeeID: employeeID,
+                branchID: nil,
+                department: role == .manager ? "Branch Management" : "Loan Origination",
+                reportsToID: nil,
+                permissions: initialPermissions
+            )
+        }
+        
+        successMessage = "\(fullName) created successfully as \(role.displayName)."
+        showSuccessAlert = true
+    }
+
     func getAssignedOfficer(for borrowerID: UUID) -> User? {
         guard let officerID = borrowerAssignments[borrowerID] else { return nil }
         return users.first { $0.id == officerID }
