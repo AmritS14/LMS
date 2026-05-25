@@ -7,6 +7,15 @@ enum UserRole: String, Codable, Sendable, CaseIterable {
     case loanOfficer
     case manager
     case admin
+
+    var displayName: String {
+        switch self {
+        case .borrower: return "Borrower"
+        case .loanOfficer: return "Loan Officer"
+        case .manager: return "Manager"
+        case .admin: return "Admin"
+        }
+    }
 }
 
 struct User: Identifiable, Codable, Sendable, Hashable {
@@ -15,7 +24,12 @@ struct User: Identifiable, Codable, Sendable, Hashable {
     var email: String
     var phone: String
     var role: UserRole
+    var isActive: Bool = true
     var createdAt: Date = .now
+
+    var uniqueID: String {
+        "USR-\(id.uuidString.prefix(8).uppercased())"
+    }
 }
 
 // MARK: - Borrower-only profile (KYC, credit, personal details)
@@ -57,6 +71,16 @@ struct StaffProfile: Identifiable, Codable, Sendable, Hashable {
     var branchID: UUID?
     var department: String?
     var reportsToID: UUID?
+    var permissions: Set<Permission> = []
+}
+
+enum Permission: String, Codable, Sendable, CaseIterable, Identifiable {
+    case viewUsers = "View Users"
+    case editUsers = "Edit Users"
+    case viewAudit = "View Audit"
+    case manageSettings = "Manage Settings"
+
+    var id: String { rawValue }
 }
 
 // MARK: - Loan Application

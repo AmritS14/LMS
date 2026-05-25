@@ -70,12 +70,36 @@ struct ManagerTabView: View {
 }
 
 struct AdminTabView: View {
+    @State private var userManagementViewModel = UserManagementViewModel()
+    @State private var templateViewModel = TemplateViewModel()
+    @State private var loanConfigViewModel = LoanConfigViewModel()
+    @State private var dashboardViewModel = DashboardViewModel()
+
     var body: some View {
         TabView {
-            Tab("Users", systemImage: "person.3") { UserManagementView() }
-            Tab("Settings", systemImage: "gearshape.2") { SystemSettingsView() }
-            Tab("Audit", systemImage: "list.clipboard") { AuditTrailView() }
-            Tab("Profile", systemImage: "person.crop.circle") { StaffProfileView() }
+            Tab("Dashboard", systemImage: "rectangle.grid.2x2.fill") {
+                NavigationStack {
+                    AdminDashboardView(viewModel: dashboardViewModel, userVM: userManagementViewModel)
+                }
+            }
+            Tab("Users", systemImage: "person.3") {
+                NavigationStack {
+                    UserListView(viewModel: userManagementViewModel)
+                }
+            }
+            Tab("Settings", systemImage: "gearshape.2") {
+                NavigationStack {
+                    SystemSettingsView(
+                        templateViewModel: templateViewModel,
+                        loanConfigViewModel: loanConfigViewModel
+                    )
+                }
+            }
+            Tab("Audit", systemImage: "list.clipboard") {
+                NavigationStack {
+                    AuditTrailView()
+                }
+            }
         }
     }
 }
@@ -88,6 +112,12 @@ struct AdminTabView: View {
 
 #Preview("Officer") {
     OfficerTabView()
+        .environment(LoanOfficerStore())
+        .environment(SessionStore())
+}
+
+#Preview("Admin") {
+    AdminTabView()
         .environment(LoanOfficerStore())
         .environment(SessionStore())
 }

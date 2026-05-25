@@ -54,3 +54,15 @@ extension LinearGradient {
         endPoint: .bottom
     )
 }
+
+enum AdminColor {
+    static let background = Color.lmsBackground
+    static let surface = Color.lmsSurface
+    static let cardBackground = Color.lmsSurface
+    static let accent = Color.lmsAccent
+    static let accentGradient = LinearGradient(
+        colors: [Color.lmsInfo, Color.lmsAccent],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+}
