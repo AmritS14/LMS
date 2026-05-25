@@ -1,154 +1,192 @@
 import SwiftUI
 
+// MARK: - Documents View
+
 struct DocumentsView: View {
-    @Environment(LoanOfficerStore.self) private var store
-    @State private var selectedCategory: GeneratedDocument.Category?
-    @State private var selectedDocument: GeneratedDocument?
-
-    private var grouped: [(GeneratedDocument.Category, [GeneratedDocument])] {
-        let categories = selectedCategory.map { [$0] } ?? GeneratedDocument.Category.allCases
-        return categories.map { category in
-            (category, store.generatedDocuments.filter { $0.category == category })
+    
+    @Environment(AppViewModel.self) var viewModel
+    
+    @State private var selectedDocument: DigitalDocument?
+    @State private var showSignatureSheet = false
+    @State private var selectedCategory = "All"
+    
+    private let categories = [
+        "All",
+        "Sanction Letters",
+        "Reports",
+        "Policies"
+    ]
+    
+    private var filteredDocuments: [DigitalDocument] {
+        
+        if selectedCategory == "All" {
+            return viewModel.digitalDocuments
+        }
+        
+        return viewModel.digitalDocuments.filter { document in
+            
+            switch selectedCategory {
+                
+            case "Sanction Letters":
+                return document.title.localizedCaseInsensitiveContains("sanction")
+                
+            case "Reports":
+                return document.title.localizedCaseInsensitiveContains("report")
+                
+            case "Policies":
+                return document.title.localizedCaseInsensitiveContains("policy")
+                
+            default:
+                return true
+            }
         }
     }
-
+    
     var body: some View {
-        List {
-            Section {
+        
+        ScrollView(.vertical, showsIndicators: false) {
+            
+            VStack(spacing: 16) {
+                
+                // Categories
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: Spacing.s) {
-                        chip(label: "All", isSelected: selectedCategory == nil) {
-                            selectedCategory = nil
-                        }
-                        ForEach(GeneratedDocument.Category.allCases, id: \.self) { cat in
-                            chip(label: cat.rawValue,
-                                 icon: cat.icon,
-                                 isSelected: selectedCategory == cat) {
-                                selectedCategory = (selectedCategory == cat) ? nil : cat
-                            }
-                        }
-                    }
-                    .padding(.horizontal, Spacing.m)
-                    .padding(.vertical, Spacing.s)
-                }
-                .listRowInsets(EdgeInsets())
-                .listRowBackground(Color.clear)
-            }
-
-            ForEach(grouped, id: \.0) { category, items in
-                if !items.isEmpty {
-                    Section(category.rawValue) {
-                        ForEach(items) { doc in
+                    
+                    HStack(spacing: 10) {
+                        
+                        ForEach(categories, id: \.self) { category in
+                            
                             Button {
-                                selectedDocument = doc
+                                
+                                selectedCategory = category
+                                
                             } label: {
-                                row(doc)
+                                
+                                Text(category)
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundColor(
+                                        selectedCategory == category
+                                        ? .white
+                                        : .primary
+                                    )
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        Capsule()
+                                            .fill(
+                                                selectedCategory == category
+                                                ? Color.blue
+                                                : Color(.tertiarySystemGroupedBackground)
+                                            )
+                                    )
                             }
-                            .buttonStyle(.plain)
                         }
                     }
+                    .padding(.horizontal)
+                }
+                
+                // Documents
+                ForEach(filteredDocuments) { document in
+                    
+                    Button {
+                        
+                        selectedDocument = document
+                        
+                    } label: {
+                        
+                        documentCard(document)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
+            .padding(.vertical)
         }
-        .listStyle(.insetGrouped)
+        .background(Color(.systemGroupedBackground))
         .navigationTitle("Documents")
-        .sheet(item: $selectedDocument) { documentSheet($0) }
-    }
-
-    private func row(_ doc: GeneratedDocument) -> some View {
-        HStack(spacing: Spacing.sm) {
-            Image(systemName: doc.category.icon)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(Color.lmsAccent)
-                .frame(width: 44, height: 44)
-                .background(Color.lmsAccent.opacity(0.12),
-                            in: RoundedRectangle(cornerRadius: CornerRadius.small))
-            VStack(alignment: .leading, spacing: 4) {
-                Text(doc.title).font(.subheadline.weight(.semibold))
-                HStack(spacing: 6) {
-                    Text(doc.category.rawValue)
-                    Text("•")
-                    Text(doc.fileSize)
-                }
-                .font(.caption).foregroundStyle(.secondary)
-                Text(OfficerFormat.date(doc.generatedDate))
-                    .font(.caption2).foregroundStyle(.tertiary)
-            }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 4) {
-                if doc.isSigned {
-                    StatusBadge("Signed", tone: .success,
-                                icon: "checkmark.seal.fill", size: .small)
-                }
-                if doc.borrowerAcknowledged {
-                    StatusBadge("Ack'd", tone: .info,
-                                icon: "hand.thumbsup.fill", size: .small)
-                }
-            }
+        .navigationBarTitleDisplayMode(.large)
+        .sheet(item: $selectedDocument) { document in
+            
+            //            DocumentPreviewSheet(
+            //                document: document,
+            //                showSignatureSheet: $showSignatureSheet
+            //            )
+            //            .environment(viewModel)
+            //        }
+            //        .sheet(isPresented: $showSignatureSheet) {
+            //
+            //            SignatureSheet(
+            //                showSignatureSheet: $showSignatureSheet
+            //            )
         }
     }
-
-    private func chip(label: String, icon: String? = nil, isSelected: Bool,
-                      action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                if let icon {
-                    Image(systemName: icon).font(.caption2.weight(.semibold))
+        
+        // MARK: Document Card
+        
+        private func documentCard(_ document: DigitalDocument) -> some View {
+            
+            HStack(spacing: 14) {
+                
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.blue.opacity(0.1))
+                    .frame(width: 52, height: 52)
+                    .overlay(
+                        Image(systemName: document.icon)
+                            .font(.system(size: 22))
+                            .foregroundStyle(.blue)
+                    )
+                
+                VStack(alignment: .leading, spacing: 5) {
+                    
+                    Text(document.title)
+                        .font(.system(size: 15, weight: .semibold))
+                    
+                    HStack(spacing: 6) {
+                        
+                        Text(document.type)
+                        Text("•")
+                        Text(document.fileSize)
+                    }
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    
+                    Text(AppFormatters.formatDate(document.generatedDate))
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
                 }
-                Text(label).font(.subheadline.weight(.semibold))
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 6) {
+                    
+                    if document.isSigned {
+                        
+                        Label("Signed", systemImage: "checkmark.seal.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.green)
+                    }
+                    
+                    if document.borrowerAcknowledged {
+                        
+                        Label("Acknowledged", systemImage: "hand.thumbsup.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.blue)
+                    }
+                }
             }
-            .padding(.horizontal, Spacing.sm).padding(.vertical, Spacing.xs)
-            .background(isSelected ? Color.lmsAccent : Color.lmsFill, in: Capsule())
-            .foregroundStyle(isSelected ? .white : .primary)
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(Color(.secondarySystemGroupedBackground))
+            )
+            .padding(.horizontal)
         }
-        .buttonStyle(.plain)
     }
-
-    private func documentSheet(_ doc: GeneratedDocument) -> some View {
+    
+    // MARK: - Preview
+    
+    #Preview {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: Spacing.m) {
-                    Image(systemName: doc.category.icon)
-                        .font(.system(size: 64))
-                        .foregroundStyle(Color.lmsAccent)
-                        .frame(maxWidth: .infinity, minHeight: 220)
-                        .background(Color.lmsTertiarySurface,
-                                    in: RoundedRectangle(cornerRadius: CornerRadius.card))
-
-                    Text(doc.title).font(.lmsTitle3)
-
-                    VStack(spacing: 0) {
-                        DetailRow(icon: "folder.fill", title: "Category",
-                                  value: doc.category.rawValue)
-                        DetailRow(icon: "internaldrive.fill", title: "Size",
-                                  value: doc.fileSize)
-                        DetailRow(icon: "calendar", title: "Generated",
-                                  value: OfficerFormat.date(doc.generatedDate))
-                        DetailRow(icon: "checkmark.seal.fill", title: "Signed",
-                                  value: doc.isSigned ? "Yes" : "No",
-                                  valueColor: doc.isSigned ? .lmsSuccess : .secondary)
-                        DetailRow(icon: "hand.thumbsup.fill", title: "Acknowledged",
-                                  value: doc.borrowerAcknowledged ? "Yes" : "No",
-                                  valueColor: doc.borrowerAcknowledged ? .lmsSuccess : .secondary)
-                    }
-                    .padding(Spacing.m)
-                    .background(Color.lmsSurface,
-                                in: RoundedRectangle(cornerRadius: CornerRadius.card))
-
-                    PrimaryButton(doc.isSigned ? "Share" : "Sign Document") {
-                        selectedDocument = nil
-                    }
-                }
-                .padding(Spacing.m)
-            }
-            .background(Color.lmsBackground)
-            .navigationTitle("Document")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { selectedDocument = nil }
-                }
-            }
+            DocumentsView()
+                .environment(AppViewModel())
         }
     }
-}
+

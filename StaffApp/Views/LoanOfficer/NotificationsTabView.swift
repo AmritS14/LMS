@@ -1,150 +1,259 @@
+//
+//  NotificationsTabView.swift
+//  loan officer
+//
+//  Created by Aadya Tiwari on 21/05/26.
+//
+
 import SwiftUI
 
-struct NotificationsTabView: View {
-    @Environment(LoanOfficerStore.self) private var store
-    @State private var selectedType: OfficerNotificationType?
+// MARK: - Notifications Tab
 
-    private var filtered: [OfficerNotification] {
-        guard let selectedType else { return store.notifications }
-        return store.notifications.filter { $0.type == selectedType }
+struct NotificationsTabView: View {
+    @Environment(AppViewModel.self) var viewModel
+    
+    @State private var selectedFilter: String = "All"
+
+    private let filters = ["All", "Fraud", "Approvals", "Assignments", "Overdue", "Escalations"]
+
+    private var filteredNotifications: [AppNotification] {
+        if selectedFilter == "All" { return viewModel.notifications }
+        return viewModel.notifications.filter { notification in
+            switch selectedFilter {
+            case "Fraud": return notification.type == .fraudAlert
+            case "Approvals": return notification.type == .pendingApproval
+            case "Assignments": return notification.type == .assignedApplication
+            case "Overdue": return notification.type == .overdueReminder
+            case "Escalations": return notification.type == .escalation
+            default: return true
+            }
+        }
+    }
+
+    private var unreadCount: Int {
+        viewModel.notifications.filter { !$0.isRead }.count
     }
 
     var body: some View {
-        List {
-            if store.unreadNotificationCount > 0 {
-                Section {
-                    HStack(spacing: Spacing.sm) {
-                        Image(systemName: "bell.badge.fill")
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(Color.lmsAccent)
-                            .frame(width: 40, height: 40)
-                            .background(Color.lmsAccent.opacity(0.12),
-                                        in: RoundedRectangle(cornerRadius: CornerRadius.small))
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(store.unreadNotificationCount) unread")
-                                .font(.headline)
-                            Text("Tap a notification to mark it read")
-                                .font(.footnote).foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Button("Read all") { store.markAllNotificationsRead() }
-                            .font(.subheadline.weight(.semibold))
-                            .buttonStyle(.plain)
-                            .foregroundStyle(Color.lmsAccent)
-                    }
-                }
-            }
+        VStack(spacing: 0) {
+            // Priority Filter Chips
+            filterChipsSection
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color(.systemGroupedBackground))
 
-            if !store.urgentNotifications.isEmpty {
-                Section("Urgent") {
-                    ForEach(store.urgentNotifications) { notification in
-                        row(notification)
-                            .listRowBackground(Color.lmsDanger.opacity(0.08))
-                    }
+            if filteredNotifications.isEmpty {
+                Spacer()
+                VStack(spacing: 12) {
+                    Image(systemName: "bell.slash.fill")
+                        .font(.system(size: 44))
+                        .foregroundStyle(.tertiary)
+                    Text("No Notifications")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                    Text("You have no \(selectedFilter.lowercased()) notifications.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.tertiary)
                 }
-            }
-
-            Section {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: Spacing.s) {
-                        chip(label: "All", isSelected: selectedType == nil) {
-                            selectedType = nil
-                        }
-                        ForEach(OfficerNotificationType.allCases, id: \.self) { type in
-                            chip(label: type.rawValue,
-                                 icon: type.icon,
-                                 isSelected: selectedType == type) {
-                                selectedType = (selectedType == type) ? nil : type
-                            }
-                        }
-                    }
-                    .padding(.horizontal, Spacing.m)
-                    .padding(.vertical, Spacing.s)
-                }
-                .listRowInsets(EdgeInsets())
-                .listRowBackground(Color.clear)
-            }
-
-            if filtered.isEmpty {
-                ContentUnavailableView("All caught up",
-                                       systemImage: "checkmark.circle.fill",
-                                       description: Text("No notifications match the current filter."))
+                .padding()
+                Spacer()
             } else {
-                Section("All Notifications") {
-                    ForEach(filtered) { notification in
-                        row(notification)
-                            .swipeActions(edge: .leading) {
-                                Button { store.markNotificationRead(notification) } label: {
-                                    Label("Read", systemImage: "envelope.open")
+                List {
+                    // Unread Summary Card
+                    if unreadCount > 0 {
+                        unreadSummaryCard
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                withAnimation {
+                                    viewModel.markAllNotificationsRead()
                                 }
-                                .tint(.lmsInfo)
                             }
+                    }
+
+                    ForEach(filteredNotifications) { notification in
+                        notificationCard(notification)
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
-                                    store.dismissNotification(notification)
+                                    withAnimation {
+                                        viewModel.deleteNotification(notification)
+                                    }
                                 } label: {
-                                    Label("Dismiss", systemImage: "xmark.circle")
+                                    Label("Dismiss", systemImage: "trash")
                                 }
+                            }
+                            .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                                Button {
+                                    withAnimation {
+                                        if notification.isRead {
+                                            if let index = viewModel.notifications.firstIndex(where: { $0.id == notification.id }) {
+                                                viewModel.notifications[index].isRead = false
+                                            }
+                                        } else {
+                                            viewModel.markNotificationRead(notification)
+                                        }
+                                    }
+                                } label: {
+                                    if notification.isRead {
+                                        Label("Unread", systemImage: "envelope.badge")
+                                    } else {
+                                        Label("Read", systemImage: "envelope.open")
+                                    }
+                                }
+                                .tint(.blue)
                             }
                     }
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .background(Color(.systemGroupedBackground))
             }
         }
-        .listStyle(.insetGrouped)
+        .background(Color(.systemGroupedBackground))
         .navigationTitle("Notifications")
+        .navigationBarTitleDisplayMode(.large)
+//        .toolbar {
+//            ToolbarItem(placement: .navigationBarTrailing) {
+//                if unreadCount > 0 {
+//                    Button("Mark All Read") {
+//                        withAnimation {
+//                            viewModel.markAllNotificationsRead()
+//                        }
+//                    }
+//                    .font(.system(size: 15, weight: .medium))
+//                }
+//            }
+//        }
     }
 
-    private func row(_ notification: OfficerNotification) -> some View {
-        HStack(alignment: .top, spacing: Spacing.sm) {
-            Image(systemName: notification.type.icon)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(notification.type.tint)
-                .frame(width: 40, height: 40)
-                .background(notification.type.tint.opacity(0.12),
-                            in: RoundedRectangle(cornerRadius: CornerRadius.small))
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(notification.title)
-                        .font(.subheadline.weight(.semibold))
-                        .lineLimit(1)
-                    Spacer()
-                    if !notification.isRead {
-                        Circle().fill(Color.lmsAccent).frame(width: 8, height: 8)
-                    }
+    // MARK: Unread Summary
+    private var unreadSummaryCard: some View {
+        LOPremiumCard {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(Color.blue.opacity(0.12))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "bell.badge.fill")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.blue)
                 }
-                Text(notification.message)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                HStack {
-                    Text(OfficerFormat.timeAgo(notification.timestamp))
-                        .font(.caption2).foregroundStyle(.tertiary)
-                    Spacer()
-                    if notification.priority == 1 {
-                        StatusBadge("Urgent", tone: .danger,
-                                    icon: "exclamationmark.triangle.fill", size: .small)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(unreadCount) unread alerts")
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    Text("Tap to mark all as read")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    // MARK: Filter Chips
+    private var filterChipsSection: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(filters, id: \.self) { filter in
+                    Button {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            selectedFilter = filter
+                        }
+                    } label: {
+                        Text(filter)
+                            .font(.system(size: 13, weight: selectedFilter == filter ? .semibold : .medium))
+                            .foregroundColor(selectedFilter == filter ? .white : .primary)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(
+                                Capsule()
+                                    .fill(selectedFilter == filter ? Color.blue : Color(.secondarySystemGroupedBackground))
+                            )
                     }
                 }
             }
         }
-        .padding(.vertical, Spacing.xs)
+    }
+
+    // MARK: Notification Card
+    private func notificationCard(_ notification: AppNotification) -> some View {
+        LOPremiumCard {
+            HStack(alignment: .top, spacing: 12) {
+                // Type Icon
+                ZStack {
+                    Circle()
+                        .fill(notification.type.color.opacity(0.12))
+                        .frame(width: 42, height: 42)
+                    Image(systemName: notification.type.icon)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(notification.type.color)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text(notification.title)
+                            .font(.system(size: 15, weight: .semibold))
+                            .lineLimit(1)
+
+                        Spacer()
+
+                        if !notification.isRead {
+                            Circle()
+                                .fill(Color.blue)
+                                .frame(width: 8, height: 8)
+                        }
+                    }
+
+                    Text(notification.message)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+
+                    HStack {
+                        Text(AppFormatters.timeAgo(notification.timestamp))
+                            .font(.system(size: 11))
+                            .foregroundStyle(.tertiary)
+
+                        Spacer()
+
+                        if notification.priority == 1 {
+                            LOStatusBadge(text: "Urgent", color: .red, icon: "exclamationmark.triangle.fill", size: .small)
+                        }
+                    }
+                    .padding(.top, 2)
+                }
+            }
+        }
         .contentShape(Rectangle())
-        .onTapGesture { store.markNotificationRead(notification) }
-    }
-
-    private func chip(label: String, icon: String? = nil, isSelected: Bool,
-                      action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                if let icon {
-                    Image(systemName: icon).font(.caption2.weight(.semibold))
-                }
-                Text(label).font(.subheadline.weight(.semibold))
+        .onTapGesture {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                viewModel.markNotificationRead(notification)
             }
-            .padding(.horizontal, Spacing.sm).padding(.vertical, Spacing.xs)
-            .background(isSelected ? Color.lmsAccent : Color.lmsFill, in: Capsule())
-            .foregroundStyle(isSelected ? .white : .primary)
+            
+            // Look up borrower name from title or message and deep-link
+            if let matchedApp = viewModel.recentApplications.first(where: { app in
+                notification.title.localizedCaseInsensitiveContains(app.borrowerName) ||
+                notification.message.localizedCaseInsensitiveContains(app.borrowerName)
+            }) {
+                viewModel.selectedApplication = matchedApp
+                viewModel.navigationPath.append(AppDestination.loanReview)
+            }
         }
-        .buttonStyle(.plain)
+    }
+}
+
+#Preview {
+    NavigationStack {
+        NotificationsTabView()
+            .environment(AppViewModel())
     }
 }

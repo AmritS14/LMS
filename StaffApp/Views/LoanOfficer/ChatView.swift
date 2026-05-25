@@ -1,103 +1,159 @@
+//
+//  ChatView.swift
+//  loan officer
+//
+
 import SwiftUI
 
 struct ChatView: View {
-    @Environment(LoanOfficerStore.self) private var store
-    @Environment(\.dismiss) private var dismiss
 
-    let conversationID: UUID
-    @State private var draft: String = ""
-    @FocusState private var inputFocused: Bool
+    @Environment(\.dismiss) var dismiss
+    @Environment(AppViewModel.self) var viewModel
 
-    private var conversation: OfficerConversation? {
-        store.conversations.first { $0.id == conversationID }
-    }
+    let conversation: BorrowerConversation
+    var isPushed: Bool = false
+
+    @State private var messageText = ""
 
     var body: some View {
-        Group {
-            if let conversation {
-                content(for: conversation)
-            } else {
-                ContentUnavailableView(
-                    "Conversation unavailable",
-                    systemImage: "bubble.left.and.exclamationmark.bubble.right"
-                )
+        if isPushed {
+            chatContent
+        } else {
+            NavigationStack {
+                chatContent
             }
         }
-        .navigationTitle(conversation?.borrowerName ?? "Chat")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
-    @ViewBuilder
-    private func content(for conversation: OfficerConversation) -> some View {
+    private var chatContent: some View {
         VStack(spacing: 0) {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(spacing: Spacing.s) {
-                        ForEach(conversation.messages) { message in
-                            bubble(message)
-                                .id(message.id)
+
+            // MARK: Messages
+
+            ScrollView {
+
+                LazyVStack(spacing: 12) {
+
+                    ForEach(conversation.messages) { message in
+
+                        HStack {
+
+                            if message.sender == .officer {
+
+                                Spacer()
+
+                                messageBubble(
+                                    text: message.text,
+                                    color: .blue,
+                                    textColor: .white,
+                                    alignment: .trailing
+                                )
+
+                            } else {
+
+                                messageBubble(
+                                    text: message.text,
+                                    color: Color(.secondarySystemBackground),
+                                    textColor: .primary,
+                                    alignment: .leading
+                                )
+
+                                Spacer()
+                            }
                         }
-                    }
-                    .padding(.horizontal, Spacing.m)
-                    .padding(.top, Spacing.m)
-                }
-                .onChange(of: conversation.messages.count) { _, _ in
-                    if let last = conversation.messages.last {
-                        withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
+                        .padding(.horizontal, 16)
                     }
                 }
+                .padding(.top, 16)
             }
 
             Divider()
 
-            HStack(spacing: Spacing.s) {
-                TextField("Message…", text: $draft, axis: .vertical)
-                    .focused($inputFocused)
-                    .lineLimit(1...4)
-                    .padding(.horizontal, Spacing.sm)
-                    .padding(.vertical, Spacing.s)
-                    .background(Color.lmsTertiarySurface,
-                                in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+            // MARK: Bottom Input
+
+            HStack(spacing: 12) {
+
+                TextField(
+                    "Type a message...",
+                    text: $messageText
+                )
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color(.secondarySystemBackground))
+                )
 
                 Button {
-                    send(in: conversation.id)
+
+                    sendMessage()
+
                 } label: {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 32))
-                        .foregroundStyle(draft.trimmingCharacters(in: .whitespaces).isEmpty
-                                         ? Color.lmsGray4 : Color.lmsAccent)
+
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(.white)
+                        .frame(width: 46, height: 46)
+                        .background(Color.blue)
+                        .clipShape(Circle())
                 }
-                .disabled(draft.trimmingCharacters(in: .whitespaces).isEmpty)
             }
-            .padding(Spacing.sm)
-            .background(.bar)
+            .padding()
+            .background(Color(.systemBackground))
+        }
+        .navigationTitle(conversation.borrowerName)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if !isPushed {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                }
+            }
         }
     }
 
-    private func bubble(_ message: ConversationMessage) -> some View {
-        HStack {
-            if message.sender == .officer { Spacer(minLength: 40) }
-            VStack(alignment: message.sender == .officer ? .trailing : .leading,
-                   spacing: 2) {
-                Text(message.text)
-                    .padding(.horizontal, Spacing.sm)
-                    .padding(.vertical, Spacing.s)
-                    .background(message.sender == .officer
-                                ? Color.lmsAccent : Color.lmsFill,
-                                in: RoundedRectangle(cornerRadius: CornerRadius.medium))
-                    .foregroundStyle(message.sender == .officer ? .white : .primary)
-                Text(OfficerFormat.timeAgo(message.sentAt))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-            if message.sender == .borrower { Spacer(minLength: 40) }
+    // MARK: - Message Bubble
+
+    private func messageBubble(
+        text: String,
+        color: Color,
+        textColor: Color,
+        alignment: HorizontalAlignment
+    ) -> some View {
+
+        VStack(alignment: alignment, spacing: 4) {
+
+            Text(text)
+                .font(.system(size: 15))
+                .foregroundColor(textColor)
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(color)
+                )
         }
+        .frame(maxWidth: 260, alignment: alignment == .leading ? .leading : .trailing)
     }
 
-    private func send(in id: UUID) {
-        let trimmed = draft.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
-        draft = ""
-        Task { await store.sendMessage(trimmed, in: id) }
+    // MARK: - Send Message
+
+    private func sendMessage() {
+
+        guard !messageText.trimmingCharacters(in: .whitespaces).isEmpty else {
+            return
+        }
+
+        print("Message Sent: \(messageText)")
+
+        messageText = ""
     }
+}
+
+#Preview {
+
+    ChatView(
+        conversation: SampleData.conversations[0]
+    )
+    .environment(AppViewModel())
 }

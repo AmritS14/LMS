@@ -1,64 +1,142 @@
+//
+//  CommunicationsMainView.swift
+//  loan officer
+//
+//  Created by Aadya Tiwari on 21/05/26.
+//
+
+
 import SwiftUI
 
 struct CommunicationsMainView: View {
-    @Environment(LoanOfficerStore.self) private var store
-    @State private var searchText: String = ""
 
-    private var filtered: [OfficerConversation] {
-        guard !searchText.isEmpty else { return store.conversations }
-        return store.conversations.filter {
-            $0.borrowerName.localizedCaseInsensitiveContains(searchText)
-        }
-    }
+    @Environment(AppViewModel.self) var viewModel
 
     var body: some View {
-        Group {
-            if store.conversations.isEmpty {
-                ContentUnavailableView(
-                    "No conversations",
-                    systemImage: "bubble.left.and.bubble.right",
-                    description: Text("Borrower threads will appear here once messaging is set up.")
-                )
-            } else {
-                List {
-                    ForEach(filtered) { conversation in
-                        NavigationLink(value: OfficerRoute.conversation(conversation.id)) {
-                            row(conversation)
-                        }
-                    }
-                }
-                .listStyle(.insetGrouped)
-                .searchable(text: $searchText, prompt: "Search borrowers")
-            }
-        }
-        .navigationTitle("Communications")
-        .task { await store.refreshAll() }
-    }
+        @Bindable var bindableViewModel = viewModel
+        ScrollView(.vertical, showsIndicators: false) {
 
-    private func row(_ conversation: OfficerConversation) -> some View {
-        HStack(spacing: Spacing.sm) {
-            AvatarView(initials: conversation.borrowerInitials,
-                       size: 48,
-                       showOnlineIndicator: true,
-                       isOnline: conversation.isOnline)
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(conversation.borrowerName)
-                        .font(.headline)
-                    Spacer()
-                    Text(OfficerFormat.timeAgo(conversation.lastMessageTime))
-                        .font(.caption2)
+            VStack(spacing: 20) {
+
+                // MARK: Header
+
+                VStack(alignment: .leading, spacing: 4) {
+
+                    Text("Communications")
+                        .font(
+                            .system(
+                                size: 28,
+                                weight: .bold,
+                                design: .rounded
+                            )
+                        )
+
+                    Text("Borrower conversations & updates")
+                        .font(.system(size: 14))
                         .foregroundStyle(.secondary)
                 }
-                Text(conversation.lastMessage)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+
+                // MARK: Conversations
+
+                VStack(spacing: 14) {
+
+                    ForEach(viewModel.conversations) { conversation in
+
+                        Button {
+
+                            viewModel.selectedConversation = conversation
+
+                        } label: {
+
+                            HStack(spacing: 14) {
+
+                                LOAvatarView(
+                                    initials: conversation.borrowerInitials,
+                                    size: 52,
+                                    showOnlineIndicator: true,
+                                    isOnline: conversation.isOnline
+                                )
+
+                                VStack(alignment: .leading, spacing: 4) {
+
+                                    HStack {
+
+                                        Text(conversation.borrowerName)
+                                            .font(
+                                                .system(
+                                                    size: 16,
+                                                    weight: .semibold
+                                                )
+                                            )
+                                            .foregroundStyle(.primary)
+
+                                        Spacer()
+
+                                        Text(
+                                            AppFormatters.timeAgo(
+                                                conversation.lastMessageTime
+                                            )
+                                        )
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(.secondary)
+                                    }
+
+                                    Text(conversation.lastMessage)
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+
+                                    if conversation.unreadCount > 0 {
+
+                                        HStack {
+
+                                            Spacer()
+
+                                            LOCountBadge(
+                                                count: conversation.unreadCount
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 18)
+                                    .fill(
+                                        Color(
+                                            .secondarySystemGroupedBackground
+                                        )
+                                    )
+                            )
+                            .padding(.horizontal, 20)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
+                Spacer(minLength: 40)
             }
-            if conversation.unreadCount > 0 {
-                CountBadge(count: conversation.unreadCount, tint: .lmsAccent)
-            }
+            .padding(.bottom, 20)
         }
-        .padding(.vertical, Spacing.xs)
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Communications")
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $bindableViewModel.selectedConversation) { conversation in
+
+            ChatView(conversation: conversation)
+                .environment(viewModel)
+        }
+    }
+}
+
+#Preview {
+
+    NavigationStack {
+
+        CommunicationsMainView()
+            .environment(AppViewModel())
     }
 }
