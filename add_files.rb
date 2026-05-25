@@ -1,5 +1,5 @@
 require 'xcodeproj'
-project_path = '/Users/namangupta/Desktop/LMS/LMS.xcodeproj'
+project_path = 'LMS.xcodeproj'
 project = Xcodeproj::Project.open(project_path)
 
 # Shared/Services/Mocks

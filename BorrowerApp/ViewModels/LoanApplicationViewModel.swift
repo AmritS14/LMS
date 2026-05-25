@@ -30,7 +30,6 @@ final class LoanApplicationViewModel {
                 status: .draft
             )
             let created = try await loanService.createApplication(app)
-            _ = try await loanService.submitApplication(id: created.id)
             isSubmitting = false
             return true
         } catch {

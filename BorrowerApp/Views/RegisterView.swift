@@ -2,16 +2,18 @@ import SwiftUI
 
 struct RegisterView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.appEnvironment) private var env
 
+    @State private var viewModel = AuthViewModel()
+    @State private var navigateToOTP = false
+    
     @State private var fullName = ""
     @State private var email = ""
     @State private var phone = ""
     @State private var password = ""
     @State private var confirmPassword = ""
 
-    @State private var isSubmitting = false
     @State private var showSuccess = false
-    @State private var errorMessage: String?
 
     @FocusState private var focusedField: Field?
 
@@ -78,7 +80,7 @@ struct RegisterView: View {
                 passwordRequirements
             }
 
-            if let errorMessage {
+            if let errorMessage = viewModel.errorMessage ?? (password != confirmPassword && !password.isEmpty && !confirmPassword.isEmpty ? "Passwords do not match." : nil) {
                 Section {
                     Label(errorMessage, systemImage: "exclamationmark.circle.fill")
                         .foregroundStyle(Color.lmsDanger)
@@ -87,8 +89,8 @@ struct RegisterView: View {
             }
 
             Section {
-                PrimaryButton("Create Account", isLoading: isSubmitting, action: submit)
-                    .disabled(isSubmitting)
+                PrimaryButton("Create Account", isLoading: viewModel.isBusy, action: submit)
+                    .disabled(viewModel.isBusy || !isFormValid)
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
             }
@@ -96,10 +98,8 @@ struct RegisterView: View {
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Create Account")
         .navigationBarTitleDisplayMode(.inline)
-        .alert("Account Created", isPresented: $showSuccess) {
-            Button("Sign In") { dismiss() }
-        } message: {
-            Text("Your account has been created. Please sign in with your credentials.")
+        .navigationDestination(isPresented: $navigateToOTP) {
+            OTPVerificationView(viewModel: viewModel)
         }
     }
 
@@ -122,19 +122,14 @@ struct RegisterView: View {
     }
 
     private func submit() {
-        guard isFormValid else {
-            errorMessage = password != confirmPassword
-                ? "Passwords do not match."
-                : "Please fill in all fields correctly."
-            return
-        }
-        errorMessage = nil
-        isSubmitting = true
+        guard isFormValid, let auth = env?.auth else { return }
         focusedField = nil
+        viewModel.identifier = email
         Task {
-            try? await Task.sleep(for: .milliseconds(800))
-            isSubmitting = false
-            showSuccess = true
+            let success = await viewModel.signUp(authService: auth, password: password, fullName: fullName, phone: phone)
+            if success {
+                navigateToOTP = true
+            }
         }
     }
 }

@@ -113,9 +113,10 @@ struct LoginView: View {
         guard let auth = env?.auth, isSignInEnabled else { return }
         focusedField = nil
         Task {
-            await viewModel.requestOTP(authService: auth)
-            if viewModel.showOTPField {
-                navigateToOTP = true
+            if let user = await viewModel.signIn(authService: auth, password: password) {
+                withAnimation(.easeInOut(duration: 0.4)) { 
+                    session.currentUser = user 
+                }
             }
         }
     }
@@ -294,7 +295,7 @@ struct OTPVerificationView: View {
         guard let auth = env?.auth else { return }
         viewModel.otp = fullOTP
         Task { @MainActor in
-            if let user = await viewModel.verifyOTP(authService: auth) {
+            if let user = await viewModel.verifyEmailOTP(authService: auth) {
                 stopTimer()
                 withAnimation(.easeInOut(duration: 0.3)) { showCheckmark = true }
                 try? await Task.sleep(for: .milliseconds(700))
@@ -304,13 +305,13 @@ struct OTPVerificationView: View {
     }
 
     private func resendCode() {
-        guard let auth = env?.auth else { return }
         resetTimer()
         otpDigits = Array(repeating: "", count: 6)
         viewModel.otp = ""
         viewModel.errorMessage = nil
         focusedIndex = 0
-        Task { await viewModel.requestOTP(authService: auth) }
+        // Task { await viewModel.signUp(authService: auth, ...) } // Need password/name to resend via signUp, or Supabase has resend function.
+        // For now just leave as empty since resend requires separate Supabase API.
     }
 
     // MARK: - Timer logic

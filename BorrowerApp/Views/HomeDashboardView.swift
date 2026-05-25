@@ -162,7 +162,7 @@ struct HomeDashboardView: View {
             tenureMonths: loan.tenureMonths,
             startDate: loan.disbursementDate
         ).monthlyInstallment
-        let nextEMI = nextUpcomingEMI(for: loan)
+        _ = nextUpcomingEMI(for: loan)
 
         return VStack(alignment: .leading, spacing: Spacing.l) {
             HStack {

@@ -3,14 +3,11 @@ import UIKit
 
 @main
 struct BorrowerApp: App {
-    @State private var session = SessionStore(
-        currentUser: MockAuthService.seedBorrower,
-        borrowerProfile: MockAuthService.seedBorrowerProfile
-    )
+    @State private var session = SessionStore()
 
     private let appEnvironment = AppEnvironment(
-        auth: MockAuthService(),
-        loans: MockLoanService(),
+        auth: SupabaseAuthService(),
+        loans: SupabaseLoanService(client: SupabaseManager.shared.client),
         documents: MockDocumentService(),
         notifications: MockNotificationService(),
         messaging: MockMessagingService(),

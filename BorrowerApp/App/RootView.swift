@@ -23,6 +23,15 @@ struct RootView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: session.isAuthenticated)
+        .task {
+            if let env = env {
+                if let user = await env.auth.currentUser {
+                    withAnimation {
+                        session.currentUser = user
+                    }
+                }
+            }
+        }
     }
 }
 

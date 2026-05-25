@@ -2,27 +2,10 @@ import SwiftUI
 
 @main
 struct StaffApp: App {
-    // Until staff auth is wired, seed the session with the mock loan officer
-    // so the new screens have a current user to read.
-    @State private var session = SessionStore(
-        currentUser: User(
-            id: MockOfficerData.officerUserID,
-            fullName: MockOfficerData.officerProfile.name,
-            email: "sarah.mehta@example.com",
-            phone: "+91 99887 76543",
-            role: .loanOfficer
-        ),
-        staffProfile: StaffProfile(
-            id: MockOfficerData.officerUserID,
-            employeeID: MockOfficerData.officerProfile.employeeID,
-            branchID: nil,
-            department: "Loan Origination",
-            reportsToID: nil
-        )
-    )
+    @State private var session = SessionStore()
 
     private let appEnvironment = AppEnvironment(
-        auth: MockAuthService(),
+        auth: SupabaseAuthService(),
         loans: MockLoanService(),
         documents: MockDocumentService(),
         notifications: MockNotificationService(),

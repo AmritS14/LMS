@@ -31,6 +31,15 @@ struct StaffRootView: View {
             }
         } else {
             StaffLoginView()
+                .task {
+                    if let appEnvironment {
+                        if let user = await appEnvironment.auth.currentUser {
+                            withAnimation {
+                                session.currentUser = user
+                            }
+                        }
+                    }
+                }
         }
     }
 }
