@@ -23,59 +23,58 @@ struct HomeDashboardView: View {
                                 emptyState.padding(.horizontal)
                             } else {
                                 let pendingApps = viewModel.applications.filter { $0.status != .disbursed && $0.status != .closed }
-                                if let app = pendingApps.first {
-                                    statusTrackerCard(app).padding(.horizontal)
-                                }
 
                                 if !viewModel.activeLoans.isEmpty {
-                                    HStack(alignment: .bottom) {
-                                        Text("Active Loans")
-                                            .font(.headline)
-                                            .foregroundStyle(.primary)
-                                        Spacer()
-                                        if viewModel.activeLoans.count > 1 {
-                                            HStack(spacing: 6) {
-                                                ForEach(viewModel.activeLoans) { loan in
-                                                    Circle()
-                                                        .fill(selectedLoanID == loan.id ? Color.blue : Color(.systemGray4))
-                                                        .frame(width: 6, height: 6)
-                                                        .animation(.easeInOut, value: selectedLoanID)
-                                                }
-                                            }
-                                            .padding(.bottom, 6)
-                                        }
-                                    }
-                                    .padding(.horizontal)
-                                    .padding(.top, 8)
-                                    .padding(.bottom, 4)
-
-                                    if viewModel.activeLoans.count > 1 {
-                                        TabView(selection: $selectedLoanID) {
-                                            ForEach(viewModel.activeLoans) { loan in
-                                                NavigationLink(destination: RepaymentDashboardView(loan: loan)) {
-                                                    VStack {
-                                                        loanHeroCard(loan)
-                                                        Spacer(minLength: 0)
+                                    VStack(spacing: 8) {
+                                        HStack(alignment: .bottom) {
+                                            Text("Active Loans")
+                                                .font(.headline)
+                                                .foregroundStyle(.primary)
+                                            Spacer()
+                                            if viewModel.activeLoans.count > 1 {
+                                                HStack(spacing: 6) {
+                                                    ForEach(viewModel.activeLoans) { loan in
+                                                        Circle()
+                                                            .fill(selectedLoanID == loan.id ? Color.blue : Color(.systemGray4))
+                                                            .frame(width: 6, height: 6)
+                                                            .animation(.easeInOut, value: selectedLoanID)
                                                     }
                                                 }
-                                                .buttonStyle(PlainButtonStyle())
-                                                .tag(loan.id as UUID?)
-                                                .padding(.horizontal)
+                                                .padding(.bottom, 6)
                                             }
                                         }
-                                        .tabViewStyle(.page(indexDisplayMode: .never))
-                                        .frame(height: 250)
-                                    } else if let loan = viewModel.activeLoans.first {
-                                        NavigationLink(destination: RepaymentDashboardView(loan: loan)) {
-                                            loanHeroCard(loan)
-                                        }
-                                        .buttonStyle(PlainButtonStyle())
                                         .padding(.horizontal)
+                                        .padding(.top, 8)
+                                        .padding(.bottom, 4)
+
+                                        if viewModel.activeLoans.count > 1 {
+                                            TabView(selection: $selectedLoanID) {
+                                                ForEach(viewModel.activeLoans) { loan in
+                                                    NavigationLink(destination: RepaymentDashboardView(loan: loan)) {
+                                                        VStack {
+                                                            loanHeroCard(loan)
+                                                            Spacer(minLength: 0)
+                                                        }
+                                                    }
+                                                    .buttonStyle(PlainButtonStyle())
+                                                    .tag(loan.id as UUID?)
+                                                    .padding(.horizontal)
+                                                }
+                                            }
+                                            .tabViewStyle(.page(indexDisplayMode: .never))
+                                            .frame(height: 250)
+                                        } else if let loan = viewModel.activeLoans.first {
+                                            NavigationLink(destination: RepaymentDashboardView(loan: loan)) {
+                                                loanHeroCard(loan)
+                                            }
+                                            .buttonStyle(PlainButtonStyle())
+                                            .padding(.horizontal)
+                                        }
                                     }
                                 }
                                 
                                 NavigationLink(destination: NewLoanApplicationView()) {
-                                    HStack(spacing: 12) {
+                                    HStack() {
                                         Image(systemName: "plus.circle.fill")
                                             .font(.title3)
                                         Text("Apply for a New Loan")
@@ -88,11 +87,13 @@ struct HomeDashboardView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 16))
                                 }
                                 .padding(.horizontal)
-                                .padding(.top, 16)
+                                
+                                if let app = pendingApps.first {
+                                    statusTrackerCard(app).padding(.horizontal)
+                                }
                             }
                         }
                     }
-                    .padding(.bottom, 32)
                 }
             }
             .navigationTitle("Dashboard")
@@ -245,8 +246,17 @@ struct HomeDashboardView: View {
                     }
                 }
             }
+            
+            Divider()
+            
+            NavigationLink(destination: ApplicationTrackingView()) {
+                Text("View all applications →")
+                    .font(.footnote)
+                    .foregroundStyle(.blue)
+            }
         }
         .padding()
+        .padding(.vertical, 8)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .shadow(color: .black.opacity(0.06), radius: 8, y: 2)

@@ -50,10 +50,15 @@ struct NewLoanApplicationView: View {
                         }
                 }
             }
-            .alert("Application Submitted", isPresented: $showConfirm) {
-                Button("OK") { dismiss() }
-            } message: {
-                Text("Your \(calcLoanType.rawValue.capitalized) for \(Formatting.currency(Decimal(viewModel.requestedAmount))) is under review.")
+            .fullScreenCover(isPresented: $showConfirm) {
+                ApplicationSuccessView(
+                    loanType: calcLoanType.rawValue.capitalized,
+                    amount: viewModel.requestedAmount,
+                    onDismiss: {
+                        showConfirm = false
+                        dismiss()
+                    }
+                )
             }
         }
     }
@@ -233,6 +238,79 @@ struct NewLoanApplicationView: View {
             }
         }
         .disabled(viewModel.isSubmitting)
+    }
+}
+
+// MARK: - Application Success View
+struct ApplicationSuccessView: View {
+    let loanType: String
+    let amount: Double
+    let onDismiss: () -> Void
+    
+    @State private var isAnimating = false
+    
+    var body: some View {
+        ZStack {
+            Color.blue.ignoresSafeArea()
+            
+            VStack(spacing: 24) {
+                Spacer()
+                
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.2))
+                        .frame(width: 120, height: 120)
+                        .scaleEffect(isAnimating ? 1.5 : 0.8)
+                        .opacity(isAnimating ? 0 : 1)
+                        .animation(.easeOut(duration: 1.5).repeatForever(autoreverses: false), value: isAnimating)
+                    
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 90, height: 90)
+                    
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 40, weight: .bold))
+                        .foregroundColor(.blue)
+                }
+                .scaleEffect(isAnimating ? 1 : 0.5)
+                .animation(.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0), value: isAnimating)
+                
+                VStack(spacing: 12) {
+                    Text("Application Submitted!")
+                        .font(.largeTitle)
+                        .bold()
+                        .foregroundStyle(.white)
+                    
+                    Text("Your \(loanType) Loan for \(Formatting.currency(Decimal(amount))) is now under review. We will notify you once it is approved.")
+                        .font(.title3)
+                        .foregroundStyle(.white.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                }
+                .opacity(isAnimating ? 1 : 0)
+                .offset(y: isAnimating ? 0 : 20)
+                .animation(.easeOut(duration: 0.5).delay(0.2), value: isAnimating)
+                
+                Spacer()
+                
+                Button(action: onDismiss) {
+                    Text("Go to Dashboard")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color.white)
+                        .foregroundStyle(.blue)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 32)
+                .opacity(isAnimating ? 1 : 0)
+                .animation(.easeIn(duration: 0.3).delay(0.6), value: isAnimating)
+            }
+        }
+        .onAppear {
+            isAnimating = true
+        }
     }
 }
 
