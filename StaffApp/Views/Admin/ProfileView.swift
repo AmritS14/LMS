@@ -1,17 +1,14 @@
 import SwiftUI
-import PhotosUI
 
 // MARK: - Profile View
 
 /// A native iOS Profile view matching the requested layout.
+@MainActor
 struct ProfileView: View {
     @State private var isTwoFactorEnabled = true
     @State private var isBiometricEnabled = true
     @State private var showSignOutConfirmation = false
     @State private var showSignOutSuccess = false
-    
-    @State private var selectedItem: PhotosPickerItem? = nil
-    @State private var avatarImage: Image? = nil
 
     var body: some View {
         List {
@@ -46,50 +43,14 @@ struct ProfileView: View {
         } message: {
             Text("You have been successfully signed out of the LMS system.")
         }
-        .onChange(of: selectedItem) { _, newValue in
-            Task {
-                if let data = try? await newValue?.loadTransferable(type: Data.self),
-                   let uiImage = UIImage(data: data) {
-                    avatarImage = Image(uiImage: uiImage)
-                }
-            }
-        }
     }
     
     // MARK: - Sections
     
+    @MainActor
     private var headerView: some View {
         VStack(spacing: 14) {
-            PhotosPicker(selection: $selectedItem, matching: .images) {
-                ZStack(alignment: .bottomTrailing) {
-                    if let avatarImage {
-                        avatarImage
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 84, height: 84)
-                            .clipShape(Circle())
-                    } else {
-                        Text("SA")
-                            .font(.system(size: 32, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 84, height: 84)
-                            .background(Color.indigo.gradient)
-                            .clipShape(Circle())
-                    }
-                    
-                    // Camera Badge Overlay
-                    Image(systemName: "camera.fill")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 26, height: 26)
-                        .background(AdminColor.accent)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(AdminColor.background, lineWidth: 2.5))
-                        .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
-                }
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Change profile photo")
+            SystemProfileBadge()
 
             VStack(spacing: 6) {
                 Text("Sarah Jenkins")
@@ -633,6 +594,27 @@ struct SupportDetailedView: View {
                     .fontWeight(.semibold)
             }
             Spacer()
+        }
+    }
+}
+
+private struct SystemProfileBadge: View {
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [AdminColor.accent, Color.indigo],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 84, height: 84)
+
+            Image(systemName: "person.crop.circle.fill")
+                .font(.system(size: 40, weight: .regular))
+                .foregroundStyle(.white.opacity(0.95))
         }
     }
 }

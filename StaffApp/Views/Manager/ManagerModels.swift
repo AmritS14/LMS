@@ -63,9 +63,9 @@ struct ManagerApplication: Identifiable, Hashable {
     var tenureMonths: Int { base.tenure }
 
     // Display-formatted values
-    var amountText: String { Formatting.currency(base.loanAmount) }
-    var annualIncomeText: String { Formatting.currency(base.monthlyIncome * 12) }
-    var emiText: String { Formatting.currency(base.emiAmount) }
+    var amountText: String { Formatting.currency(Decimal(base.loanAmount)) }
+    var annualIncomeText: String { Formatting.currency(Decimal(base.monthlyIncome * 12)) }
+    var emiText: String { Formatting.currency(Decimal(base.emiAmount)) }
     var referenceCode: String {
         "LN-" + base.id.uuidString.replacingOccurrences(of: "-", with: "").prefix(6).uppercased()
     }

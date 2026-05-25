@@ -15,39 +15,54 @@ struct OfficerTabView: View {
             Tab("Messages", systemImage: "bubble.left.and.bubble.right") {
                 OfficerNavigationStack { CommunicationsMainView() }
             }
-            Tab("Profile", systemImage: "person.crop.circle") {
-                NavigationStack { StaffProfileView() }
-            }
         }
     }
 }
 
-// Wraps a tab root in a NavigationStack that knows how to resolve every
-// OfficerRoute. Centralising destinations keeps each view free of
-// `navigationDestination` boilerplate.
+// Wraps each tab root in the shared loan-officer navigation path so every
+// screen resolves the same destination enum.
 struct OfficerNavigationStack<Root: View>: View {
+    @Environment(AppViewModel.self) private var viewModel
+
     @ViewBuilder var root: () -> Root
 
     var body: some View {
-        NavigationStack {
+        @Bindable var bindableViewModel = viewModel
+
+        NavigationStack(path: $bindableViewModel.navigationPath) {
             root()
-                .navigationDestination(for: OfficerRoute.self) { route in
-                    destination(for: route)
+                .navigationDestination(for: AppDestination.self) { destination in
+                    destinationView(for: destination)
                 }
         }
     }
 
     @ViewBuilder
-    private func destination(for route: OfficerRoute) -> some View {
-        switch route {
-        case .allApplications: AllApplicationsView()
-        case .review(let id): LoanReviewView(applicationID: id)
-        case .communications: CommunicationsMainView()
-        case .conversation(let id): ChatView(conversationID: id)
-        case .notifications: NotificationsTabView()
-        case .recovery: RecoveryManagementMainView()
-        case .recoveryDetail: RecoveryVerificationView()
-        case .documents: DocumentsView()
+    private func destinationView(for destination: AppDestination) -> some View {
+        switch destination {
+        case .loanReview:
+            LoanReviewView()
+        case .recovery:
+            RecoveryVerificationView()
+        case .fraudAlerts:
+            LoanReviewView()
+        case .messages:
+            ChatView(conversation: SampleData.conversations[0])
+                .environment(viewModel)
+        case .notifications:
+            NotificationsTabView()
+        case .documents:
+            DocumentsView()
+        case .communications:
+            CommunicationsMainView()
+        case .recoveryManagement:
+            RecoveryManagementMainView()
+        case .allapplications:
+            AllApplicationsView()
+        case .profile:
+            LoanOfficerProfileView()
+        case .chat(let conversation):
+            ChatView(conversation: conversation, isPushed: true)
         }
     }
 }

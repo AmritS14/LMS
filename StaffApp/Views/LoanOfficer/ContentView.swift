@@ -31,7 +31,7 @@ struct ContentView: View {
                     case .allapplications:
                         AllApplicationsView()
                     case .profile:
-                        ProfileView()
+                        LoanOfficerProfileView()
                     case .chat(let conversation):
                         ChatView(conversation: conversation, isPushed: true)
                     }

@@ -27,6 +27,8 @@ import Combine
     var collateral = SampleData.sampleCollateral
     var selectedConversation: BorrowerConversation?
 
+    private var environment: AppEnvironment?
+
     // Dynamic KPI counters tracking base numbers
     private var pendingCount = 47
     private var approvedCount = 132
@@ -61,6 +63,58 @@ import Combine
             app.borrowerName.localizedCaseInsensitiveContains(searchText) ||
             app.loanType.localizedCaseInsensitiveContains(searchText) ||
             app.status.rawValue.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+
+    func configure(environment: AppEnvironment) {
+        self.environment = environment
+        Task { await refreshFromService() }
+    }
+
+    private func refreshFromService() async {
+        guard let environment else { return }
+
+        do {
+            let sharedApplications = try await environment.loans.fetchAssignedApplications(
+                officerID: MockOfficerData.officerUserID
+            )
+
+            guard !sharedApplications.isEmpty else {
+                return
+            }
+
+            let updateCount = min(sharedApplications.count, recentApplications.count)
+            for index in 0..<updateCount {
+                recentApplications[index].sourceApplicationID = sharedApplications[index].id
+                recentApplications[index].status = sharedApplications[index].status.officerStatus
+            }
+
+            recalculateKPIs()
+        } catch {
+            // Keep the seeded sample data if the shared service is unavailable.
+        }
+    }
+
+    private func recalculateKPIs() {
+        pendingCount = recentApplications.filter { $0.status == .pending || $0.status == .underReview }.count
+        approvedCount = recentApplications.filter { $0.status == .approved || $0.status == .disbursed }.count
+        escalatedCount = recentApplications.filter { $0.status == .escalated }.count
+        updateKPIs()
+    }
+
+    private func syncStatus(
+        for application: LOLoanApplication,
+        to status: ApplicationStatus,
+        note: String?
+    ) {
+        guard let environment, let sourceApplicationID = application.sourceApplicationID else { return }
+
+        Task {
+            try? await environment.loans.updateStatus(
+                applicationID: sourceApplicationID,
+                to: status,
+                note: note
+            )
         }
     }
 
@@ -103,6 +157,7 @@ import Combine
                 }
                 approvedCount += 1
                 updateKPIs()
+                syncStatus(for: recentApplications[index], to: .recommended, note: remarks)
                 
                 // Prepend to activity feed
                 let activity = ActivityItem(
@@ -144,6 +199,7 @@ import Combine
                     escalatedCount = max(0, escalatedCount - 1)
                 }
                 updateKPIs()
+                syncStatus(for: recentApplications[index], to: .rejected, note: remarks)
             }
         }
     }
@@ -175,6 +231,7 @@ import Combine
                     escalatedCount += 1
                 }
                 updateKPIs()
+                syncStatus(for: recentApplications[index], to: .escalated, note: remarks)
                 
                 // Add escalation warning to activity feed
                 let activity = ActivityItem(

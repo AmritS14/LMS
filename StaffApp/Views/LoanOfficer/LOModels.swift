@@ -44,6 +44,17 @@ enum RiskLevel: String, CaseIterable, Codable {
             return "flame.fill"
         }
     }
+
+    var tone: StatusBadge.Tone {
+        switch self {
+        case .low:
+            return .success
+        case .medium:
+            return .warning
+        case .high, .critical:
+            return .danger
+        }
+    }
 }
 
 // MARK: - KYC Status
@@ -310,6 +321,7 @@ enum NotificationType: String, Codable {
     case overdueReminder = "Overdue Reminder"
     case escalation = "Escalation"
     case documentRequest = "Document Request"
+    case system = "System"
     case systemUpdate = "System Update"
 
     var color: Color {
@@ -336,6 +348,9 @@ enum NotificationType: String, Codable {
         case .documentRequest:
             return .teal
 
+        case .system:
+            return .gray
+
         case .systemUpdate:
             return .gray
         }
@@ -361,10 +376,15 @@ enum NotificationType: String, Codable {
         case .documentRequest:
             return "doc.badge.plus"
 
+        case .system:
+            return "gearshape.fill"
+
         case .systemUpdate:
             return "gearshape.fill"
         }
     }
+
+    var tint: Color { color }
 }
 
 // MARK: - Message Type
@@ -494,6 +514,7 @@ struct ValidationIssue: Identifiable, Hashable {
 struct LOLoanApplication: Identifiable, Hashable {
 
     let id = UUID()
+    var sourceApplicationID: UUID? = nil
 
     var borrowerName: String
     var borrowerInitials: String
@@ -588,6 +609,46 @@ struct LOLoanApplication: Identifiable, Hashable {
     
     var canProceedToApproval: Bool {
         return !validationIssues.contains(where: { $0.isBlocker })
+    }
+}
+
+extension LOLoanStatus {
+    var sharedStatus: ApplicationStatus {
+        switch self {
+        case .pending:
+            return .submitted
+        case .approved:
+            return .recommended
+        case .rejected:
+            return .rejected
+        case .underReview:
+            return .underReview
+        case .escalated:
+            return .escalated
+        case .disbursed:
+            return .approved
+        }
+    }
+}
+
+extension ApplicationStatus {
+    var officerStatus: LOLoanStatus {
+        switch self {
+        case .draft, .submitted:
+            return .pending
+        case .underReview:
+            return .underReview
+        case .escalated:
+            return .escalated
+        case .additionalInfoRequired:
+            return .underReview
+        case .recommended, .approved, .disbursed:
+            return .approved
+        case .rejected:
+            return .rejected
+        case .closed:
+            return .disbursed
+        }
     }
 }
 

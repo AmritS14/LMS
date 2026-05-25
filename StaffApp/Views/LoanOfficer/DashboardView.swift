@@ -1,251 +1,567 @@
 import SwiftUI
 
+// MARK: - Dashboard View
+
 struct DashboardView: View {
-    @Environment(LoanOfficerStore.self) private var store
-    @State private var expandedApplicationID: UUID?
+
+    @Environment(AppViewModel.self) var viewModel
+
+    @State private var expandedId: UUID?
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: Spacing.l) {
-                header
-                branchCard
-                kpiGrid
-                recentApplications
-                recoveryShortcut
-            }
-            .padding(.horizontal, Spacing.m)
-            .padding(.vertical, Spacing.m)
-        }
-        .background(Color.lmsBackground)
-        .navigationTitle("Dashboard")
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink(value: OfficerRoute.notifications) {
-                    ZStack(alignment: .topTrailing) {
-                        Image(systemName: "bell")
-                            .font(.title3)
-                        if store.unreadNotificationCount > 0 {
-                            CountBadge(count: store.unreadNotificationCount)
-                                .offset(x: 8, y: -6)
-                        }
-                    }
-                }
-                .accessibilityLabel("Notifications")
-            }
-        }
-        .task { await store.refreshAll() }
-    }
 
-    // MARK: Header
-    private var header: some View {
-        HStack(spacing: Spacing.sm) {
-            AvatarView(initials: store.officerProfile.avatarInitials, size: 48)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(store.greetingText)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Text(store.officerProfile.name)
-                    .font(.lmsTitle3)
-                    .foregroundStyle(.primary)
-            }
-            Spacer()
-        }
-    }
+        ScrollView(.vertical, showsIndicators: false) {
 
-    // MARK: Branch
-    private var branchCard: some View {
-        HStack(spacing: Spacing.s) {
-            Image(systemName: "building.2.fill")
-                .foregroundStyle(Color.lmsAccent)
-            Text(store.officerProfile.branch)
-                .font(.subheadline)
-            Spacer()
-            Text("EMP: \(store.officerProfile.employeeID)")
-                .font(.lmsMono)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, Spacing.m)
-        .padding(.vertical, Spacing.sm)
-        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
-    }
+            VStack(spacing: 24) {
 
-    // MARK: KPI Grid
-    private var kpiGrid: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader(title: "Today", subtitle: "Performance overview",
-                          icon: "chart.bar.fill")
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: Spacing.sm),
-                                GridItem(.flexible(), spacing: Spacing.sm)],
-                      spacing: Spacing.sm) {
-                ForEach(store.kpiTiles) { kpi in
-                    kpiTile(kpi)
-                }
-            }
-        }
-    }
+                // MARK: Header
+                DashboardHeaderSection()
 
-    private func kpiTile(_ kpi: OfficerKPI) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.s) {
-            Image(systemName: kpi.icon)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(kpi.tint)
-                .frame(width: 36, height: 36)
-                .background(kpi.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: CornerRadius.small))
-            Text(kpi.value)
-                .font(.system(.title, design: .rounded).weight(.bold))
-            Text(kpi.title)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .lineLimit(2, reservesSpace: true)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Spacing.m)
-        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card))
-    }
+                // MARK: KPI Overview
+                KPIOverviewSection()
 
-    // MARK: Recent Applications
-    private var recentApplications: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            HStack {
-                SectionHeader(
-                    title: "Recent Applications",
-                    subtitle: "\(store.applications.count) total"
+                // MARK: Recent Applications
+                RecentApplicationsSection(
+                    expandedId: $expandedId
                 )
-                NavigationLink("View All", value: OfficerRoute.allApplications)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.lmsAccent)
-            }
 
-            VStack(spacing: Spacing.sm) {
-                ForEach(store.applications.prefix(3)) { app in
-                    applicationCard(app)
-                }
+                // MARK: Recovery Management
+                RecoveryManagementButton()
+
+                Spacer(minLength: 40)
             }
+            .padding(.bottom, 20)
         }
+        .background(Color(.systemGroupedBackground))
+        .toolbarTitleDisplayMode(.inlineLarge)
     }
+}
 
-    private func applicationCard(_ app: OfficerApplication) -> some View {
-        let isExpanded = expandedApplicationID == app.id
-        return VStack(alignment: .leading, spacing: Spacing.sm) {
-            HStack(spacing: Spacing.sm) {
-                AvatarView(initials: app.borrowerInitials,
-                           size: 44,
-                           colors: app.riskLevel.gradient)
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 4) {
-                        Text(app.borrowerName)
-                            .font(.headline)
-                        if app.fraudFlag {
-                            Image(systemName: "exclamationmark.shield.fill")
-                                .foregroundStyle(.red)
-                                .font(.footnote)
-                        }
-                    }
-                    Text("\(app.loanTypeLabel) • \(OfficerFormat.currency(app.loanAmount))")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                    .font(.caption.weight(.semibold))
+// MARK: - Dashboard Header Section
+
+struct DashboardHeaderSection: View {
+
+    @Environment(AppViewModel.self) var viewModel
+
+    var body: some View {
+
+        HStack(alignment: .center, spacing: 15) {
+            
+            Button {
+                viewModel.navigationPath.append(AppDestination.profile)
+            } label: {
+                LOAvatarView(
+                    initials: viewModel.officerProfile.avatarInitials,
+                    size: 44,
+                    colors: [
+                        Color(red: 0.2, green: 0.5, blue: 1.0),
+                        Color(red: 0.4, green: 0.3, blue: 0.9)
+                    ]
+                )
+            }
+            .buttonStyle(.plain)
+            
+            VStack(alignment: .leading, spacing: 5) {
+                
+                Text(viewModel.officerProfile.name)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(.primary)
+                Text(viewModel.selectedBranch)
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.secondary)
             }
-
-            HStack(spacing: Spacing.s) {
-                StatusBadge(app.status.displayLabel, tone: app.status.tone,
-                            icon: app.status.icon, size: .small)
-                StatusBadge(app.riskLevel.rawValue, tone: app.riskLevel.tone,
-                            icon: app.riskLevel.icon, size: .small)
+            
+            Spacer()
+            
+            Button {
+                
+                viewModel.navigationPath.append(
+                    AppDestination.notifications
+                )
+                
+            } label: {
+                
+                ZStack(alignment: .topTrailing) {
+                    
+                    Image(systemName: "bell.fill")
+                        .font(.system(size: 22, weight: .medium))
+                        .foregroundStyle(.primary)
+                        .frame(width: 44, height: 44)
+                        .background(
+                            Circle()
+                                .fill(
+                                    Color(
+                                        .secondarySystemGroupedBackground
+                                    )
+                                )
+                        )
+                    
+                    LOCountBadge(
+                        count: viewModel.unreadNotifications
+                    )
+                    .offset(x: 6, y: -4)
+                }
             }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+    }
+}
 
-            if isExpanded {
-                Divider()
-                VStack(spacing: 0) {
-                    DetailRow(icon: app.kycStatus.icon, title: "KYC",
-                              value: app.kycStatus.displayLabel,
-                              valueColor: tone(app.kycStatus.tone))
-                    DetailRow(icon: "gauge.medium", title: "Eligibility",
-                              value: "\(app.eligibilityScore)/100",
-                              valueColor: eligibilityColor(app.eligibilityScore))
-                    DetailRow(icon: "indianrupeesign.circle.fill", title: "EMI",
-                              value: OfficerFormat.currency(app.emiAmount))
-                    DetailRow(icon: "calendar", title: "Applied",
-                              value: OfficerFormat.date(app.applicationDate))
-                }
+// MARK: - KPI Overview Section
 
-                NavigationLink(value: OfficerRoute.review(app.id)) {
-                    Label("View Full Details", systemImage: "arrow.right.circle.fill")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
+struct KPIOverviewSection: View {
+
+    @Environment(AppViewModel.self) var viewModel
+
+    private let columns = [
+        GridItem(.flexible(), spacing: 14),
+        GridItem(.flexible(), spacing: 14)
+    ]
+
+    var body: some View {
+
+        VStack(alignment: .leading) {
+
+            LOSectionHeader(
+                title: "Performance Overview",
+                subtitle: "Today's metrics"
+            )
+            .padding(.horizontal, 20)
+
+            LazyVGrid(columns: columns) {
+
+                ForEach(viewModel.kpiData) { kpi in
+
+                    KPICardView(kpi: kpi)
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .padding(.top, Spacing.xs)
+            }
+            .padding(.horizontal)
+        }
+    }
+}
+
+// MARK: - KPI Card View
+
+struct KPICardView: View {
+
+    let kpi: KPIData
+
+    var body: some View {
+
+        VStack(alignment: .leading, spacing: 8) {
+            
+            // Icon Badge
+            ZStack {
+                Circle()
+                    .fill(kpi.color.opacity(0.1))
+                    .frame(width: 36, height: 36)
+                Image(systemName: kpi.icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(kpi.color)
+            }
+            
+            VStack(alignment: .leading, spacing: 1) {
+                Text("\(kpi.value)")
+                    .font(
+                        .system(
+                            size: 26,
+                            weight: .bold,
+                            design: .rounded
+                        )
+                    )
+                    .foregroundStyle(.primary)
+
+                Text(kpi.title)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(Spacing.m)
-        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card))
-        .contentShape(Rectangle())
-        .onTapGesture {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                expandedApplicationID = isExpanded ? nil : app.id
+        .padding(14)
+        .frame(maxWidth: .infinity, minHeight: 105, alignment: .topLeading)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(.secondarySystemGroupedBackground))
+                .shadow(color: .black.opacity(0.03), radius: 6, x: 0, y: 3)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color(.separator).opacity(0.2), lineWidth: 0.5)
+        )
+    }
+}
+
+// MARK: - Recent Applications Section
+
+struct RecentApplicationsSection: View {
+
+    @Environment(AppViewModel.self) var viewModel
+
+    @Binding var expandedId: UUID?
+
+    private var recentApplications: [LOLoanApplication] {
+
+        Array(viewModel.filteredApplications.prefix(3))
+    }
+
+    var body: some View {
+
+        VStack(alignment: .leading, spacing: 14) {
+
+            LOSectionHeader(
+                title: "Recent Applications",
+                subtitle: "\(viewModel.filteredApplications.count) applications",
+                actionTitle: "View All"
+            ) {
+
+                viewModel.navigationPath.append(
+                    AppDestination.allapplications
+                )
+            }
+            .padding(.horizontal, 20)
+
+            VStack(spacing: 12) {
+
+                ForEach(recentApplications) { application in
+
+                    ApplicationCardView(
+                        application: application,
+                        isExpanded: expandedId == application.id
+                    )
+                    .environment(viewModel)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+
+                        withAnimation()
+                        {
+
+                            if expandedId == application.id {
+
+                                expandedId = nil
+
+                            } else {
+
+                                expandedId = application.id
+                            }
+                        }
+
+                        let feedback = UIImpactFeedbackGenerator(
+                            style: .light
+                        )
+
+                        feedback.impactOccurred()
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+        }
+    }
+}
+
+struct ApplicationCardView: View {
+
+    @Environment(AppViewModel.self) var viewModel
+
+    let application: LOLoanApplication
+    let isExpanded: Bool
+
+    var body: some View {
+
+        LOPremiumCard {
+
+            VStack(alignment: .leading, spacing: 12) {
+
+                // MARK: Top Row
+
+                HStack(alignment: .top, spacing: 12) {
+
+                    LOAvatarView(
+                        initials: application.borrowerInitials,
+                        size: 42,
+                        colors:
+                            application.riskLevel == .critical
+                            ? [.red, Color(red: 0.75, green: 0.05, blue: 0.05)]
+                            : [
+                                Color(red: 0.2, green: 0.5, blue: 1.0),
+                                Color(red: 0.4, green: 0.3, blue: 0.9)
+                            ]
+                    )
+
+                    VStack(alignment: .leading, spacing: 3) {
+
+                        HStack(spacing: 6) {
+
+                            Text(application.borrowerName)
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(.primary)
+
+                            if application.fraudFlag {
+
+                                Image(systemName: "exclamationmark.shield.fill")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(.red)
+                            }
+                            Spacer()
+                            
+                            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Text(
+                            "\(application.loanType) • \(AppFormatters.formatCurrency(application.loanAmount))"
+                        )
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                }
+
+                // MARK: Status Row
+
+                HStack(spacing: 8) {
+
+                    LOStatusBadge(
+                        text: application.status.rawValue,
+                        color: application.status.color,
+                        icon: application.status.icon,
+                        size: .small
+                    )
+
+//                    LOStatusBadge(
+//                        text: application.riskLevel.rawValue,
+//                        color: application.riskLevel.color,
+//                        icon: application.riskLevel.icon,
+//                        size: .small
+//                    )
+
+                    Spacer()
+
+                    
+                }
+
+                // MARK: Expanded Details
+
+                if isExpanded {
+
+                    VStack(spacing: 0) {
+
+                        Divider()
+                            .padding(.vertical, 8)
+
+                        VStack(spacing: 6) {
+
+                            LODetailRow(
+                                icon: application.kycStatus.icon,
+                                title: "KYC Status",
+                                value: application.kycStatus.rawValue,
+                                valueColor: application.kycStatus.color
+                            )
+
+                            LODetailRow(
+                                icon: "gauge.medium",
+                                title: "Eligibility Score",
+                                value: "\(application.eligibilityScore)/100",
+                                valueColor:
+                                    application.eligibilityScore >= 70
+                                    ? .green
+                                    : (
+                                        application.eligibilityScore >= 50
+                                        ? .orange
+                                        : .red
+                                    )
+                            )
+
+                            LODetailRow(
+                                icon: "indianrupeesign.circle.fill",
+                                title: "EMI Amount",
+                                value: AppFormatters.formatCurrency(application.emiAmount),
+                                valueColor: .primary
+                            )
+
+                            LODetailRow(
+                                icon: "calendar",
+                                title: "Applied On",
+                                value: AppFormatters.formatDate(application.applicationDate),
+                                valueColor: .primary
+                            )
+
+                            LODetailRow(
+                                icon: "briefcase.fill",
+                                title: "Employment",
+                                value: application.employmentType,
+                                valueColor: .primary
+                            )
+
+                            LODetailRow(
+                                icon: "percent",
+                                title: "Interest Rate",
+                                value: String(format: "%.2f%%", application.interestRate),
+                                valueColor: .primary
+                            )
+                        }
+                      
+                        // MARK: View Details Button
+
+                        Button {
+
+                            viewModel.selectedApplication = application
+                            viewModel.navigationPath.append(AppDestination.loanReview)
+
+                        } label: {
+
+                            HStack(spacing: 6) {
+
+                                Text("View Full Details")
+                                    .font(.system(size: 14, weight: .semibold))
+
+                                
+                            }
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [
+                                                Color.blue,
+                                                Color.blue.opacity(0.8)
+                                            ],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, 12)
+
+                        // MARK: Message Borrower Button
+
+                        Button {
+                            viewModel.selectedApplication = application
+                            viewModel.highlightMessageButton = true
+                            viewModel.navigationPath.append(AppDestination.loanReview)
+                        } label: {
+
+                            HStack(spacing: 6) {
+
+                                Image(systemName: "message.fill")
+                                    .font(.system(size: 13))
+
+                                Text("Message Borrower")
+                                    .font(.system(size: 14, weight: .semibold))
+                            }
+                            .foregroundStyle(.blue)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.blue.opacity(0.1))
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, 8)
+                    }
+                }
             }
         }
     }
+}
 
-    // MARK: Recovery Shortcut
-    private var recoveryShortcut: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            SectionHeader(title: "Recovery",
-                          subtitle: "Overdue accounts needing attention")
-            NavigationLink(value: OfficerRoute.recovery) {
-                HStack(spacing: Spacing.sm) {
-                    Image(systemName: "arrow.clockwise.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(Color.lmsWarning)
-                        .frame(width: 44, height: 44)
-                        .background(Color.lmsWarning.opacity(0.12),
-                                    in: RoundedRectangle(cornerRadius: CornerRadius.medium))
-                    VStack(alignment: .leading, spacing: 2) {
+// MARK: - Recovery Management Button
+
+struct RecoveryManagementButton: View {
+
+    @Environment(AppViewModel.self) var viewModel
+
+    var body: some View {
+
+        VStack(alignment: .leading, spacing: 14) {
+
+            LOSectionHeader(
+                title: "Recovery Management",
+                subtitle: "Manage overdue recoveries"
+            )
+            .padding(.horizontal, 20)
+
+            Button {
+
+                viewModel.navigationPath.append(
+                    AppDestination.recovery
+                )
+
+            } label: {
+
+                HStack(spacing: 14) {
+
+                    ZStack {
+
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(Color.orange.opacity(0.15))
+                            .frame(width: 52, height: 52)
+
+                        Image(systemName: "arrow.clockwise.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundStyle(.orange)
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+
                         Text("Recovery Management")
-                            .font(.headline)
-                            .foregroundStyle(.primary)
-                        Text("\(store.overdueBorrowers.count) overdue accounts")
-                            .font(.footnote)
+                            .font(
+                                .system(
+                                    size: 16,
+                                    weight: .semibold
+                                )
+                            )
+
+                        Text("Track overdue & pending recoveries")
+                            .font(.system(size: 13))
                             .foregroundStyle(.secondary)
                     }
+
                     Spacer()
+
                     Image(systemName: "chevron.right")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.tertiary)
+                        .font(
+                            .system(
+                                size: 12,
+                                weight: .semibold
+                            )
+                        )
+                        .foregroundStyle(.secondary)
                 }
-                .padding(Spacing.m)
-                .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card))
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 18)
+                        .fill(
+                            Color(
+                                .secondarySystemGroupedBackground
+                            )
+                        )
+                )
+                .padding(.horizontal, 20)
             }
             .buttonStyle(.plain)
         }
     }
-
-    private func tone(_ tone: StatusBadge.Tone) -> Color {
-        switch tone {
-        case .neutral: .primary
-        case .info: .lmsInfo
-        case .success: .lmsSuccess
-        case .warning: .lmsWarning
-        case .danger: .lmsDanger
-        }
-    }
-
-    private func eligibilityColor(_ score: Int) -> Color {
-        if score >= 70 { return .lmsSuccess }
-        if score >= 50 { return .lmsWarning }
-        return .lmsDanger
-    }
 }
 
+// MARK: - Preview
+
 #Preview {
+
     NavigationStack {
+
         DashboardView()
-            .environment(LoanOfficerStore())
+            .environment(AppViewModel())
     }
 }

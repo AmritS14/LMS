@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct ProfileView: View {
+struct LoanOfficerProfileView: View {
     @Environment(AppViewModel.self) var viewModel
     
     // Settings state

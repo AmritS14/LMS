@@ -167,14 +167,14 @@
 			path = Admin;
 			sourceTree = "<group>";
 		};
+		F040CD642FC44BF300A9E2F9 /* LoanOfficer */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = LoanOfficer;
+			sourceTree = "<group>";
+		};
 		F07247BE2FC4010D001A13BD /* Manager */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Manager;
-			sourceTree = "<group>";
-		};
-		F0B1BEEF2FC362A400612B34 /* LoanOfficer */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = LoanOfficer;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -361,9 +361,9 @@
 				0AEE002BB359BE5F83A4C94E /* RoleTabViews.swift */,
 				D2CE2D15122C2AB876A86802 /* StaffLoginView.swift */,
 				582532DC63C4EBFEF246A1E2 /* StaffProfileView.swift */,
-				F0B1BEEF2FC362A400612B34 /* LoanOfficer */,
 				F07247BE2FC4010D001A13BD /* Manager */,
 				F040CAA22FC4292C00A9E2F9 /* Admin */,
+				F040CD642FC44BF300A9E2F9 /* LoanOfficer */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -393,8 +393,8 @@
 			);
 			fileSystemSynchronizedGroups = (
 				F040CAA22FC4292C00A9E2F9 /* Admin */,
+				F040CD642FC44BF300A9E2F9 /* LoanOfficer */,
 				F07247BE2FC4010D001A13BD /* Manager */,
-				F0B1BEEF2FC362A400612B34 /* LoanOfficer */,
 			);
 			name = StaffApp;
 			productName = StaffApp;
