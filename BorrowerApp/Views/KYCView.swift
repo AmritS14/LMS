@@ -1,4 +1,6 @@
 import SwiftUI
+import PhotosUI
+import UniformTypeIdentifiers
 
 struct KYCView: View {
     @Environment(SessionStore.self) private var session
@@ -8,6 +10,13 @@ struct KYCView: View {
     @State private var uploadMessage: String?
     @State private var uploadDidFail = false
     @State private var uploadedDocuments: [DocumentKind] = []
+
+    // File picker state
+    @State private var activeDocumentKind: DocumentKind?
+    @State private var showSourcePicker = false
+    @State private var showPhotoPicker = false
+    @State private var showFilePicker = false
+    @State private var selectedPhotoItem: PhotosPickerItem?
 
     var body: some View {
         List {
@@ -65,12 +74,59 @@ struct KYCView: View {
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: uploadMessage)
+        .confirmationDialog("Choose File Source", isPresented: $showSourcePicker, titleVisibility: .visible) {
+            Button {
+                showPhotoPicker = true
+            } label: {
+                Label("Photo Library", systemImage: "photo.on.rectangle")
+            }
+            Button {
+                showFilePicker = true
+            } label: {
+                Label("Browse Files", systemImage: "folder")
+            }
+            Button("Cancel", role: .cancel) {
+                activeDocumentKind = nil
+            }
+        }
+        .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhotoItem, matching: .images)
+        .onChange(of: selectedPhotoItem) { _, newItem in
+            guard let newItem, let kind = activeDocumentKind else { return }
+            selectedPhotoItem = nil
+            Task {
+                await handlePhotoPickerResult(item: newItem, kind: kind)
+                activeDocumentKind = nil
+            }
+        }
+        .fileImporter(
+            isPresented: $showFilePicker,
+            allowedContentTypes: [.pdf, .jpeg, .png],
+            allowsMultipleSelection: false
+        ) { result in
+            guard let kind = activeDocumentKind else { return }
+            switch result {
+            case .success(let urls):
+                if let url = urls.first {
+                    Task {
+                        await handleFileImporterResult(url: url, kind: kind)
+                        activeDocumentKind = nil
+                    }
+                }
+            case .failure(let error):
+                uploadDidFail = true
+                uploadMessage = error.localizedDescription
+                activeDocumentKind = nil
+            }
+        }
     }
 
     @ViewBuilder
     private func documentRow(kind: DocumentKind, title: String, icon: String, iconColor: Color) -> some View {
         let isUploaded = uploadedDocuments.contains(kind)
-        Button(action: { uploadMockDocument(kind: kind) }) {
+        Button(action: {
+            activeDocumentKind = kind
+            showSourcePicker = true
+        }) {
             HStack(spacing: Spacing.sm) {
                 Image(systemName: icon)
                     .font(.system(size: 16))
@@ -97,6 +153,8 @@ struct KYCView: View {
         .buttonStyle(.plain)
     }
 
+    // MARK: - Data
+
     private func fetchDocuments() async {
         guard let env, let userID = session.currentUser?.id else { return }
         do {
@@ -107,30 +165,102 @@ struct KYCView: View {
         }
     }
 
-    private func uploadMockDocument(kind: DocumentKind) {
+    // MARK: - Photo Picker Handler
+
+    private func handlePhotoPickerResult(item: PhotosPickerItem, kind: DocumentKind) async {
         guard let env, let userID = session.currentUser?.id else { return }
         isUploading = true
         uploadMessage = nil
-        Task {
-            do {
-                _ = try await env.documents.upload(
-                    Data(),
-                    fileName: "mock_\(kind.rawValue).pdf",
-                    mimeType: "application/pdf",
-                    kind: kind,
-                    ownerID: userID
-                )
-                uploadDidFail = false
-                uploadMessage = "Uploaded \(kind.rawValue.capitalized)"
-                await fetchDocuments()
-            } catch {
-                uploadDidFail = true
-                uploadMessage = "Upload failed. Please try again."
-            }
-            isUploading = false
 
-            try? await Task.sleep(for: .seconds(3))
-            if !isUploading { uploadMessage = nil }
+        do {
+            guard let imageData = try await item.loadTransferable(type: Data.self) else {
+                throw NSError(domain: "KYC", code: 0, userInfo: [NSLocalizedDescriptionKey: "Could not load selected photo"])
+            }
+
+            let mimeType: String
+            let ext: String
+            // Check first bytes for PNG magic number
+            if imageData.prefix(4) == Data([0x89, 0x50, 0x4E, 0x47]) {
+                mimeType = "image/png"
+                ext = "png"
+            } else {
+                mimeType = "image/jpeg"
+                ext = "jpg"
+            }
+
+            let fileName = "\(kind.rawValue)_\(UUID().uuidString.prefix(8)).\(ext)"
+
+            _ = try await env.documents.upload(
+                imageData,
+                fileName: fileName,
+                mimeType: mimeType,
+                kind: kind,
+                ownerID: userID
+            )
+            uploadDidFail = false
+            uploadMessage = "\(displayName(for: kind)) uploaded"
+            await fetchDocuments()
+        } catch {
+            uploadDidFail = true
+            uploadMessage = error.localizedDescription
+        }
+        isUploading = false
+
+        try? await Task.sleep(for: .seconds(3))
+        if !isUploading { uploadMessage = nil }
+    }
+
+    // MARK: - File Importer Handler
+
+    private func handleFileImporterResult(url: URL, kind: DocumentKind) async {
+        guard let env, let userID = session.currentUser?.id else { return }
+        isUploading = true
+        uploadMessage = nil
+
+        let accessing = url.startAccessingSecurityScopedResource()
+        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+
+        do {
+            let fileData = try Data(contentsOf: url)
+            let fileName = url.lastPathComponent
+            let ext = url.pathExtension.lowercased()
+
+            let mimeType: String
+            switch ext {
+            case "pdf": mimeType = "application/pdf"
+            case "png": mimeType = "image/png"
+            case "jpg", "jpeg": mimeType = "image/jpeg"
+            default: mimeType = "application/octet-stream"
+            }
+
+            _ = try await env.documents.upload(
+                fileData,
+                fileName: fileName,
+                mimeType: mimeType,
+                kind: kind,
+                ownerID: userID
+            )
+            uploadDidFail = false
+            uploadMessage = "\(displayName(for: kind)) uploaded"
+            await fetchDocuments()
+        } catch {
+            uploadDidFail = true
+            uploadMessage = error.localizedDescription
+        }
+        isUploading = false
+
+        try? await Task.sleep(for: .seconds(3))
+        if !isUploading { uploadMessage = nil }
+    }
+
+    private func displayName(for kind: DocumentKind) -> String {
+        switch kind {
+        case .identityProof: return "ID Proof"
+        case .addressProof: return "Address Proof"
+        case .incomeProof: return "Salary Slip"
+        case .bankStatement: return "Bank Statement"
+        case .collateral: return "Collateral"
+        case .other: return "Document"
         }
     }
 }

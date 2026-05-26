@@ -199,6 +199,17 @@ struct LoanApplication: Identifiable, Codable, Sendable, Hashable {
     var updatedAt: Date = .now
 }
 
+struct ApplicationEvent: Identifiable, Codable, Sendable {
+    var id: UUID = UUID()
+    var applicationID: UUID
+    var actorID: UUID?
+    var eventType: String
+    var remark: String?
+    var fromStatus: String?
+    var toStatus: String?
+    var createdAt: Date = .now
+}
+
 // MARK: - Loan & EMI
 
 enum EMIStatus: String, Codable, Sendable {

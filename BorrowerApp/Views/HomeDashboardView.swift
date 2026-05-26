@@ -9,6 +9,7 @@ struct HomeDashboardView: View {
     @State private var selectedLoanID: UUID?
     @State private var emiToPay: EMI?
     @State private var showSupportSheet = false
+    @State private var selectedPendingAppID: UUID?
 
     var body: some View {
         ScrollView {
@@ -67,10 +68,14 @@ struct HomeDashboardView: View {
     private func paySheet(emi: EMI) -> some View {
         let loan = viewModel.activeLoans.first(where: { $0.id == selectedLoanID })
         return PayEMISheet(emi: emi, loan: loan) {
-            Task {
-                await repaymentViewModel.payEMI(emi)
+            await repaymentViewModel.payEMI(emi)
+            if repaymentViewModel.paymentSuccess {
+                // Refresh dashboard data after successful payment
+                await loadData()
                 emiToPay = nil
+                return true
             }
+            return false
         }
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
@@ -82,21 +87,40 @@ struct HomeDashboardView: View {
     private var contentSections: some View {
         let pendingApps = viewModel.applications.filter { $0.status != .disbursed && $0.status != .closed }
         if !pendingApps.isEmpty {
-            VStack(alignment: .leading, spacing: Spacing.m) {
+            VStack(alignment: .leading, spacing: Spacing.s) {
                 HStack(alignment: .firstTextBaseline) {
                     Text("Pending Applications")
                         .font(.title3.bold())
                     Spacer()
+                    if pendingApps.count > 1 {
+                        Text("\(pendingAppIndex(in: pendingApps) + 1) of \(pendingApps.count)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .padding(.horizontal, Spacing.m)
-                
-                ForEach(pendingApps) { app in
+
+                if pendingApps.count > 1 {
+                    TabView(selection: $selectedPendingAppID) {
+                        ForEach(pendingApps) { app in
+                            NavigationLink(destination: ApplicationTrackingView()) {
+                                statusTrackerCard(app)
+                                    .padding(.horizontal, Spacing.m)
+                                    .padding(.bottom, 25)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .tag(app.id as UUID?)
+                        }
+                    }
+                    .tabViewStyle(.page(indexDisplayMode: .always))
+                    .indexViewStyle(.page(backgroundDisplayMode: .never))
+                    .frame(height: 180)
+                } else if let app = pendingApps.first {
                     NavigationLink(destination: ApplicationTrackingView()) {
                         statusTrackerCard(app)
                     }
                     .buttonStyle(PlainButtonStyle())
                     .padding(.horizontal, Spacing.m)
-                    .padding(.bottom, Spacing.xs)
                 }
             }
             .padding(.top, Spacing.m)
@@ -147,6 +171,12 @@ struct HomeDashboardView: View {
     private var activeLoanIndex: Int {
         guard let id = selectedLoanID,
               let idx = viewModel.activeLoans.firstIndex(where: { $0.id == id }) else { return 0 }
+        return idx
+    }
+
+    private func pendingAppIndex(in apps: [LoanApplication]) -> Int {
+        guard let id = selectedPendingAppID,
+              let idx = apps.firstIndex(where: { $0.id == id }) else { return 0 }
         return idx
     }
 
@@ -368,6 +398,11 @@ struct HomeDashboardView: View {
     private func loadData() async {
         guard let env, let userID = session.currentUser?.id else { return }
         await viewModel.fetchDashboardData(loanService: env.loans, borrowerID: userID)
+        // Auto-select first pending application for the swipeable card view
+        let pendingApps = viewModel.applications.filter { $0.status != .disbursed && $0.status != .closed }
+        if let first = pendingApps.first {
+            selectedPendingAppID = first.id
+        }
         if let first = viewModel.activeLoans.first {
             selectedLoanID = first.id
             await repaymentViewModel.loadRepaymentData(loanService: env.loans, loan: first)
@@ -440,11 +475,12 @@ struct EMIRow: View {
 struct PayEMISheet: View {
     let emi: EMI
     let loan: Loan?
-    let onConfirm: () -> Void
+    let onConfirm: () async -> Bool
 
     @Environment(\.dismiss) private var dismiss
     @State private var isProcessing = false
     @State private var didSucceed = false
+    @State private var errorText: String?
 
     var body: some View {
         NavigationStack {
@@ -492,6 +528,13 @@ struct PayEMISheet: View {
             }
             .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
             .padding(.horizontal, Spacing.m)
+
+            if let errorText {
+                Label(errorText, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(Color.lmsDanger)
+                    .padding(.horizontal, Spacing.m)
+            }
 
             HStack(spacing: Spacing.s) {
                 Image(systemName: "lock.shield.fill")
@@ -553,10 +596,14 @@ struct PayEMISheet: View {
 
     private func processPayment() async {
         isProcessing = true
-        try? await Task.sleep(for: .milliseconds(900))
-        onConfirm()
+        errorText = nil
+        let success = await onConfirm()
         isProcessing = false
-        withAnimation(.easeInOut) { didSucceed = true }
+        if success {
+            withAnimation(.easeInOut) { didSucceed = true }
+        } else {
+            errorText = "Payment failed. Please try again."
+        }
     }
 }
 

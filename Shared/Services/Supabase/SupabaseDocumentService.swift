@@ -3,6 +3,7 @@ import Supabase
 
 actor SupabaseDocumentService: DocumentService {
     private let client: SupabaseClient
+    private let apiBase = "https://arshitsinghal-lms-backend.hf.space"
     
     init(client: SupabaseClient = SupabaseManager.shared.client) {
         self.client = client
@@ -16,27 +17,29 @@ actor SupabaseDocumentService: DocumentService {
         let file_name: String
         let remote_url: String?
         let status: String
-        let uploaded_at: Date
+        let uploaded_at: Date?
+        let created_at: Date?
     }
     
     // Mappers
     private func mapKind(_ raw: String) -> DocumentKind {
         switch raw.lowercased() {
-        case "identity_proof": return .identityProof
-        case "address_proof": return .addressProof
-        case "income_proof": return .incomeProof
-        case "bank_statement": return .bankStatement
+        case "identityproof", "identity_proof": return .identityProof
+        case "addressproof", "address_proof": return .addressProof
+        case "incomeproof", "income_proof": return .incomeProof
+        case "bankstatement", "bank_statement": return .bankStatement
         case "collateral": return .collateral
         default: return .other
         }
     }
     
     private func mapDBKind(_ kind: DocumentKind) -> String {
+        // Use camelCase to match backend DTO enum values
         switch kind {
-        case .identityProof: return "identity_proof"
-        case .addressProof: return "address_proof"
-        case .incomeProof: return "income_proof"
-        case .bankStatement: return "bank_statement"
+        case .identityProof: return "identityProof"
+        case .addressProof: return "addressProof"
+        case .incomeProof: return "incomeProof"
+        case .bankStatement: return "bankStatement"
         case .collateral: return "collateral"
         case .other: return "other"
         }
@@ -69,46 +72,52 @@ actor SupabaseDocumentService: DocumentService {
             ownerID: dbDoc.owner_id,
             kind: mapKind(dbDoc.kind),
             fileName: dbDoc.file_name,
-            mimeType: "application/octet-stream", // Fallback, normally store in db
+            mimeType: "application/octet-stream",
             remoteURL: remoteURL,
             status: mapStatus(dbDoc.status),
-            uploadedAt: dbDoc.uploaded_at
+            uploadedAt: dbDoc.uploaded_at ?? dbDoc.created_at ?? .now
         )
     }
     
     func upload(_ data: Data, fileName: String, mimeType: String, kind: DocumentKind, ownerID: UUID) async throws -> LoanDocument {
-        let fileExt = (fileName as NSString).pathExtension
-        let storagePath = "\(ownerID.uuidString)/\(UUID().uuidString).\(fileExt)"
+        guard let session = try? await client.auth.session else {
+            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "You must be logged in to upload documents"])
+        }
         
-        // Upload to Supabase Storage
-        _ = try await client.storage
-            .from("documents")
-            .upload(
-                path: storagePath,
-                file: data,
-                options: FileOptions(contentType: mimeType)
-            )
-            
-        // Get public URL or authenticated URL
-        let remoteURLString = try client.storage.from("documents").getPublicURL(path: storagePath).absoluteString
+        let boundary = "Boundary-\(UUID().uuidString)"
+        let url = URL(string: "\(apiBase)/documents/upload")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         
-        // Insert metadata into loan_documents table
-        let insertData: [String: AnyJSON] = [
-            "owner_id": .string(ownerID.uuidString),
-            "kind": .string(mapDBKind(kind)),
-            "file_name": .string(fileName),
-            "remote_url": .string(remoteURLString),
-            "status": .string("pending")
-        ]
+        var bodyData = Data()
         
-        let response = try await client
-            .from("loan_documents")
-            .insert(insertData)
-            .select()
-            .single()
-            .execute()
-            
-        let dbDoc = try SupabaseManager.shared.decoder.decode(DBLoanDocument.self, from: response.data)
+        // Add 'kind' field
+        bodyData.append("--\(boundary)\r\n".data(using: .utf8)!)
+        bodyData.append("Content-Disposition: form-data; name=\"kind\"\r\n\r\n".data(using: .utf8)!)
+        bodyData.append("\(mapDBKind(kind))\r\n".data(using: .utf8)!)
+        
+        // Add 'file' field
+        bodyData.append("--\(boundary)\r\n".data(using: .utf8)!)
+        bodyData.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
+        bodyData.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+        bodyData.append(data)
+        bodyData.append("\r\n".data(using: .utf8)!)
+        
+        // Close boundary
+        bodyData.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        
+        request.httpBody = bodyData
+        
+        let (responseData, httpResponse) = try await URLSession.shared.data(for: request)
+        
+        if let httpRes = httpResponse as? HTTPURLResponse, !(200...299).contains(httpRes.statusCode) {
+            let errorStr = String(data: responseData, encoding: .utf8) ?? "Unknown error"
+            throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: "Upload failed: \(errorStr)"])
+        }
+        
+        let dbDoc = try SupabaseManager.shared.decoder.decode(DBLoanDocument.self, from: responseData)
         return toDomainDocument(dbDoc)
     }
     
@@ -139,7 +148,7 @@ actor SupabaseDocumentService: DocumentService {
             let path = url.lastPathComponent
             let ownerPrefix = dbDoc.owner_id.uuidString
             // Delete from storage
-            _ = try? await client.storage.from("documents").remove(paths: ["\(ownerPrefix)/\(path)"])
+            _ = try? await client.storage.from("loan_documents").remove(paths: ["\(ownerPrefix)/\(path)"])
         }
         
         // Delete from database

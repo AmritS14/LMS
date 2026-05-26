@@ -4,7 +4,7 @@ import Supabase
 /// Supabase implementation of LoanService
 actor SupabaseLoanService: LoanService {
     private let client: SupabaseClient
-    private let apiBase = "https://arshitsinghal-lms-backend.hf.space/api"
+    private let apiBase = "https://arshitsinghal-lms-backend.hf.space"
 
     init(client: SupabaseClient) {
         self.client = client
@@ -62,12 +62,6 @@ actor SupabaseLoanService: LoanService {
         let paid_at: Date?
     }
     
-    // Response from NestJS POST /applications
-    private struct APICreateAppResponse: Decodable {
-        let id: String?
-        let borrower_id: String?
-        let status: String?
-    }
     
     // MARK: - Mappers
     
@@ -159,7 +153,6 @@ actor SupabaseLoanService: LoanService {
     }
 
     func createApplication(productID: UUID, requestedAmount: Decimal, tenureMonths: Int) async throws -> LoanApplication {
-        // Get the Supabase auth token to call NestJS API
         guard let session = try? await client.auth.session else {
             throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "You must be logged in to apply"])
         }
@@ -185,15 +178,10 @@ actor SupabaseLoanService: LoanService {
             throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: "Application failed: \(errorStr)"])
         }
         
-        // Return a placeholder that signals success — the dashboard will re-fetch real data
-        return LoanApplication(
-            borrowerID: session.user.id,
-            loanType: .personal,
-            requestedAmount: requestedAmount,
-            tenureMonths: tenureMonths,
-            interestRate: 0,
-            status: .submitted
-        )
+        // Parse the response from the backend
+        let dbApp = try SupabaseManager.shared.decoder.decode(DBLoanApplication.self, from: data)
+        try await ensureProductCache()
+        return toDomainApplication(dbApp)
     }
 
     func submitApplication(id: UUID) async throws -> LoanApplication {
@@ -227,7 +215,19 @@ actor SupabaseLoanService: LoanService {
     }
 
     func updateStatus(applicationID: UUID, to status: ApplicationStatus, note: String?) async throws {
-        throw NSError(domain: "LoanService", code: 501, userInfo: [NSLocalizedDescriptionKey: "Status changes go through NestJS API"])
+        // Route through specific workflow endpoints based on target status
+        switch status {
+        case .underReview:
+            try await startReview(applicationID: applicationID)
+        case .approved:
+            try await approveApplication(applicationID: applicationID, remark: note)
+        case .rejected:
+            try await rejectApplication(applicationID: applicationID, remark: note)
+        case .escalated:
+            try await sendToManager(applicationID: applicationID, remark: note)
+        default:
+            throw NSError(domain: "LoanService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Use specific workflow actions for status transitions"])
+        }
     }
 
     func fetchActiveLoans(borrowerID: UUID) async throws -> [Loan] {
@@ -239,21 +239,43 @@ actor SupabaseLoanService: LoanService {
             .execute()
             
         let dbLoans = try SupabaseManager.shared.decoder.decode([DBLoan].self, from: response.data)
-            
-        return dbLoans.map { dbLoan in
-            Loan(
+        
+        // Fetch EMIs for each loan
+        var loans: [Loan] = []
+        for dbLoan in dbLoans {
+            let emis = try await fetchEMISchedule(loanID: dbLoan.id)
+            // Determine loan type from the application's product
+            let loanType = await loanTypeForApplication(dbLoan.application_id)
+            loans.append(Loan(
                 id: dbLoan.id,
                 applicationID: dbLoan.application_id,
                 borrowerID: dbLoan.borrower_id,
-                loanType: .personal,
+                loanType: loanType,
                 principal: dbLoan.principal,
                 interestRate: dbLoan.interest_rate,
                 tenureMonths: dbLoan.tenure_months,
                 disbursementDate: dbLoan.disbursement_date,
                 outstandingBalance: dbLoan.outstanding_balance,
-                emiSchedule: [],
+                emiSchedule: emis,
                 status: mapLoanStatus(dbLoan.status)
-            )
+            ))
+        }
+        return loans
+    }
+
+    private func loanTypeForApplication(_ applicationID: UUID) async -> LoanType {
+        do {
+            let response = try await client
+                .from("loan_applications")
+                .select("loan_product_id")
+                .eq("id", value: applicationID)
+                .single()
+                .execute()
+            struct AppProduct: Decodable { let loan_product_id: UUID }
+            let appProd = try SupabaseManager.shared.decoder.decode(AppProduct.self, from: response.data)
+            return productCache[appProd.loan_product_id] ?? .personal
+        } catch {
+            return .personal
         }
     }
 
@@ -278,6 +300,167 @@ actor SupabaseLoanService: LoanService {
                 status: mapEMIStatus(dbEmi.status),
                 paidAt: dbEmi.paid_at
             )
+        }
+    }
+
+    // MARK: - EMI Payment
+
+    func payEMI(emiID: UUID) async throws -> EMI {
+        guard let session = try? await client.auth.session else {
+            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "You must be logged in to pay EMIs"])
+        }
+
+        let url = URL(string: "\(apiBase)/emis/\(emiID.uuidString)/pay")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let (data, httpResponse) = try await URLSession.shared.data(for: request)
+
+        if let httpRes = httpResponse as? HTTPURLResponse, !(200...299).contains(httpRes.statusCode) {
+            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: "Payment failed: \(errorStr)"])
+        }
+
+        // Backend returns { emi: {...}, loan: {...} }
+        // Parse the EMI from the response
+        struct PayResponse: Decodable {
+            let emi: DBEMI
+        }
+        let payResponse = try SupabaseManager.shared.decoder.decode(PayResponse.self, from: data)
+        let dbEmi = payResponse.emi
+        return EMI(
+            id: dbEmi.id,
+            installmentNumber: dbEmi.installment_number,
+            dueDate: dbEmi.due_date,
+            principalComponent: dbEmi.principal_component,
+            interestComponent: dbEmi.interest_component,
+            totalAmount: dbEmi.total_amount,
+            status: mapEMIStatus(dbEmi.status),
+            paidAt: dbEmi.paid_at
+        )
+    }
+
+    // MARK: - Staff Workflow Actions
+
+    func startReview(applicationID: UUID) async throws {
+        try await postWorkflowAction(applicationID: applicationID, action: "start-review", body: nil)
+    }
+
+    func requestDocuments(applicationID: UUID, documentTypes: [String], remark: String?) async throws {
+        var body: [String: Any] = ["documentTypes": documentTypes]
+        if let remark { body["remark"] = remark }
+        try await postWorkflowAction(applicationID: applicationID, action: "request-documents", body: body)
+    }
+
+    func documentsUploaded(applicationID: UUID, documentIDs: [UUID]) async throws {
+        let body: [String: Any] = ["documentIds": documentIDs.map(\.uuidString)]
+        try await postWorkflowAction(applicationID: applicationID, action: "documents-uploaded", body: body)
+    }
+
+    func sendToManager(applicationID: UUID, remark: String?) async throws {
+        var body: [String: Any]? = nil
+        if let remark { body = ["remark": remark] }
+        try await postWorkflowAction(applicationID: applicationID, action: "send-to-manager", body: body)
+    }
+
+    func approveApplication(applicationID: UUID, remark: String?) async throws {
+        var body: [String: Any]? = nil
+        if let remark { body = ["remark": remark] }
+        try await postWorkflowAction(applicationID: applicationID, action: "approve", body: body)
+    }
+
+    func rejectApplication(applicationID: UUID, remark: String?) async throws {
+        var body: [String: Any]? = nil
+        if let remark { body = ["remark": remark] }
+        try await postWorkflowAction(applicationID: applicationID, action: "reject", body: body)
+    }
+
+    func fetchApplicationDetails(applicationID: UUID) async throws -> LoanApplication {
+        guard let session = try? await client.auth.session else {
+            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
+        }
+
+        let url = URL(string: "\(apiBase)/applications/\(applicationID.uuidString)")!
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, httpResponse) = try await URLSession.shared.data(for: request)
+        if let httpRes = httpResponse as? HTTPURLResponse, !(200...299).contains(httpRes.statusCode) {
+            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: errorStr])
+        }
+
+        try await ensureProductCache()
+        let dbApp = try SupabaseManager.shared.decoder.decode(DBLoanApplication.self, from: data)
+        return toDomainApplication(dbApp)
+    }
+
+    private struct DBApplicationEvent: Decodable {
+        let id: UUID
+        let application_id: UUID
+        let actor_id: UUID?
+        let event_type: String
+        let remark: String?
+        let from_status: String?
+        let to_status: String?
+        let created_at: Date
+    }
+
+    func fetchApplicationEvents(applicationID: UUID) async throws -> [ApplicationEvent] {
+        guard let session = try? await client.auth.session else {
+            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
+        }
+
+        let url = URL(string: "\(apiBase)/applications/\(applicationID.uuidString)/events")!
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, httpResponse) = try await URLSession.shared.data(for: request)
+        if let httpRes = httpResponse as? HTTPURLResponse, !(200...299).contains(httpRes.statusCode) {
+            return []
+        }
+
+        let dbEvents = try SupabaseManager.shared.decoder.decode([DBApplicationEvent].self, from: data)
+        return dbEvents.map { db in
+            ApplicationEvent(
+                id: db.id,
+                applicationID: db.application_id,
+                actorID: db.actor_id,
+                eventType: db.event_type,
+                remark: db.remark,
+                fromStatus: db.from_status,
+                toStatus: db.to_status,
+                createdAt: db.created_at
+            )
+        }
+    }
+
+    // MARK: - Private Helper
+
+    private func postWorkflowAction(applicationID: UUID, action: String, body: [String: Any]?) async throws {
+        guard let session = try? await client.auth.session else {
+            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
+        }
+
+        let url = URL(string: "\(apiBase)/applications/\(applicationID.uuidString)/\(action)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        if let body {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        } else {
+            request.httpBody = "{}".data(using: .utf8)
+        }
+
+        let (data, httpResponse) = try await URLSession.shared.data(for: request)
+
+        if let httpRes = httpResponse as? HTTPURLResponse, !(200...299).contains(httpRes.statusCode) {
+            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: "\(action) failed: \(errorStr)"])
         }
     }
 }

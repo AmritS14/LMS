@@ -35,6 +35,16 @@ actor SupabaseAuthService: AuthService {
         return try await mapSupabaseUserToLocalUser(session.user)
     }
     
+    func requestOTP(identifier: String) async throws {
+        // Not used in email/password flow
+        throw NSError(domain: "Auth", code: 501, userInfo: [NSLocalizedDescriptionKey: "Use email/password sign-in instead."])
+    }
+    
+    func verifyOTP(identifier: String, code: String) async throws -> User {
+        // Not used in email/password flow
+        throw NSError(domain: "Auth", code: 501, userInfo: [NSLocalizedDescriptionKey: "Use verifyEmailOTP instead."])
+    }
+    
     func signInWithPasskey() async throws -> User {
         // Not implemented in this basic Supabase setup
         throw URLError(.unsupportedURL)

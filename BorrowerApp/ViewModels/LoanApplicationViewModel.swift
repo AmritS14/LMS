@@ -16,6 +16,16 @@ final class LoanApplicationViewModel {
     var selectedProduct: LoanProduct?
     var isLoadingProducts: Bool = false
 
+    // After submission — application ID for document linking
+    var submittedApplicationID: UUID?
+
+    // Uploaded document IDs for this application
+    var uploadedDocumentIDs: [UUID] = []
+
+    // Document linking status
+    var isLinkingDocuments: Bool = false
+    var documentsLinked: Bool = false
+
     func loadProducts(loanService: any LoanService) async {
         isLoadingProducts = true
         do {
@@ -45,11 +55,12 @@ final class LoanApplicationViewModel {
         isSubmitting = true
         errorMessage = nil
         do {
-            _ = try await loanService.createApplication(
+            let application = try await loanService.createApplication(
                 productID: product.id,
                 requestedAmount: Decimal(requestedAmount),
                 tenureMonths: tenureMonths
             )
+            submittedApplicationID = application.id
             isSubmitting = false
             return true
         } catch {
@@ -57,5 +68,41 @@ final class LoanApplicationViewModel {
             isSubmitting = false
             return false
         }
+    }
+
+    /// Called after documents have been uploaded. Links all uploaded document IDs to the application.
+    func linkDocuments(loanService: any LoanService) async -> Bool {
+        guard let appID = submittedApplicationID, !uploadedDocumentIDs.isEmpty else {
+            return true // Nothing to link
+        }
+
+        isLinkingDocuments = true
+        errorMessage = nil
+        do {
+            try await loanService.documentsUploaded(
+                applicationID: appID,
+                documentIDs: uploadedDocumentIDs
+            )
+            documentsLinked = true
+            isLinkingDocuments = false
+            return true
+        } catch {
+            errorMessage = "Failed to link documents: \(error.localizedDescription)"
+            isLinkingDocuments = false
+            return false
+        }
+    }
+
+    func addUploadedDocumentID(_ id: UUID) {
+        if !uploadedDocumentIDs.contains(id) {
+            uploadedDocumentIDs.append(id)
+        }
+    }
+
+    func reset() {
+        submittedApplicationID = nil
+        uploadedDocumentIDs = []
+        documentsLinked = false
+        errorMessage = nil
     }
 }

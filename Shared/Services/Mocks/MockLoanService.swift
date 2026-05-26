@@ -256,4 +256,71 @@ actor MockLoanService: LoanService {
         try await Task.sleep(for: .milliseconds(200))
                         return loans.first(where: { $0.id == loanID })?.emiSchedule ?? []
     }
+
+    func payEMI(emiID: UUID) async throws -> EMI {
+        try await Task.sleep(for: .milliseconds(400))
+        for loanIdx in loans.indices {
+            if let emiIdx = loans[loanIdx].emiSchedule.firstIndex(where: { $0.id == emiID }) {
+                loans[loanIdx].emiSchedule[emiIdx].status = .paid
+                loans[loanIdx].emiSchedule[emiIdx].paidAt = .now
+                return loans[loanIdx].emiSchedule[emiIdx]
+            }
+        }
+        throw NSError(domain: "Loan", code: 404, userInfo: [NSLocalizedDescriptionKey: "EMI not found"])
+    }
+
+    func startReview(applicationID: UUID) async throws {
+        try await Task.sleep(for: .milliseconds(200))
+        guard let idx = applications.firstIndex(where: { $0.id == applicationID }) else { return }
+        applications[idx].status = .underReview
+        applications[idx].updatedAt = .now
+    }
+
+    func requestDocuments(applicationID: UUID, documentTypes: [String], remark: String?) async throws {
+        try await Task.sleep(for: .milliseconds(200))
+        guard let idx = applications.firstIndex(where: { $0.id == applicationID }) else { return }
+        applications[idx].status = .additionalInfoRequired
+        applications[idx].updatedAt = .now
+    }
+
+    func documentsUploaded(applicationID: UUID, documentIDs: [UUID]) async throws {
+        try await Task.sleep(for: .milliseconds(200))
+        guard let idx = applications.firstIndex(where: { $0.id == applicationID }) else { return }
+        applications[idx].status = .underReview
+        applications[idx].updatedAt = .now
+    }
+
+    func sendToManager(applicationID: UUID, remark: String?) async throws {
+        try await Task.sleep(for: .milliseconds(200))
+        guard let idx = applications.firstIndex(where: { $0.id == applicationID }) else { return }
+        applications[idx].status = .escalated
+        applications[idx].updatedAt = .now
+    }
+
+    func approveApplication(applicationID: UUID, remark: String?) async throws {
+        try await Task.sleep(for: .milliseconds(200))
+        guard let idx = applications.firstIndex(where: { $0.id == applicationID }) else { return }
+        applications[idx].status = .approved
+        applications[idx].updatedAt = .now
+    }
+
+    func rejectApplication(applicationID: UUID, remark: String?) async throws {
+        try await Task.sleep(for: .milliseconds(200))
+        guard let idx = applications.firstIndex(where: { $0.id == applicationID }) else { return }
+        applications[idx].status = .rejected
+        applications[idx].updatedAt = .now
+    }
+
+    func fetchApplicationDetails(applicationID: UUID) async throws -> LoanApplication {
+        try await Task.sleep(for: .milliseconds(200))
+        guard let app = applications.first(where: { $0.id == applicationID }) else {
+            throw NSError(domain: "Loan", code: 404, userInfo: [NSLocalizedDescriptionKey: "Application not found"])
+        }
+        return app
+    }
+
+    func fetchApplicationEvents(applicationID: UUID) async throws -> [ApplicationEvent] {
+        try await Task.sleep(for: .milliseconds(200))
+        return []
+    }
 }

@@ -103,7 +103,6 @@ struct BorrowerProfileView: View {
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Profile")
-        .navigationBarTitleDisplayMode(.large)
         .task { await loadData() }
         .alert("Sign out of your account?", isPresented: $showSignOutConfirm) {
             Button("Sign Out", role: .destructive) { signOut() }
