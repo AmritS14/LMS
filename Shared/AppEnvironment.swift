@@ -9,6 +9,7 @@ struct AppEnvironment: Sendable {
     var notifications: any NotificationService
     var messaging: any MessagingService
     var keychain: any KeychainService
+    var admin: any AdminService
 
     init(
         auth: any AuthService,
@@ -16,7 +17,8 @@ struct AppEnvironment: Sendable {
         documents: any DocumentService,
         notifications: any NotificationService,
         messaging: any MessagingService,
-        keychain: any KeychainService
+        keychain: any KeychainService,
+        admin: any AdminService = MockAdminService()
     ) {
         self.auth = auth
         self.loans = loans
@@ -24,6 +26,7 @@ struct AppEnvironment: Sendable {
         self.notifications = notifications
         self.messaging = messaging
         self.keychain = keychain
+        self.admin = admin
     }
 }
 

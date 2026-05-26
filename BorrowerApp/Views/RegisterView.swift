@@ -1,0 +1,170 @@
+import SwiftUI
+
+struct RegisterView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.appEnvironment) private var env
+
+    @State private var viewModel = AuthViewModel()
+    @State private var navigateToOTP = false
+    
+    @State private var fullName = ""
+    @State private var email = ""
+    @State private var phone = ""
+    @State private var password = ""
+    @State private var confirmPassword = ""
+
+    @State private var showSuccess = false
+
+    @FocusState private var focusedField: Field?
+
+    private enum Field: Hashable { case name, email, phone, password, confirm }
+
+    // MARK: - Password validation
+    private var hasLowercase: Bool { password.range(of: "[a-z]", options: .regularExpression) != nil }
+    private var hasUppercase: Bool { password.range(of: "[A-Z]", options: .regularExpression) != nil }
+    private var hasNumber: Bool { password.range(of: "[0-9]", options: .regularExpression) != nil }
+    private var hasSpecial: Bool { password.range(of: "[^a-zA-Z0-9]", options: .regularExpression) != nil }
+
+    private var isPasswordValid: Bool {
+        hasLowercase && hasUppercase && hasNumber && hasSpecial && password.count >= 8
+    }
+
+    private var isFormValid: Bool {
+        !fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !phone.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        isPasswordValid &&
+        password == confirmPassword
+    }
+
+    var body: some View {
+        Form {
+            Section("Personal Details") {
+                TextField("Full Name", text: $fullName)
+                    .textContentType(.name)
+                    .textInputAutocapitalization(.words)
+                    .submitLabel(.next)
+                    .focused($focusedField, equals: .name)
+                    .onSubmit { focusedField = .email }
+
+                TextField("Email", text: $email)
+                    .textContentType(.emailAddress)
+                    .keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.next)
+                    .focused($focusedField, equals: .email)
+                    .onSubmit { focusedField = .phone }
+
+                TextField("Phone Number", text: $phone)
+                    .textContentType(.telephoneNumber)
+                    .keyboardType(.phonePad)
+                    .focused($focusedField, equals: .phone)
+            }
+
+            Section {
+                SecureField("Password", text: $password)
+                    .textContentType(.newPassword)
+                    .submitLabel(.next)
+                    .focused($focusedField, equals: .password)
+                    .onSubmit { focusedField = .confirm }
+
+                SecureField("Confirm Password", text: $confirmPassword)
+                    .textContentType(.newPassword)
+                    .submitLabel(.done)
+                    .focused($focusedField, equals: .confirm)
+                    .onSubmit { focusedField = nil }
+            } header: {
+                Text("Password")
+            } footer: {
+                passwordRequirements
+            }
+
+            if let errorMessage = viewModel.errorMessage ?? (password != confirmPassword && !password.isEmpty && !confirmPassword.isEmpty ? "Passwords do not match." : nil) {
+                Section {
+                    Label(errorMessage, systemImage: "exclamationmark.circle.fill")
+                        .foregroundStyle(Color.lmsDanger)
+                        .font(.footnote)
+                }
+            }
+
+            Section {
+                PrimaryButton("Create Account", isLoading: viewModel.isBusy, action: submit)
+                    .disabled(viewModel.isBusy || !isFormValid)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+            }
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .navigationTitle("Create Account")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(isPresented: $navigateToOTP) {
+            OTPVerificationView(viewModel: viewModel)
+        }
+    }
+
+    // MARK: - Password Requirements
+    private var passwordRequirements: some View {
+        VStack(alignment: .leading, spacing: Spacing.xs_s) {
+            Text("Password must contain:")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+
+            VStack(alignment: .leading, spacing: 4) {
+                RequirementRow(text: "At least 8 characters", isMet: password.count >= 8)
+                RequirementRow(text: "An uppercase letter", isMet: hasUppercase)
+                RequirementRow(text: "A lowercase letter", isMet: hasLowercase)
+                RequirementRow(text: "A number", isMet: hasNumber)
+                RequirementRow(text: "A special character", isMet: hasSpecial)
+            }
+        }
+        .padding(.vertical, Spacing.xs)
+    }
+
+    private func submit() {
+        guard isFormValid, let auth = env?.auth else { return }
+        focusedField = nil
+        viewModel.identifier = email
+        Task {
+            let success = await viewModel.signUp(authService: auth, password: password, fullName: fullName, phone: phone)
+            if success {
+                navigateToOTP = true
+            }
+        }
+    }
+}
+
+// MARK: - Requirement Row
+struct RequirementRow: View {
+    let text: String
+    let isMet: Bool
+
+    var body: some View {
+        HStack(spacing: Spacing.xs_s) {
+            Image(systemName: isMet ? "checkmark.circle.fill" : "circle")
+                .font(.footnote)
+                .foregroundStyle(isMet ? AnyShapeStyle(Color.lmsSuccess) : AnyShapeStyle(HierarchicalShapeStyle.secondary))
+                .symbolEffectIfAvailable(value: isMet)
+
+            Text(text)
+                .font(.footnote)
+                .foregroundStyle(isMet ? .primary : .secondary)
+        }
+        .animation(.easeInOut(duration: 0.2), value: isMet)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func symbolEffectIfAvailable<V: Equatable>(value: V) -> some View {
+        if #available(iOS 17.0, *) {
+            self.symbolEffect(.bounce, value: value)
+        } else {
+            self
+        }
+    }
+}
+
+#Preview {
+    NavigationStack { RegisterView() }
+}

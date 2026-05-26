@@ -1,10 +1,19 @@
 import Foundation
 
 protocol AdminService: Sendable {
-    func listUsers(role: UserRole?) async throws -> [User]
-    func updateRole(userID: UUID, role: UserRole) async throws
-    func deactivateUser(userID: UUID) async throws
-    func auditTrail(entityID: UUID?, limit: Int) async throws -> [AuditEntry]
+    /// All users in the system (admin-only; gated by RLS).
+    func listUsers() async throws -> [User]
+    /// Staff profiles (employee id, department, reporting line) keyed by user id.
+    func listStaffProfiles() async throws -> [StaffProfile]
+    /// Creates a staff account (loan officer / manager / admin) via the backend
+    /// admin endpoint. Returns the new user's id.
+    func createStaff(
+        email: String,
+        fullName: String,
+        role: UserRole,
+        employeeID: String,
+        temporaryPassword: String
+    ) async throws -> UUID
 }
 
 protocol ReportingService: Sendable {

@@ -7,6 +7,15 @@ enum UserRole: String, Codable, Sendable, CaseIterable {
     case loanOfficer
     case manager
     case admin
+
+    var displayName: String {
+        switch self {
+        case .borrower: return "Borrower"
+        case .loanOfficer: return "Loan Officer"
+        case .manager: return "Manager"
+        case .admin: return "Admin"
+        }
+    }
 }
 
 struct User: Identifiable, Codable, Sendable, Hashable {
@@ -15,7 +24,12 @@ struct User: Identifiable, Codable, Sendable, Hashable {
     var email: String
     var phone: String
     var role: UserRole
+    var isActive: Bool = true
     var createdAt: Date = .now
+
+    var uniqueID: String {
+        "USR-\(id.uuidString.prefix(8).uppercased())"
+    }
 }
 
 // MARK: - Borrower-only profile (KYC, credit, personal details)
@@ -57,6 +71,16 @@ struct StaffProfile: Identifiable, Codable, Sendable, Hashable {
     var branchID: UUID?
     var department: String?
     var reportsToID: UUID?
+    var permissions: Set<Permission> = []
+}
+
+enum Permission: String, Codable, Sendable, CaseIterable, Identifiable {
+    case viewUsers = "View Users"
+    case editUsers = "Edit Users"
+    case viewAudit = "View Audit"
+    case manageSettings = "Manage Settings"
+
+    var id: String { rawValue }
 }
 
 // MARK: - Loan Application
@@ -66,16 +90,99 @@ enum LoanType: String, Codable, Sendable, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+struct LoanProduct: Identifiable, Codable, Sendable, Hashable {
+    var id: UUID = UUID()
+    var name: String
+    var description: String?
+    var minimumAmount: Decimal
+    var maximumAmount: Decimal
+    var minimumTenureMonths: Int
+    var maximumTenureMonths: Int
+    var minimumInterestRate: Double
+    var maximumInterestRate: Double
+    var isActive: Bool = true
+
+    /// Best-guess LoanType derived from the product name
+    var loanType: LoanType {
+        let lower = name.lowercased()
+        if lower.contains("home") { return .home }
+        if lower.contains("vehicle") || lower.contains("auto") { return .vehicle }
+        if lower.contains("education") { return .education }
+        if lower.contains("business") { return .business }
+        return .personal
+    }
+
+    /// Icon for the product
+    var icon: String {
+        switch loanType {
+        case .home: return "house.fill"
+        case .personal: return "person.fill"
+        case .vehicle: return "car.fill"
+        case .business: return "briefcase.fill"
+        case .education: return "book.closed.fill"
+        }
+    }
+
+    /// Midpoint interest rate for display
+    var displayRate: Double {
+        (minimumInterestRate + maximumInterestRate) / 2.0
+    }
+}
+
 enum ApplicationStatus: String, Codable, Sendable {
     case draft
     case submitted
     case underReview
+    case escalated
     case additionalInfoRequired
     case recommended
     case approved
     case rejected
     case disbursed
     case closed
+}
+
+extension ApplicationStatus {
+    var displayLabel: String {
+        switch self {
+        case .draft: "Draft"
+        case .submitted: "Submitted"
+        case .underReview: "Under Review"
+        case .escalated: "Escalated"
+        case .additionalInfoRequired: "Info Needed"
+        case .recommended: "Recommended"
+        case .approved: "Approved"
+        case .rejected: "Rejected"
+        case .disbursed: "Disbursed"
+        case .closed: "Closed"
+        }
+    }
+
+    var tone: StatusBadge.Tone {
+        switch self {
+        case .draft: .neutral
+        case .submitted, .underReview: .info
+        case .escalated, .additionalInfoRequired: .warning
+        case .recommended, .approved, .disbursed: .success
+        case .rejected: .danger
+        case .closed: .neutral
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .draft: "doc.text"
+        case .submitted: "tray.and.arrow.up"
+        case .underReview: "magnifyingglass"
+        case .escalated: "arrow.up.right.circle.fill"
+        case .additionalInfoRequired: "exclamationmark.bubble"
+        case .recommended: "hand.thumbsup"
+        case .approved: "checkmark.seal.fill"
+        case .rejected: "xmark.octagon.fill"
+        case .disbursed: "banknote.fill"
+        case .closed: "lock.fill"
+        }
+    }
 }
 
 struct LoanApplication: Identifiable, Codable, Sendable, Hashable {
@@ -90,6 +197,22 @@ struct LoanApplication: Identifiable, Codable, Sendable, Hashable {
     var documentIDs: [UUID] = []
     var createdAt: Date = .now
     var updatedAt: Date = .now
+
+    // Optional enriched fields populated by the backend's joined responses.
+    var borrowerName: String? = nil
+    var borrowerEmail: String? = nil
+    var productName: String? = nil
+}
+
+struct ApplicationEvent: Identifiable, Codable, Sendable {
+    var id: UUID = UUID()
+    var applicationID: UUID
+    var actorID: UUID?
+    var eventType: String
+    var remark: String?
+    var fromStatus: String?
+    var toStatus: String?
+    var createdAt: Date = .now
 }
 
 // MARK: - Loan & EMI
@@ -109,16 +232,22 @@ struct EMI: Identifiable, Codable, Sendable, Hashable {
     var paidAt: Date?
 }
 
+enum LoanStatus: String, Codable, Sendable {
+    case active, settled, defaulted
+}
+
 struct Loan: Identifiable, Codable, Sendable, Hashable {
     var id: UUID = UUID()
     var applicationID: UUID
     var borrowerID: UUID
+    var loanType: LoanType = .personal
     var principal: Decimal
     var interestRate: Double
     var tenureMonths: Int
     var disbursementDate: Date
     var outstandingBalance: Decimal
     var emiSchedule: [EMI] = []
+    var status: LoanStatus = .active
 }
 
 // MARK: - Documents
