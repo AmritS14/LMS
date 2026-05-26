@@ -12,6 +12,8 @@
 		06D2003DAE7684963CD1D12A /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = B07AD9174280E67995096E93 /* Typography.swift */; };
 		10763574BC09806E93C4652B /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E3BA31DFDF4BBB9114F3C4 /* SessionStore.swift */; };
 		11E257368809C6692698BD2B /* SupabaseDocumentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19A749024376B4E1C30F4B83 /* SupabaseDocumentService.swift */; };
+		A1AA0000000000000010AA03 /* SupabaseDocumentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19A749024376B4E1C30F4B83 /* SupabaseDocumentService.swift */; };
+		A1AA0000000000000011AA03 /* SupabaseMessagingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9459DAEBCBCB9D3C2250C401 /* SupabaseMessagingService.swift */; };
 		14709A63F344F7FD1D8264FF /* MockSupportServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77E37F22B749EB4CF963D0B3 /* MockSupportServices.swift */; };
 		1498870D378AA154011348C5 /* RepaymentDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FF7914A86ED65B6282042EF /* RepaymentDashboardView.swift */; };
 		1622FD72ADC7841D53ED4087 /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E121B25741BC258047859E /* PrimaryButton.swift */; };
@@ -622,6 +624,8 @@
 				66143A3B9FE6F60EA68A1A8F /* SupabaseAuthService.swift in Sources */,
 				9ACB3979801AABEA63E8250F /* SupabaseManager.swift in Sources */,
 				7CF9B0770FFCAFE017674DFC /* SupabaseLoanService.swift in Sources */,
+				A1AA0000000000000010AA03 /* SupabaseDocumentService.swift in Sources */,
+				A1AA0000000000000011AA03 /* SupabaseMessagingService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -4,16 +4,18 @@ struct StaffLoginView: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.appEnvironment) private var env
 
-    @State private var viewModel = AuthViewModel()
+    @State private var email: String = ""
     @State private var password: String = ""
+    @State private var isBusy: Bool = false
+    @State private var errorMessage: String?
     @FocusState private var focusedField: Field?
 
     private enum Field { case email, password }
 
     private var isSignInEnabled: Bool {
-        !viewModel.identifier.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !password.isEmpty &&
-        !viewModel.isBusy
+        !isBusy
     }
 
     var body: some View {
@@ -21,7 +23,7 @@ struct StaffLoginView: View {
             VStack(spacing: Spacing.l) {
                 Text("LMS Staff Portal").font(.lmsTitle)
                 SectionCard {
-                    TextField("Work Email", text: $viewModel.identifier)
+                    TextField("Work Email", text: $email)
                         .textFieldStyle(.roundedBorder)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
@@ -37,14 +39,14 @@ struct StaffLoginView: View {
                         .focused($focusedField, equals: .password)
                         .onSubmit(submit)
 
-                    if let errorMessage = viewModel.errorMessage {
+                    if let errorMessage {
                         Label(errorMessage, systemImage: "exclamationmark.circle.fill")
                             .font(.footnote)
                             .foregroundStyle(Color.lmsDanger)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
-                    PrimaryButton("Sign In", isLoading: viewModel.isBusy, action: submit)
+                    PrimaryButton("Sign In", isLoading: isBusy, action: submit)
                         .disabled(!isSignInEnabled)
                 }
                 Spacer()
@@ -57,11 +59,18 @@ struct StaffLoginView: View {
     private func submit() {
         guard let auth = env?.auth, isSignInEnabled else { return }
         focusedField = nil
+        isBusy = true
+        errorMessage = nil
         Task {
-            if let user = await viewModel.signIn(authService: auth, password: password) {
+            do {
+                let user = try await auth.signIn(email: email, password: password)
+                isBusy = false
                 withAnimation(.easeInOut(duration: 0.4)) {
                     session.currentUser = user
                 }
+            } catch {
+                errorMessage = error.localizedDescription
+                isBusy = false
             }
         }
     }
