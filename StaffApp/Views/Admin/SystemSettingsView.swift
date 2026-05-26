@@ -48,11 +48,7 @@ struct SystemSettingsView: View {
             }
         }
         .navigationTitle("Settings")
-        .navigationBarTitleDisplayMode(.inline)
         .background(AdminColor.background)
-        .navigationDestination(for: NotificationTemplate.self) { template in
-            TemplateEditorDestination(template: template, viewModel: templateViewModel)
-        }
     }
 
     private func settingsRow(title: String, subtitle: String) -> some View {
@@ -65,17 +61,5 @@ struct SystemSettingsView: View {
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, Spacing.xs)
-    }
-}
-
-private struct TemplateEditorDestination: View {
-    let template: NotificationTemplate
-    @Bindable var viewModel: TemplateViewModel
-
-    var body: some View {
-        TemplateEditorView(viewModel: viewModel)
-            .onAppear {
-                viewModel.selectTemplate(template)
-            }
     }
 }

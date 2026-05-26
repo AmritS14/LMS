@@ -101,7 +101,7 @@ struct AdminTabView: View {
                     AdminDashboardView(viewModel: dashboardViewModel, userVM: userManagementViewModel)
                 }
             }
-            Tab("Users", systemImage: "person.3") {
+            Tab("Users", systemImage: "person.2.fill") {
                 NavigationStack {
                     UserListView(viewModel: userManagementViewModel)
                 }
@@ -114,11 +114,11 @@ struct AdminTabView: View {
                     )
                 }
             }
-            Tab("Audit", systemImage: "list.clipboard") {
-                NavigationStack {
-                    AuditTrailView()
-                }
-            }
+//            Tab("Audit", systemImage: "list.clipboard") {
+//                NavigationStack {
+//                    AuditTrailView()
+//                }
+//            }
         }
     }
 }

@@ -16,7 +16,7 @@ struct AddStaffSheet: View {
     @State private var errorMessage: String?
 
     // Only staff roles can be created here.
-    private let creatableRoles: [UserRole] = [.loanOfficer, .manager, .admin]
+    private let creatableRoles: [UserRole] = [.loanOfficer, .manager]
 
     private var canSubmit: Bool {
         !fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&

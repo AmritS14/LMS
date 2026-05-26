@@ -12,7 +12,6 @@ struct DistributionDetailsView: View {
     @Bindable var viewModel: DashboardViewModel
     @Bindable var userVM: UserManagementViewModel
     @Environment(\.dismiss) private var dismiss
-    @State private var isAmountVisible: Bool = true
 
     var body: some View {
         List {
@@ -38,7 +37,7 @@ struct DistributionDetailsView: View {
                     .font(.lmsSubheadline)
                     .foregroundStyle(.white.opacity(0.8))
                 
-                Text(isAmountVisible ? viewModel.snapshot.stats.totalAmount : "••••••••")
+                Text(viewModel.isAmountVisible ? Formatting.compactIndianRupee(viewModel.rawTotalAmount) : "₹••••••")
                     .font(.system(size: 34, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
             }
@@ -46,11 +45,11 @@ struct DistributionDetailsView: View {
             Spacer()
             
             Button {
-                withAnimation {
-                    isAmountVisible.toggle()
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                    viewModel.isAmountVisible.toggle()
                 }
             } label: {
-                Image(systemName: isAmountVisible ? "eye" : "eye.slash")
+                Image(systemName: viewModel.isAmountVisible ? "eye" : "eye.slash")
                     .font(.title2)
                     .foregroundStyle(.white)
             }

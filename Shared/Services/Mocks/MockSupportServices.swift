@@ -6,7 +6,10 @@ actor MockAdminService: AdminService {
     func listUsers() async throws -> [User] { [] }
     func listStaffProfiles() async throws -> [StaffProfile] { [] }
     func createStaff(email: String, fullName: String, role: UserRole, employeeID: String, temporaryPassword: String) async throws -> UUID {
-        UUID()
+        guard role != .admin else {
+            throw NSError(domain: "AdminService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Creating Admin accounts is not allowed."])
+        }
+        return UUID()
     }
 }
 

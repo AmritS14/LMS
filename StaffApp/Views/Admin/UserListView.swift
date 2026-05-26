@@ -81,7 +81,7 @@ struct UserListView: View {
                 .presentationDragIndicator(.visible)
         }
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showAddStaff = true
                 } label: {
@@ -89,12 +89,6 @@ struct UserListView: View {
                         .font(.title3)
                 }
                 .accessibilityLabel("Add staff user")
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink(destination: ProfileView()) {
-                    Image(systemName: "person.crop.circle")
-                        .font(.title3)
-                }
             }
         }
     }

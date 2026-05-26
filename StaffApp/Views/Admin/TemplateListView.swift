@@ -16,16 +16,26 @@ struct TemplateListView: View {
     @Bindable var viewModel: TemplateViewModel
     
     @State private var showAddTemplateSheet = false
+    @State private var selectedTemplateForEdit: NotificationTemplate? = nil
 
     var body: some View {
         List {
             ForEach(viewModel.filteredTemplates) { template in
-                NavigationLink(value: template) {
-                    TemplateRowView(
-                        template: template,
-                        isSelected: viewModel.selectedTemplate?.id == template.id
-                    )
+                Button {
+                    selectedTemplateForEdit = template
+                } label: {
+                    HStack {
+                        TemplateRowView(
+                            template: template,
+                            isSelected: viewModel.selectedTemplate?.id == template.id
+                        )
+                        Image(systemName: "chevron.right")
+                            .font(.footnote)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.tertiary)
+                    }
                 }
+                .tint(.primary)
             }
             .onDelete { offsets in
                 viewModel.deleteTemplates(at: offsets)
@@ -38,6 +48,7 @@ struct TemplateListView: View {
             prompt: "Search templates or triggers"
         )
         .navigationTitle("Template")
+        .navigationBarTitleDisplayMode(.inline)
         .overlay {
             if viewModel.filteredTemplates.isEmpty && !viewModel.searchText.isEmpty {
                 EmptyStateView(
@@ -62,6 +73,15 @@ struct TemplateListView: View {
             }
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
+        }
+        .navigationDestination(item: $selectedTemplateForEdit) { template in
+            TemplateEditorView(viewModel: viewModel)
+                .onAppear {
+                    viewModel.selectTemplate(template)
+                }
+                .onDisappear {
+                    selectedTemplateForEdit = nil
+                }
         }
     }
 }

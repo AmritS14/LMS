@@ -96,6 +96,9 @@ actor SupabaseAdminService: AdminService {
         employeeID: String,
         temporaryPassword: String
     ) async throws -> UUID {
+        guard role != .admin else {
+            throw NSError(domain: "AdminService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Creating Admin accounts is not allowed."])
+        }
         guard let session = try? await client.auth.session else {
             throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
         }

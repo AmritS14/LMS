@@ -67,6 +67,7 @@ struct LoanConfigFormView: View {
             .presentationDragIndicator(.visible)
         }
         .navigationTitle("Loan Configurations")
+        .navigationBarTitleDisplayMode(.inline)
         .task {
             viewModel.configure(environment: env)
             await viewModel.load()
