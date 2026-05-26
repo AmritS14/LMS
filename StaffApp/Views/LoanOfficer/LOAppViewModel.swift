@@ -77,6 +77,39 @@ import Combine
         Task { await refreshFromService() }
     }
 
+    /// Ensures a borrower⇄officer conversation exists for this application the
+    /// first time the officer opens it for review. Idempotent.
+    func ensureThread(for application: LOLoanApplication) {
+        guard let environment,
+              let appID = application.sourceApplicationID,
+              let borrowerID = application.borrowerID,
+              let officerID else { return }
+        Task {
+            _ = try? await environment.messaging.ensureThread(
+                applicationID: appID,
+                participantIDs: [officerID, borrowerID]
+            )
+        }
+    }
+
+    /// Posts a message into the application's conversation as the officer.
+    func postOfficerMessage(for application: LOLoanApplication, body: String) {
+        let text = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty,
+              let environment,
+              let appID = application.sourceApplicationID,
+              let borrowerID = application.borrowerID,
+              let officerID else { return }
+        Task {
+            guard let thread = try? await environment.messaging.ensureThread(
+                applicationID: appID,
+                participantIDs: [officerID, borrowerID]
+            ) else { return }
+            let message = ChatMessage(threadID: thread.id, senderID: officerID, body: text)
+            _ = try? await environment.messaging.send(message)
+        }
+    }
+
     private func refreshFromService() async {
         guard let environment else { return }
 
@@ -130,6 +163,7 @@ import Combine
 
         return LOLoanApplication(
             sourceApplicationID: app.id,
+            borrowerID: app.borrowerID,
             borrowerName: name,
             borrowerInitials: initials.isEmpty ? "?" : initials,
             creditScore: 720,
@@ -421,6 +455,13 @@ import Combine
                     action: .requestDocuments(documentTypes: [Self.backendDocumentType(docName)]),
                     note: note.isEmpty ? nil : note
                 )
+
+                // Mirror the request into the real conversation so the borrower
+                // sees it in their Messages tab and can reply.
+                let messageBody = note.isEmpty
+                    ? "Please upload the following document: \(docName)."
+                    : "Please upload \(docName). \(note)"
+                postOfficerMessage(for: recentApplications[index], body: messageBody)
             }
         }
     }

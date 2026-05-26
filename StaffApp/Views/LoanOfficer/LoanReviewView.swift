@@ -41,6 +41,7 @@ struct LoanReviewView: View {
     @State private var showBlockerAlert = false
     @State private var highlightRemarks = false
     @State private var selectedReviewDocument: LOLoanDocument? = nil
+    @State private var showConversation = false
 
     /// The application under review — uses selectedApplication or falls back to the first recent one.
     private var application: LOLoanApplication {
@@ -127,6 +128,11 @@ struct LoanReviewView: View {
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showConversation) {
+            LOConversationView(application: application)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+        }
         .alert("Send Back for Revision", isPresented: $showSendBackAlert) {
             Button("Send Back") {
                 if !viewModel.navigationPath.isEmpty {
@@ -146,6 +152,8 @@ struct LoanReviewView: View {
             withAnimation() {
                 animateIn = true
             }
+            // Open (or reuse) the borrower⇄officer conversation for this app.
+            viewModel.ensureThread(for: application)
         }
         .onDisappear {
             viewModel.highlightMessageButton = false
@@ -411,12 +419,13 @@ extension LoanReviewView {
 
     private var messageBorrowerButton: some View {
         Button {
-            if let conversation = viewModel.conversations.first(where: {
+            withAnimation { viewModel.highlightMessageButton = false }
+            // Real backend application → open the live borrower⇄officer thread.
+            if application.sourceApplicationID != nil, application.borrowerID != nil {
+                showConversation = true
+            } else if let conversation = viewModel.conversations.first(where: {
                 $0.borrowerName == application.borrowerName
             }) {
-                withAnimation {
-                    viewModel.highlightMessageButton = false
-                }
                 viewModel.navigationPath.append(AppDestination.chat(conversation))
             }
         } label: {

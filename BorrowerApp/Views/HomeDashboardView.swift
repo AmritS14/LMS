@@ -10,6 +10,8 @@ struct HomeDashboardView: View {
     @State private var emiToPay: EMI?
     @State private var showSupportSheet = false
     @State private var selectedPendingAppID: UUID?
+    @State private var docUploadApp: LoanApplication?
+    @State private var hasLoadedOnce = false
 
     var body: some View {
         ScrollView {
@@ -18,6 +20,7 @@ struct HomeDashboardView: View {
         }
         .scrollIndicators(.hidden)
         .scrollBounceBehavior(.basedOnSize)
+        .refreshable { await loadData() }
         .background(Color.lmsBackground.ignoresSafeArea())
         .navigationTitle("Dashboard")
         .navigationBarTitleDisplayMode(.large)
@@ -30,12 +33,34 @@ struct HomeDashboardView: View {
                 .accessibilityLabel("Profile")
             }
         }
-        .task { await loadData() }
+        .task {
+            if !hasLoadedOnce {
+                await loadData()
+                hasLoadedOnce = true
+            }
+        }
+        .onAppear {
+            // Re-fetch when returning to the Home tab so officer-side status
+            // changes (e.g. documents requested) surface without a manual pull.
+            if hasLoadedOnce {
+                Task { await loadData() }
+            }
+        }
         .onChange(of: selectedLoanID) { _, newID in
             guard let newID,
                   let env,
                   let loan = viewModel.activeLoans.first(where: { $0.id == newID }) else { return }
             Task { await repaymentViewModel.loadRepaymentData(loanService: env.loans, loan: loan) }
+        }
+        .sheet(item: $docUploadApp) { app in
+            UploadRequestedDocumentsView(
+                application: app,
+                requestNote: viewModel.requestNotes[app.id]
+            ) {
+                await loadData()
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
         .sheet(item: $emiToPay, content: paySheet)
         .sheet(isPresented: $showSupportSheet) {
@@ -87,6 +112,17 @@ struct HomeDashboardView: View {
 
     @ViewBuilder
     private var contentSections: some View {
+        let docPendingApps = viewModel.applications.filter { $0.status == .additionalInfoRequired }
+        if !docPendingApps.isEmpty {
+            VStack(spacing: Spacing.s) {
+                ForEach(docPendingApps) { app in
+                    actionRequiredCard(app)
+                }
+            }
+            .padding(.horizontal, Spacing.m)
+            .padding(.top, Spacing.m)
+        }
+
         let pendingApps = viewModel.applications.filter { $0.status != .disbursed && $0.status != .closed }
         if !pendingApps.isEmpty {
             VStack(alignment: .leading, spacing: Spacing.s) {
@@ -258,6 +294,56 @@ struct HomeDashboardView: View {
             .filter { $0.status == .upcoming || $0.status == .overdue }
             .sorted { $0.dueDate < $1.dueDate }
             .first
+    }
+
+    // MARK: - Action Required (documents requested)
+    private func actionRequiredCard(_ app: LoanApplication) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .foregroundStyle(Color.lmsWarning)
+                    .font(.title3)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Action Needed")
+                        .font(.subheadline.weight(.semibold))
+                    Text("\(app.loanType.rawValue.capitalized) Loan • \(Formatting.currency(app.requestedAmount))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+
+            if let note = viewModel.requestNotes[app.id], !note.isEmpty {
+                Text(note)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(Spacing.sm)
+                    .background(Color.lmsBackground, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+            } else {
+                Text("Your loan officer has requested additional documents.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            Button {
+                docUploadApp = app
+            } label: {
+                Label("Upload Documents", systemImage: "arrow.up.doc.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Spacing.s)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Color.lmsWarning)
+        }
+        .padding(Spacing.m)
+        .background(Color.lmsWarning.opacity(0.08), in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                .stroke(Color.lmsWarning.opacity(0.3), lineWidth: 1)
+        )
     }
 
     // MARK: - Status Tracker

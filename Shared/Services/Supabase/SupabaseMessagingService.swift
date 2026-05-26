@@ -108,12 +108,43 @@ actor SupabaseMessagingService: MessagingService {
         let updateData: [String: AnyJSON] = [
             "read_at": .string(ISO8601DateFormatter().string(from: upTo))
         ]
-        
+
         _ = try await client
             .from("chat_messages")
             .update(updateData)
             .eq("thread_id", value: threadID)
             .is("read_at", value: nil)
             .execute()
+    }
+
+    func ensureThread(applicationID: UUID, participantIDs: [UUID]) async throws -> MessageThread {
+        // Reuse an existing thread for this application if one already exists.
+        let existing = try await client
+            .from("message_threads")
+            .select()
+            .eq("application_id", value: applicationID)
+            .limit(1)
+            .execute()
+
+        if let found = try? SupabaseManager.shared.decoder.decode([DBMessageThread].self, from: existing.data),
+           let thread = found.first {
+            return toDomainThread(thread)
+        }
+
+        // Otherwise create it. RLS requires the caller to be among participants.
+        let insertData: [String: AnyJSON] = [
+            "participant_ids": .array(participantIDs.map { .string($0.uuidString) }),
+            "application_id": .string(applicationID.uuidString)
+        ]
+
+        let response = try await client
+            .from("message_threads")
+            .insert(insertData)
+            .select()
+            .single()
+            .execute()
+
+        let dbThread = try SupabaseManager.shared.decoder.decode(DBMessageThread.self, from: response.data)
+        return toDomainThread(dbThread)
     }
 }

@@ -515,6 +515,7 @@ struct LOLoanApplication: Identifiable, Hashable {
 
     let id = UUID()
     var sourceApplicationID: UUID? = nil
+    var borrowerID: UUID? = nil
 
     var borrowerName: String
     var borrowerInitials: String

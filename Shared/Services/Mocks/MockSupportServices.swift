@@ -156,6 +156,22 @@ actor MockMessagingService: MessagingService {
             messageStore[threadID] = msgs
         }
             }
+
+    func ensureThread(applicationID: UUID, participantIDs: [UUID]) async throws -> MessageThread {
+        if let existing = threadList.first(where: { $0.applicationID == applicationID }) {
+            return existing
+        }
+        let thread = MessageThread(
+            id: UUID(),
+            participantIDs: participantIDs,
+            applicationID: applicationID,
+            lastMessagePreview: nil,
+            updatedAt: .now
+        )
+        threadList.insert(thread, at: 0)
+        messageStore[thread.id] = []
+        return thread
+    }
 }
 
 // MARK: - MockNotificationService
