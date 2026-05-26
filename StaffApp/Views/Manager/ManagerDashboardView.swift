@@ -201,10 +201,10 @@ struct ManagerDashboardView: View {
                     Text(store.avgDecisionTime)
                         .font(.system(.title2, design: .rounded).weight(.bold))
                     HStack(spacing: 4) {
-                        Image(systemName: "arrow.down").font(.caption2.weight(.bold))
-                        Text("14% faster").font(.caption2)
+                        Image(systemName: "checkmark.seal").font(.caption2.weight(.bold))
+                        Text("\(store.decisionsCount) decided").font(.caption2)
                     }
-                    .foregroundStyle(Color.lmsSuccess)
+                    .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(Spacing.m)
@@ -226,10 +226,10 @@ struct ManagerDashboardView: View {
                     .background(Color.lmsWarning.opacity(0.15), in: Circle())
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Approval rate increased 2.5% this week")
+                    Text("Approval rate \(store.approvalRateText) across \(store.decisionsCount) decisions")
                         .font(.subheadline)
                         .foregroundStyle(.primary)
-                    Text("\(store.highRiskCount) applications need urgent review")
+                    Text("\(store.highRiskCount) high-risk application\(store.highRiskCount == 1 ? "" : "s") need review")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

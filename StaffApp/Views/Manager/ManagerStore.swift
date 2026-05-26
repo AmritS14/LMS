@@ -22,6 +22,8 @@ final class ManagerStore {
     var rejectedToday: Int = 0
     var approvalRate: Double = 0
     var avgDecisionTime: String = "—"
+    // Total decided (approved/disbursed/rejected) applications in the queue.
+    var decisionsCount: Int = 0
 
     var selectedApplicationID: UUID?
 
@@ -70,6 +72,29 @@ final class ManagerStore {
 
         let decided = approvedOrDisbursed.count + rejected.count
         approvalRate = decided > 0 ? Double(approvedOrDisbursed.count) / Double(decided) : 0
+
+        // Average decision turnaround = time from submission (createdAt) to the
+        // decision (updatedAt) across all decided applications. Real figure,
+        // replacing the previously hardcoded value.
+        let decidedApps = approvedOrDisbursed + rejected
+        let intervals = decidedApps.map { $0.updatedAt.timeIntervalSince($0.createdAt) }.filter { $0 > 0 }
+        if intervals.isEmpty {
+            avgDecisionTime = "—"
+        } else {
+            let avgSeconds = intervals.reduce(0, +) / Double(intervals.count)
+            avgDecisionTime = Self.formatDuration(avgSeconds)
+        }
+        decisionsCount = decided
+    }
+
+    /// Human-friendly duration: days if ≥1 day, else hours, else minutes.
+    private static func formatDuration(_ seconds: TimeInterval) -> String {
+        let days = seconds / 86_400
+        if days >= 1 { return String(format: "%.1f days", days) }
+        let hours = seconds / 3_600
+        if hours >= 1 { return String(format: "%.0f hrs", hours) }
+        let minutes = max(1, seconds / 60)
+        return String(format: "%.0f min", minutes)
     }
 
     private static func makeManagerApplication(from app: LoanApplication, documents: [LoanDocument] = []) -> ManagerApplication {
