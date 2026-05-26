@@ -36,6 +36,17 @@ Then run the DB rollback SQL below for any migration that was applied.
   drop policy if exists "Admins update users" on public.users;
   ```
 
+- Name: `grant_update_users_to_authenticated` — applied 2026-05-27
+- Purpose: Table-level GRANT was missing (authenticated only had SELECT), so
+  UPDATEs hit `42501 permission denied` before RLS even applied — the same
+  issue previously fixed for loan_products. RLS still gates rows (admins → any,
+  users → own). Without this, neither admin user-mgmt nor self-profile-update
+  could ever write.
+- Rollback SQL:
+  ```sql
+  revoke update on public.users from authenticated;
+  ```
+
 ### Migration template
 - Name: `<migration_name>` — applied <date>
 - Purpose: ...
