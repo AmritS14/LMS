@@ -11,6 +11,10 @@ struct ApplicationReviewView: View {
     @State private var completed: ApplicationActionType?
     @State private var verifiedDocs: Set<String> = Set(Self.documents)
 
+    @State private var showDisburseConfirm = false
+    @State private var isDisbursing = false
+    @State private var disburseError: String?
+
     private static let documents = ["Government ID", "Income Proof", "Collateral Proof"]
     private static let documentIcons = [
         "Government ID": "person.text.rectangle",
@@ -57,6 +61,37 @@ struct ApplicationReviewView: View {
                 officer: app.officerName,
                 onFinish: { dismiss() }
             )
+        }
+        .confirmationDialog(
+            "Disburse \(app.amountText) to \(app.borrowerName)?",
+            isPresented: $showDisburseConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Disburse Loan") { disburse(app) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This creates the loan and EMI schedule and notifies the borrower. This can't be undone.")
+        }
+        .alert("Disbursement Failed", isPresented: Binding(
+            get: { disburseError != nil },
+            set: { if !$0 { disburseError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(disburseError ?? "")
+        }
+    }
+
+    private func disburse(_ app: ManagerApplication) {
+        isDisbursing = true
+        Task {
+            do {
+                try await store.disburse(app)
+                isDisbursing = false
+            } catch {
+                disburseError = error.localizedDescription
+                isDisbursing = false
+            }
         }
     }
 
@@ -171,7 +206,25 @@ struct ApplicationReviewView: View {
 
     // MARK: Action bar
 
+    @ViewBuilder
     private func actionBar(_ app: ManagerApplication) -> some View {
+        VStack(spacing: Spacing.s) {
+            switch app.status {
+            case .approved:
+                disburseBar
+            case .disbursed:
+                statusPill("Loan Disbursed", systemImage: "checkmark.seal.fill", tone: .lmsSuccess)
+            case .rejected:
+                statusPill("Application Rejected", systemImage: "slash.circle", tone: .lmsDanger)
+            default:
+                reviewBar
+            }
+        }
+        .padding(Spacing.m)
+        .background(.bar)
+    }
+
+    private var reviewBar: some View {
         VStack(spacing: Spacing.s) {
             HStack(spacing: Spacing.s) {
                 Button(role: .destructive) { activeSheet = .reject } label: {
@@ -198,8 +251,34 @@ struct ApplicationReviewView: View {
             .controlSize(.large)
             .tint(.lmsSuccess)
         }
-        .padding(Spacing.m)
-        .background(.bar)
+    }
+
+    private var disburseBar: some View {
+        Button { showDisburseConfirm = true } label: {
+            HStack(spacing: Spacing.s) {
+                if isDisbursing {
+                    ProgressView().tint(.white)
+                } else {
+                    Image(systemName: "indianrupeesign.circle.fill")
+                }
+                Text(isDisbursing ? "Disbursing…" : "Disburse Loan")
+                    .font(.headline)
+            }
+            .frame(maxWidth: .infinity, minHeight: 28)
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.roundedRectangle(radius: CornerRadius.button))
+        .controlSize(.large)
+        .tint(.lmsAccent)
+        .disabled(isDisbursing)
+    }
+
+    private func statusPill(_ text: String, systemImage: String, tone: Color) -> some View {
+        Label(text, systemImage: systemImage)
+            .font(.headline)
+            .foregroundStyle(tone)
+            .frame(maxWidth: .infinity, minHeight: 36)
+            .background(tone.opacity(0.12), in: RoundedRectangle(cornerRadius: CornerRadius.button, style: .continuous))
     }
 
     @ViewBuilder
