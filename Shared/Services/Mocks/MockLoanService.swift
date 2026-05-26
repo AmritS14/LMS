@@ -317,6 +317,13 @@ actor MockLoanService: LoanService {
         applications[idx].updatedAt = .now
     }
 
+    func sendBackApplication(applicationID: UUID, remark: String?) async throws {
+        try await Task.sleep(for: .milliseconds(200))
+        guard let idx = applications.firstIndex(where: { $0.id == applicationID }) else { return }
+        applications[idx].status = .additionalInfoRequired
+        applications[idx].updatedAt = .now
+    }
+
     func approveApplication(applicationID: UUID, remark: String?) async throws {
         try await Task.sleep(for: .milliseconds(200))
         guard let idx = applications.firstIndex(where: { $0.id == applicationID }) else { return }

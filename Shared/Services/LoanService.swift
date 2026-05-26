@@ -19,6 +19,11 @@ protocol LoanService: Sendable {
     func requestDocuments(applicationID: UUID, documentTypes: [String], remark: String?) async throws
     func documentsUploaded(applicationID: UUID, documentIDs: [UUID]) async throws
     func sendToManager(applicationID: UUID, remark: String?) async throws
+    /// Manager sends an application back for more information. Persists a
+    /// status change to `document_pending` plus a `document_requested` event
+    /// (which the borrower surfaces as "Action Needed"). No backend endpoint
+    /// exists, so this writes directly via Supabase under the manager's RLS.
+    func sendBackApplication(applicationID: UUID, remark: String?) async throws
     func approveApplication(applicationID: UUID, remark: String?) async throws
     func rejectApplication(applicationID: UUID, remark: String?) async throws
     func disburseLoan(applicationID: UUID) async throws

@@ -215,8 +215,9 @@ final class ManagerStore {
             case .reject:
                 Task { try? await environment.loans.rejectApplication(applicationID: appID, remark: remarks) }
             case .sendBack:
-                // No manager-facing "send back" endpoint exists; this stays a local-only decision.
-                break
+                // Persists a document_pending status + document_requested event
+                // via Supabase (no backend endpoint), so the borrower is notified.
+                Task { try? await environment.loans.sendBackApplication(applicationID: appID, remark: remarks) }
             }
         }
     }

@@ -450,6 +450,34 @@ actor SupabaseLoanService: LoanService {
         try await postWorkflowAction(applicationID: applicationID, action: "send-to-manager", body: body)
     }
 
+    func sendBackApplication(applicationID: UUID, remark: String?) async throws {
+        guard let session = try? await client.auth.session else {
+            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
+        }
+
+        // 1. Move the application to document_pending so the borrower sees an
+        //    "Action Needed" prompt. Manager RLS allows updating team apps.
+        try await client
+            .from("loan_applications")
+            .update(["status": AnyJSON.string("document_pending")])
+            .eq("id", value: applicationID)
+            .execute()
+
+        // 2. Log the send-back as a document_requested event so the borrower's
+        //    dashboard surfaces the manager's note (same path officers use).
+        let eventData: [String: AnyJSON] = [
+            "application_id": .string(applicationID.uuidString),
+            "actor_id": .string(session.user.id.uuidString),
+            "event_type": .string("document_requested"),
+            "to_status": .string("document_pending"),
+            "remark": remark.map { AnyJSON.string($0) } ?? .null
+        ]
+        try await client
+            .from("loan_application_events")
+            .insert(eventData)
+            .execute()
+    }
+
     func approveApplication(applicationID: UUID, remark: String?) async throws {
         var body: [String: Any]? = nil
         if let remark { body = ["remark": remark] }
