@@ -42,16 +42,28 @@ struct DashboardView: View {
 struct DashboardHeaderSection: View {
 
     @Environment(AppViewModel.self) var viewModel
+    @Environment(SessionStore.self) private var session
+
+    private var officerName: String {
+        let name = session.currentUser?.fullName ?? ""
+        return name.isEmpty ? viewModel.officerProfile.name : name
+    }
+
+    private var officerInitials: String {
+        let parts = officerName.split(separator: " ").compactMap { $0.first.map(String.init) }
+        let joined = parts.prefix(2).joined().uppercased()
+        return joined.isEmpty ? "LO" : joined
+    }
 
     var body: some View {
 
         HStack(alignment: .center, spacing: 15) {
-            
+
             Button {
                 viewModel.navigationPath.append(AppDestination.profile)
             } label: {
                 LOAvatarView(
-                    initials: viewModel.officerProfile.avatarInitials,
+                    initials: officerInitials,
                     size: 44,
                     colors: [
                         Color(red: 0.2, green: 0.5, blue: 1.0),
@@ -60,13 +72,13 @@ struct DashboardHeaderSection: View {
                 )
             }
             .buttonStyle(.plain)
-            
+
             VStack(alignment: .leading, spacing: 5) {
-                
-                Text(viewModel.officerProfile.name)
+
+                Text(officerName)
                     .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(.primary)
-                Text(viewModel.selectedBranch)
+                Text(session.currentUser?.email ?? viewModel.selectedBranch)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.secondary)
             }

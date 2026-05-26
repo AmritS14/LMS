@@ -5,10 +5,12 @@ import SwiftUI
 /// A native iOS Profile view matching the requested layout.
 @MainActor
 struct ProfileView: View {
+    @Environment(SessionStore.self) private var session
+    @Environment(\.appEnvironment) private var env
+
     @State private var isTwoFactorEnabled = true
     @State private var isBiometricEnabled = true
     @State private var showSignOutConfirmation = false
-    @State private var showSignOutSuccess = false
 
     var body: some View {
         List {
@@ -16,16 +18,16 @@ struct ProfileView: View {
             headerView
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
-            
+
             // Account Section
             accountSection
-            
+
             // Security Section
             securitySection
-            
+
             // Preferences Section
             preferencesSection
-            
+
             // Support & Sign Out Section
             footerSection
         }
@@ -33,15 +35,19 @@ struct ProfileView: View {
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Are you sure you want to sign out?", isPresented: $showSignOutConfirmation, titleVisibility: .visible) {
-            Button("Sign Out", role: .destructive) {
-                showSignOutSuccess = true
-            }
+            Button("Sign Out", role: .destructive) { signOut() }
             Button("Cancel", role: .cancel) {}
         }
-        .alert("Signed Out", isPresented: $showSignOutSuccess) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("You have been successfully signed out of the LMS system.")
+    }
+
+    private func signOut() {
+        Task {
+            try? await env?.auth.signOut()
+            await MainActor.run {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    session.currentUser = nil
+                }
+            }
         }
     }
     
@@ -53,16 +59,22 @@ struct ProfileView: View {
             SystemProfileBadge()
 
             VStack(spacing: 6) {
-                Text("Sarah Jenkins")
+                Text(session.currentUser?.fullName.isEmpty == false ? session.currentUser!.fullName : "Administrator")
                     .font(.title2)
                     .fontWeight(.bold)
-                
-                Text("SYSTEM ADMIN")
+
+                Text((session.role?.rawValue ?? "admin").replacingOccurrences(of: "_", with: " ").uppercased())
                     .font(.caption)
                     .fontWeight(.bold)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 5)
                     .background(Color.indigo.opacity(0.15), in: Capsule())
+
+                if let email = session.currentUser?.email, !email.isEmpty {
+                    Text(email)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .frame(maxWidth: .infinity)
