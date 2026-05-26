@@ -127,4 +127,20 @@ actor SupabaseAdminService: AdminService {
         }
         return UUID()
     }
+
+    func updateUserRole(userID: UUID, role: UserRole) async throws {
+        try await client
+            .from("users")
+            .update(["role": backendRole(role)])
+            .eq("id", value: userID)
+            .execute()
+    }
+
+    func setUserActive(userID: UUID, isActive: Bool) async throws {
+        try await client
+            .from("users")
+            .update(["is_active": isActive])
+            .eq("id", value: userID)
+            .execute()
+    }
 }

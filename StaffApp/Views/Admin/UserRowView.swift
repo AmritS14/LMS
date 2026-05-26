@@ -125,11 +125,11 @@ struct UserDetailsView: View {
             Text(viewModel.successMessage)
         }
         .confirmationDialog(
-            "Are you sure you want to delete this account?",
+            "Deactivate this account? They will lose access until reactivated. Accounts are never permanently deleted, to keep loan records intact.",
             isPresented: $showDeleteConfirmation,
             titleVisibility: .visible
         ) {
-            Button("Delete Account", role: .destructive) {
+            Button("Deactivate Account", role: .destructive) {
                 Task {
                     await viewModel.deleteUser(for: user.id)
                 }
@@ -177,7 +177,7 @@ struct UserDetailsView: View {
             Button(role: .destructive) {
                 showDeleteConfirmation = true
             } label: {
-                Text("Delete Account")
+                Text("Deactivate Account")
             }
         } header: {
             Text("Manage Account").font(.title3).fontWeight(.bold).foregroundStyle(.primary).textCase(nil)

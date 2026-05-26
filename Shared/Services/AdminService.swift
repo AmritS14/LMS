@@ -14,6 +14,12 @@ protocol AdminService: Sendable {
         employeeID: String,
         temporaryPassword: String
     ) async throws -> UUID
+    /// Admin-only: change a user's system role. Persisted via Supabase under
+    /// the "Admins update users" RLS policy.
+    func updateUserRole(userID: UUID, role: UserRole) async throws
+    /// Admin-only: activate or deactivate a user account (soft enable/disable;
+    /// accounts are never hard-deleted to preserve referential integrity).
+    func setUserActive(userID: UUID, isActive: Bool) async throws
 }
 
 protocol ReportingService: Sendable {

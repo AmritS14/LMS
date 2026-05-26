@@ -8,6 +8,8 @@ actor MockAdminService: AdminService {
     func createStaff(email: String, fullName: String, role: UserRole, employeeID: String, temporaryPassword: String) async throws -> UUID {
         UUID()
     }
+    func updateUserRole(userID: UUID, role: UserRole) async throws {}
+    func setUserActive(userID: UUID, isActive: Bool) async throws {}
 }
 
 // MARK: - MockDocumentService

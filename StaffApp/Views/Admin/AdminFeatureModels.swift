@@ -348,37 +348,64 @@ final class UserManagementViewModel {
 
     func updateRole(for userID: UUID, to role: UserRole) async {
         guard let index = users.firstIndex(where: { $0.id == userID }) else { return }
+        let previousRole = users[index].role
+        guard previousRole != role else { return }
+
+        // Optimistic update, persisted via the backend (admin RLS).
         users[index].role = role
-        if role == .admin || role == .manager || role == .loanOfficer {
-            if staffProfiles[userID] == nil {
-                staffProfiles[userID] = StaffProfile(
-                    id: userID,
-                    employeeID: "ST-\(userID.uuidString.prefix(6).uppercased())",
-                    branchID: nil,
-                    department: nil,
-                    reportsToID: nil,
-                    permissions: []
-                )
-            }
+        if role == .admin || role == .manager || role == .loanOfficer, staffProfiles[userID] == nil {
+            staffProfiles[userID] = StaffProfile(
+                id: userID,
+                employeeID: "ST-\(userID.uuidString.prefix(6).uppercased())",
+                branchID: nil,
+                department: nil,
+                reportsToID: nil,
+                permissions: []
+            )
         }
-        showSuccessAlert = true
-        successMessage = "Role updated for \(users[index].fullName)."
+
+        do {
+            try await environment?.admin.updateUserRole(userID: userID, role: role)
+            showSuccessAlert = true
+            successMessage = "Role updated for \(users[index].fullName)."
+        } catch {
+            users[index].role = previousRole      // revert on failure
+            showSuccessAlert = true
+            successMessage = "Couldn't update role: \(error.localizedDescription)"
+        }
     }
 
     func toggleUserStatus(for userID: UUID) async {
         guard let index = users.firstIndex(where: { $0.id == userID }) else { return }
-        users[index].isActive.toggle()
-        showSuccessAlert = true
-        successMessage = users[index].isActive ? "User reactivated." : "User deactivated."
+        let newValue = !users[index].isActive
+
+        users[index].isActive = newValue
+        do {
+            try await environment?.admin.setUserActive(userID: userID, isActive: newValue)
+            showSuccessAlert = true
+            successMessage = newValue ? "User reactivated." : "User deactivated."
+        } catch {
+            users[index].isActive = !newValue     // revert on failure
+            showSuccessAlert = true
+            successMessage = "Couldn't update status: \(error.localizedDescription)"
+        }
     }
 
+    /// Accounts are never hard-deleted (that would orphan auth records and
+    /// break loan/application foreign keys). "Delete" performs a backend
+    /// deactivation instead, keeping the user in the directory as inactive.
     func deleteUser(for userID: UUID) async {
-        users.removeAll { $0.id == userID }
-        staffProfiles.removeValue(forKey: userID)
-        borrowerAssignments = borrowerAssignments.filter { $0.key != userID && $0.value != userID }
-        loanHistory.removeValue(forKey: userID)
-        showSuccessAlert = true
-        successMessage = "User removed."
+        guard let index = users.firstIndex(where: { $0.id == userID }) else { return }
+        users[index].isActive = false
+        do {
+            try await environment?.admin.setUserActive(userID: userID, isActive: false)
+            showSuccessAlert = true
+            successMessage = "\(users[index].fullName) has been deactivated."
+        } catch {
+            users[index].isActive = true
+            showSuccessAlert = true
+            successMessage = "Couldn't deactivate user: \(error.localizedDescription)"
+        }
     }
 
     func updatePermissions(for userID: UUID, to permissions: Set<Permission>) async {

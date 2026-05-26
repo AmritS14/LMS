@@ -23,7 +23,15 @@ Then run the DB rollback SQL below for any migration that was applied.
 3. Manager "Send Back" persistence + Admin user management (edit role / deactivate / delete) — needs RLS policy changes.
 
 ## DB migrations applied (append each here with rollback SQL BEFORE applying)
-_(none yet)_
+
+- Name: `admin_update_users_policy` — applied 2026-05-27
+- Purpose: Let admins persist role changes / activate-deactivate on OTHER users.
+  Previously only "Users can update own profile" (auth.uid()=id) existed, so
+  admin user-management was UI-only. Additive policy, scoped to has_role('admin').
+- Rollback SQL:
+  ```sql
+  drop policy if exists "Admins update users" on public.users;
+  ```
 
 ### Migration template
 - Name: `<migration_name>` — applied <date>
