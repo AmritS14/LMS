@@ -67,7 +67,10 @@ struct LoanConfigFormView: View {
             .presentationDragIndicator(.visible)
         }
         .navigationTitle("Loan Configurations")
-        .onAppear { viewModel.configure(environment: env) }
+        .task {
+            viewModel.configure(environment: env)
+            await viewModel.load()
+        }
         .alert("Configuration Saved", isPresented: $viewModel.showSaveAlert) {
             Button("OK", role: .cancel) {}
         } message: {

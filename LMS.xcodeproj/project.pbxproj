@@ -59,6 +59,7 @@
 		825AF51AA045E92CF99F1D3A /* StaffLoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2CE2D15122C2AB876A86802 /* StaffLoginView.swift */; };
 		850682E07C033FC34B6B770E /* RepaymentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 858BD1FDB37EEA83814044AF /* RepaymentViewModel.swift */; };
 		8642A177D6B5354C27D85CC2 /* NewLoanApplicationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110706905C594DC975DCFE77 /* NewLoanApplicationView.swift */; };
+		897313B6AB4253FB09D4B397 /* SupabaseAdminService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3F99DE09F9F0CC21967249D /* SupabaseAdminService.swift */; };
 		8A14B7E415A57005DB723A7D /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60B97A297D7D30BAB7D473E3 /* APIClient.swift */; };
 		8BB48099C15507DD6F5777EF /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 780758255E8A8257BB032094 /* NotificationService.swift */; };
 		9073C990A1687625410E1BD8 /* StaffApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECD8C28C6EE6908B66DD7AC /* StaffApp.swift */; };
@@ -93,6 +94,7 @@
 		DE6C803F8BFEC780F48378E4 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60B97A297D7D30BAB7D473E3 /* APIClient.swift */; };
 		E1C6AB0F72DFE85EB39A11AC /* LoanService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A661E2C59635EFD0C144B906 /* LoanService.swift */; };
 		E50B59A319E4E9BC7B9DEB2A /* EMICalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F582C8AB54B323AD8E169865 /* EMICalculator.swift */; };
+		E5346A35720FA359BF32D66B /* SupabaseAdminService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3F99DE09F9F0CC21967249D /* SupabaseAdminService.swift */; };
 		E7CD28706FBC6B17F24CEFD4 /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C08CDB892408BA704D4EACF /* PersistenceController.swift */; };
 		E8141B529CD3DA2A70744F7C /* MockLoanService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 211DE72674707B85B3C3C40A /* MockLoanService.swift */; };
 		E82B764D4020A955545FA3D7 /* MockSupportServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77E37F22B749EB4CF963D0B3 /* MockSupportServices.swift */; };
@@ -176,6 +178,7 @@
 		F040CB032FC430DF00A9E2F9 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		F04C0D712FC06930009E0886 /* LMSTextFieldStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LMSTextFieldStyle.swift; sourceTree = "<group>"; };
 		F0B1C0AC2FC3FB2800612B34 /* StatusBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBadge.swift; sourceTree = "<group>"; };
+		F3F99DE09F9F0CC21967249D /* SupabaseAdminService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseAdminService.swift; path = Supabase/SupabaseAdminService.swift; sourceTree = "<group>"; };
 		F582C8AB54B323AD8E169865 /* EMICalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EMICalculator.swift; sourceTree = "<group>"; };
 		FEE98171A238045C22C2F9E8 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -310,6 +313,7 @@
 				914A1BB4F51D4F5C31806EFD /* SupabaseLoanService.swift */,
 				9459DAEBCBCB9D3C2250C401 /* SupabaseMessagingService.swift */,
 				19A749024376B4E1C30F4B83 /* SupabaseDocumentService.swift */,
+				F3F99DE09F9F0CC21967249D /* SupabaseAdminService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -581,6 +585,7 @@
 				5C1375C47BBBB9A4EE2FC938 /* SupabaseMessagingService.swift in Sources */,
 				11E257368809C6692698BD2B /* SupabaseDocumentService.swift in Sources */,
 				16228464F2B8DED10C1F71D7 /* UploadRequestedDocumentsView.swift in Sources */,
+				E5346A35720FA359BF32D66B /* SupabaseAdminService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -630,6 +635,7 @@
 				7CF9B0770FFCAFE017674DFC /* SupabaseLoanService.swift in Sources */,
 				A1AA0000000000000010AA03 /* SupabaseDocumentService.swift in Sources */,
 				A1AA0000000000000011AA03 /* SupabaseMessagingService.swift in Sources */,
+				897313B6AB4253FB09D4B397 /* SupabaseAdminService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

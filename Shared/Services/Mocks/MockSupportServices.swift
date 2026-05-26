@@ -1,5 +1,15 @@
 import Foundation
 
+// MARK: - MockAdminService
+
+actor MockAdminService: AdminService {
+    func listUsers() async throws -> [User] { [] }
+    func listStaffProfiles() async throws -> [StaffProfile] { [] }
+    func createStaff(email: String, fullName: String, role: UserRole, employeeID: String, temporaryPassword: String) async throws -> UUID {
+        UUID()
+    }
+}
+
 // MARK: - MockDocumentService
 
 actor MockDocumentService: DocumentService {

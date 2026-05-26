@@ -274,6 +274,47 @@ final class UserManagementViewModel {
     var searchText: String = ""
     var showSuccessAlert: Bool = false
     var successMessage: String = ""
+    var isLoading: Bool = false
+    var loadError: String?
+
+    private var environment: AppEnvironment?
+
+    func configure(environment: AppEnvironment?) {
+        self.environment = environment
+    }
+
+    /// Replaces the seeded mock users with the real directory from the backend.
+    func load() async {
+        guard let environment else { return }
+        isLoading = true
+        loadError = nil
+        do {
+            async let usersReq = environment.admin.listUsers()
+            async let profilesReq = environment.admin.listStaffProfiles()
+            let fetchedUsers = try await usersReq
+            let fetchedProfiles = try await profilesReq
+            users = fetchedUsers
+            staffProfiles = Dictionary(uniqueKeysWithValues: fetchedProfiles.map { ($0.id, $0) })
+        } catch {
+            loadError = error.localizedDescription
+        }
+        isLoading = false
+    }
+
+    /// Creates a new staff user via the backend, then reloads the directory.
+    func createStaff(email: String, fullName: String, role: UserRole, employeeID: String, temporaryPassword: String) async throws {
+        guard let environment else {
+            throw NSError(domain: "Admin", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not connected to backend."])
+        }
+        _ = try await environment.admin.createStaff(
+            email: email,
+            fullName: fullName,
+            role: role,
+            employeeID: employeeID,
+            temporaryPassword: temporaryPassword
+        )
+        await load()
+    }
 
     private var loanHistory: [UUID: [Loan]] = AdminSeedData.loanHistory
     private var borrowerAssignments: [UUID: UUID] = AdminSeedData.borrowerOfficerAssignments
@@ -467,9 +508,43 @@ final class LoanConfigViewModel {
     var isSaving: Bool = false
 
     private var environment: AppEnvironment?
+    var isLoading: Bool = false
 
     func configure(environment: AppEnvironment?) {
         self.environment = environment
+    }
+
+    /// Loads the live loan products from the backend, grouped by category.
+    func load() async {
+        guard let environment else { return }
+        isLoading = true
+        defer { isLoading = false }
+        guard let products = try? await environment.loans.fetchLoanProducts() else { return }
+
+        var grouped: [LoanCategory: [AdminLoanProduct]] = [:]
+        for p in products {
+            let admin = AdminLoanProduct(
+                id: p.id,
+                name: p.name,
+                minAmount: NSDecimalNumber(decimal: p.minimumAmount).doubleValue,
+                maxAmount: NSDecimalNumber(decimal: p.maximumAmount).doubleValue,
+                interestRate: p.displayRate,
+                maxTenure: p.maximumTenureMonths,
+                tenureUnit: .months
+            )
+            grouped[Self.category(for: p.loanType), default: []].append(admin)
+        }
+        productsByCategory = grouped
+    }
+
+    private static func category(for type: LoanType) -> LoanCategory {
+        switch type {
+        case .personal: return .personal
+        case .home: return .home
+        case .vehicle: return .vehicle
+        case .education: return .education
+        case .business: return .business
+        }
     }
 
     var activeCategories: [LoanCategory] {

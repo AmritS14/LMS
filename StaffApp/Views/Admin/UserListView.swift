@@ -13,6 +13,9 @@ import SwiftUI
 /// Displays a searchable list of all system users with role-based filters.
 struct UserListView: View {
     @Bindable var viewModel: UserManagementViewModel
+    @Environment(\.appEnvironment) private var env
+
+    @State private var showAddStaff = false
 
     var body: some View {
         List {
@@ -51,18 +54,42 @@ struct UserListView: View {
         }
         .listStyle(.plain)
         .background(AdminColor.background)
+        .overlay {
+            if viewModel.isLoading && viewModel.users.isEmpty {
+                ProgressView()
+            }
+        }
         .searchable(
             text: $viewModel.searchText,
             placement: .navigationBarDrawer(displayMode: .always),
             prompt: "Search"
         )
         .navigationTitle("Users")
+        .task {
+            viewModel.configure(environment: env)
+            await viewModel.load()
+        }
+        .refreshable { await viewModel.load() }
         .alert("Success", isPresented: $viewModel.showSuccessAlert) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(viewModel.successMessage)
         }
+        .sheet(isPresented: $showAddStaff) {
+            AddStaffSheet(viewModel: viewModel)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+        }
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    showAddStaff = true
+                } label: {
+                    Image(systemName: "person.badge.plus")
+                        .font(.title3)
+                }
+                .accessibilityLabel("Add staff user")
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink(destination: ProfileView()) {
                     Image(systemName: "person.crop.circle")

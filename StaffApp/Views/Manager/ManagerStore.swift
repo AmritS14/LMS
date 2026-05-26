@@ -17,11 +17,11 @@ final class ManagerStore {
     var recentActions: [ManagerRecentAction] = []
     var notifications: [OfficerNotification] = []
 
-    // Seeded headline metrics; decisions bump these so the dashboard reacts.
-    var approvedToday: Int = 13
-    var rejectedToday: Int = 2
-    var approvalRate: Double = 0.84
-    var avgDecisionTime: String = "4.1h"
+    // Headline metrics derived from the real application set in refreshAll().
+    var approvedToday: Int = 0
+    var rejectedToday: Int = 0
+    var approvalRate: Double = 0
+    var avgDecisionTime: String = "—"
 
     var selectedApplicationID: UUID?
 
@@ -31,15 +31,9 @@ final class ManagerStore {
 
     func configure(environment: AppEnvironment) {
         self.environment = environment
-        if applications.isEmpty {
-            applications = MockManagerData.applications()
-        }
-        if recentActions.isEmpty {
-            recentActions = MockManagerData.recentActions()
-        }
-        if notifications.isEmpty {
-            notifications = MockManagerData.notifications()
-        }
+        // Applications come from the live queue in refreshAll(); don't seed
+        // mock ones. Notifications/recent actions have no backend source yet,
+        // so they stay empty rather than showing fabricated entries.
     }
 
     func refreshAll() async {
@@ -50,11 +44,25 @@ final class ManagerStore {
             let server = try await environment.loans.fetchApplications(
                 statuses: ["manager_review", "approved", "disbursed", "rejected"]
             )
-            guard !server.isEmpty else { return }
             applications = server.map(Self.makeManagerApplication)
+            recomputeMetrics(from: server)
         } catch {
             // Seed data already populates the UI; ignore transient failures.
         }
+    }
+
+    /// Derives the dashboard headline metrics from the real application set
+    /// instead of the seeded mock numbers.
+    private func recomputeMetrics(from apps: [LoanApplication]) {
+        let cal = Calendar.current
+        let approvedOrDisbursed = apps.filter { $0.status == .approved || $0.status == .disbursed }
+        let rejected = apps.filter { $0.status == .rejected }
+
+        approvedToday = approvedOrDisbursed.filter { cal.isDateInToday($0.updatedAt) }.count
+        rejectedToday = rejected.filter { cal.isDateInToday($0.updatedAt) }.count
+
+        let decided = approvedOrDisbursed.count + rejected.count
+        approvalRate = decided > 0 ? Double(approvedOrDisbursed.count) / Double(decided) : 0
     }
 
     private static func makeManagerApplication(from app: LoanApplication) -> ManagerApplication {
