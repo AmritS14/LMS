@@ -9,18 +9,10 @@ struct ApplicationReviewView: View {
     @State private var activeSheet: ApplicationActionType?
     @State private var pendingResult: ApplicationActionType?
     @State private var completed: ApplicationActionType?
-    @State private var verifiedDocs: Set<String> = Set(Self.documents)
 
     @State private var showDisburseConfirm = false
     @State private var isDisbursing = false
     @State private var disburseError: String?
-
-    private static let documents = ["Government ID", "Income Proof", "Collateral Proof"]
-    private static let documentIcons = [
-        "Government ID": "person.text.rectangle",
-        "Income Proof": "doc.text",
-        "Collateral Proof": "building.columns"
-    ]
 
     private var app: ManagerApplication? { store.application(id: applicationID) }
 
@@ -43,7 +35,7 @@ struct ApplicationReviewView: View {
             VStack(spacing: Spacing.m) {
                 borrowerSection(app)
                 loanSection(app)
-                documentsSection
+                documentsSection(app)
                 evaluationSection(app)
             }
             .padding(Spacing.m)
@@ -131,19 +123,30 @@ struct ApplicationReviewView: View {
         }
     }
 
-    private var documentsSection: some View {
-        SectionCard(title: "Verified Documents",
-                    footer: "Tap a document to toggle verification.") {
+    @ViewBuilder
+    private func documentsSection(_ app: ManagerApplication) -> some View {
+        SectionCard(title: "Submitted Documents",
+                    footer: "Documents and their verification status from the loan officer's review.") {
             HStack {
                 Text("Verification")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
-                StatusBadge("\(verifiedDocs.count) of \(Self.documents.count) Verified",
-                            tone: verifiedDocs.count == Self.documents.count ? .success : .warning,
-                            size: .small)
+                if app.totalDocumentCount > 0 {
+                    StatusBadge("\(app.verifiedDocumentCount) of \(app.totalDocumentCount) Verified",
+                                tone: app.allDocumentsVerified ? .success : .warning,
+                                size: .small)
+                }
             }
-            ForEach(Self.documents, id: \.self) { doc in
-                documentRow(doc)
+            if app.documents.isEmpty {
+                Text("No documents uploaded yet.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, Spacing.xs)
+            } else {
+                ForEach(app.documents) { doc in
+                    documentRow(doc)
+                }
             }
         }
     }
@@ -181,27 +184,54 @@ struct ApplicationReviewView: View {
         .background(Color.lmsBackground, in: RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous))
     }
 
-    private func documentRow(_ doc: String) -> some View {
-        let verified = verifiedDocs.contains(doc)
-        return Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                if verified { verifiedDocs.remove(doc) } else { verifiedDocs.insert(doc) }
+    private func documentRow(_ doc: LoanDocument) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: Self.icon(for: doc.kind))
+                .foregroundStyle(Color.lmsAccent)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(Self.label(for: doc.kind)).font(.subheadline).foregroundStyle(.primary)
+                Text(doc.fileName).font(.caption).foregroundStyle(.secondary).lineLimit(1)
             }
-        } label: {
-            HStack(spacing: Spacing.sm) {
-                Image(systemName: Self.documentIcons[doc] ?? "doc")
-                    .foregroundStyle(Color.lmsAccent)
-                    .frame(width: 24)
-                Text(doc).font(.subheadline).foregroundStyle(.primary)
-                Spacer()
-                Image(systemName: verified ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
-                    .foregroundStyle(verified ? Color.lmsSuccess : Color.lmsGray4)
-            }
-            .padding(Spacing.sm)
-            .background(Color.lmsBackground, in: RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous))
+            Spacer()
+            documentStatusIndicator(doc.status)
         }
-        .buttonStyle(.plain)
+        .padding(Spacing.sm)
+        .background(Color.lmsBackground, in: RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func documentStatusIndicator(_ status: DocumentVerificationStatus) -> some View {
+        switch status {
+        case .verified:
+            Image(systemName: "checkmark.circle.fill").font(.title3).foregroundStyle(Color.lmsSuccess)
+        case .rejected:
+            Image(systemName: "xmark.circle.fill").font(.title3).foregroundStyle(Color.lmsDanger)
+        case .pending:
+            Image(systemName: "clock.fill").font(.title3).foregroundStyle(Color.lmsWarning)
+        }
+    }
+
+    private static func label(for kind: DocumentKind) -> String {
+        switch kind {
+        case .identityProof: "Identity Proof"
+        case .addressProof:  "Address Proof"
+        case .incomeProof:   "Income Proof"
+        case .bankStatement: "Bank Statement"
+        case .collateral:    "Collateral Proof"
+        case .other:         "Document"
+        }
+    }
+
+    private static func icon(for kind: DocumentKind) -> String {
+        switch kind {
+        case .identityProof: "person.text.rectangle"
+        case .addressProof:  "house"
+        case .incomeProof:   "doc.text"
+        case .bankStatement: "building.columns"
+        case .collateral:    "shield"
+        case .other:         "doc"
+        }
     }
 
     // MARK: Action bar

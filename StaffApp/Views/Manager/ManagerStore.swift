@@ -44,7 +44,14 @@ final class ManagerStore {
             let server = try await environment.loans.fetchApplications(
                 statuses: ["manager_review", "approved", "disbursed", "rejected"]
             )
-            applications = server.map(Self.makeManagerApplication)
+            // Hydrate each application's real document vault so the review
+            // screen shows the borrower's actual uploads, not a fixed list.
+            var rows: [ManagerApplication] = []
+            for app in server {
+                let docs = (try? await environment.documents.documents(forApplication: app.id)) ?? []
+                rows.append(Self.makeManagerApplication(from: app, documents: docs))
+            }
+            applications = rows
             recomputeMetrics(from: server)
         } catch {
             // Seed data already populates the UI; ignore transient failures.
@@ -65,7 +72,7 @@ final class ManagerStore {
         approvalRate = decided > 0 ? Double(approvedOrDisbursed.count) / Double(decided) : 0
     }
 
-    private static func makeManagerApplication(from app: LoanApplication) -> ManagerApplication {
+    private static func makeManagerApplication(from app: LoanApplication, documents: [LoanDocument] = []) -> ManagerApplication {
         let name = app.borrowerName ?? "Borrower"
         let borrower = User(
             id: app.borrowerID,

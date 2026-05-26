@@ -46,8 +46,18 @@ struct ManagerApplication: Identifiable, Hashable {
     let officerName: String
     let recommendation: OfficerRecommendation
     let evaluationNote: String
+    // The application's real uploaded documents, hydrated by the store from
+    // the backend. Defaults to empty so previews / mock builders still compile.
+    var documents: [LoanDocument] = []
 
     var id: UUID { base.id }
+
+    // MARK: Document summary (derived from the real vault)
+    var verifiedDocumentCount: Int { documents.filter { $0.status == .verified }.count }
+    var totalDocumentCount: Int { documents.count }
+    var allDocumentsVerified: Bool {
+        !documents.isEmpty && documents.allSatisfy { $0.status == .verified }
+    }
 
     // Forwarded borrower / loan facts
     var borrowerName: String { base.borrowerName }
