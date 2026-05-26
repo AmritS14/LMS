@@ -28,6 +28,7 @@ import Combine
     var selectedConversation: BorrowerConversation?
 
     private var environment: AppEnvironment?
+    private var officerID: UUID?
 
     // Dynamic KPI counters tracking base numbers
     private var pendingCount = 47
@@ -66,8 +67,13 @@ import Combine
         }
     }
 
-    func configure(environment: AppEnvironment) {
+    func configure(environment: AppEnvironment, officerID: UUID? = nil) {
         self.environment = environment
+        self.officerID = officerID
+        Task { await refreshFromService() }
+    }
+
+    func refresh() {
         Task { await refreshFromService() }
     }
 
@@ -76,22 +82,107 @@ import Combine
 
         do {
             let sharedApplications = try await environment.loans.fetchAssignedApplications(
-                officerID: MockOfficerData.officerUserID
+                officerID: officerID ?? MockOfficerData.officerUserID
             )
 
-            guard !sharedApplications.isEmpty else {
-                return
+            // Build real officer rows, hydrating each timeline from the events feed.
+            var rows: [LOLoanApplication] = []
+            for app in sharedApplications {
+                let events = (try? await environment.loans.fetchApplicationEvents(applicationID: app.id)) ?? []
+                rows.append(Self.makeOfficerApplication(from: app, events: events))
             }
 
-            let updateCount = min(sharedApplications.count, recentApplications.count)
-            for index in 0..<updateCount {
-                recentApplications[index].sourceApplicationID = sharedApplications[index].id
-                recentApplications[index].status = sharedApplications[index].status.officerStatus
+            recentApplications = rows
+            if let selectedID = selectedApplication?.sourceApplicationID {
+                selectedApplication = rows.first { $0.sourceApplicationID == selectedID }
             }
-
             recalculateKPIs()
         } catch {
-            // Keep the seeded sample data if the shared service is unavailable.
+            // Keep the seeded sample data if the backend is unavailable.
+        }
+    }
+
+    private static func makeOfficerApplication(
+        from app: LoanApplication,
+        events: [ApplicationEvent]
+    ) -> LOLoanApplication {
+        let name = app.borrowerName ?? "Borrower"
+        let initials = name
+            .split(separator: " ")
+            .compactMap { $0.first.map(String.init) }
+            .prefix(2)
+            .joined()
+            .uppercased()
+        let amount = NSDecimalNumber(decimal: app.requestedAmount).doubleValue
+        let officerStatus = app.status.officerStatus
+
+        let timeline: [TimelineEvent] = events
+            .sorted { $0.createdAt > $1.createdAt }
+            .map { event in
+                TimelineEvent(
+                    title: Self.eventTitle(event.eventType),
+                    description: event.remark ?? Self.eventTitle(event.eventType),
+                    timestamp: event.createdAt,
+                    status: officerStatus,
+                    officerName: ""
+                )
+            }
+
+        return LOLoanApplication(
+            sourceApplicationID: app.id,
+            borrowerName: name,
+            borrowerInitials: initials.isEmpty ? "?" : initials,
+            creditScore: 720,
+            loanAmount: amount,
+            riskLevel: .low,
+            kycStatus: .pending,
+            fraudFlag: false,
+            status: officerStatus,
+            applicationDate: app.createdAt,
+            loanType: app.productName ?? (app.loanType.rawValue.capitalized + " Loan"),
+            tenure: app.tenureMonths,
+            interestRate: app.interestRate,
+            employmentType: "Not specified",
+            employer: "—",
+            monthlyIncome: 0,
+            existingLiabilities: 0,
+            eligibilityScore: 0,
+            emiAmount: amount / Double(max(app.tenureMonths, 1)),
+            phoneNumber: "—",
+            email: app.borrowerEmail ?? "—",
+            address: "—",
+            purpose: "—",
+            documents: [],
+            timeline: timeline
+        )
+    }
+
+    // Maps a free-form requested document name to the backend's documentType enum.
+    private static func backendDocumentType(_ name: String) -> String {
+        let n = name.lowercased()
+        if n.contains("pan") { return "pan_card" }
+        if n.contains("aadhaar") || n.contains("aadhar") { return "aadhaar_card" }
+        if n.contains("salary") { return "salary_slip" }
+        if n.contains("bank") { return "bank_statement" }
+        if n.contains("itr") || n.contains("tax") { return "itr" }
+        if n.contains("photo") || n.contains("passport") { return "passport_photo" }
+        if n.contains("employment") || n.contains("employer") { return "employment_certificate" }
+        if n.contains("address") { return "address_proof" }
+        return "other"
+    }
+
+    private static func eventTitle(_ rawType: String) -> String {
+        switch rawType {
+        case "submitted": return "Application Submitted"
+        case "auto_assigned", "assigned": return "Assigned to Officer"
+        case "review_started": return "Review Started"
+        case "documents_requested": return "Documents Requested"
+        case "documents_uploaded": return "Documents Uploaded"
+        case "sent_to_manager": return "Sent to Manager"
+        case "approved": return "Approved"
+        case "rejected": return "Rejected"
+        case "loan_disbursed": return "Loan Disbursed"
+        default: return rawType.replacingOccurrences(of: "_", with: " ").capitalized
         }
     }
 
@@ -102,19 +193,37 @@ import Combine
         updateKPIs()
     }
 
-    private func syncStatus(
+    enum OfficerWorkflowAction {
+        case sendToManager
+        case reject
+        case requestDocuments(documentTypes: [String])
+    }
+
+    private func performWorkflow(
         for application: LOLoanApplication,
-        to status: ApplicationStatus,
+        action: OfficerWorkflowAction,
         note: String?
     ) {
         guard let environment, let sourceApplicationID = application.sourceApplicationID else { return }
 
         Task {
-            try? await environment.loans.updateStatus(
-                applicationID: sourceApplicationID,
-                to: status,
-                note: note
-            )
+            do {
+                switch action {
+                case .sendToManager:
+                    // send-to-manager requires under_review; move there first if still assigned.
+                    try? await environment.loans.startReview(applicationID: sourceApplicationID)
+                    try await environment.loans.sendToManager(applicationID: sourceApplicationID, remark: note)
+                case .reject:
+                    try await environment.loans.rejectApplication(applicationID: sourceApplicationID, remark: note)
+                case .requestDocuments(let types):
+                    try? await environment.loans.startReview(applicationID: sourceApplicationID)
+                    try await environment.loans.requestDocuments(applicationID: sourceApplicationID, documentTypes: types, remark: note)
+                }
+                // Reconcile local rows with the authoritative backend status.
+                await refreshFromService()
+            } catch {
+                // UI already reflects the optimistic update; backend failures are non-fatal here.
+            }
         }
     }
 
@@ -157,7 +266,8 @@ import Combine
                 }
                 approvedCount += 1
                 updateKPIs()
-                syncStatus(for: recentApplications[index], to: .recommended, note: remarks)
+                // Officer "approve" recommends the application to a manager.
+                performWorkflow(for: recentApplications[index], action: .sendToManager, note: remarks)
                 
                 // Prepend to activity feed
                 let activity = ActivityItem(
@@ -199,7 +309,7 @@ import Combine
                     escalatedCount = max(0, escalatedCount - 1)
                 }
                 updateKPIs()
-                syncStatus(for: recentApplications[index], to: .rejected, note: remarks)
+                performWorkflow(for: recentApplications[index], action: .reject, note: remarks)
             }
         }
     }
@@ -231,8 +341,8 @@ import Combine
                     escalatedCount += 1
                 }
                 updateKPIs()
-                syncStatus(for: recentApplications[index], to: .escalated, note: remarks)
-                
+                performWorkflow(for: recentApplications[index], action: .sendToManager, note: remarks)
+
                 // Add escalation warning to activity feed
                 let activity = ActivityItem(
                     title: "Escalation raised",
@@ -305,6 +415,12 @@ import Combine
                 if selectedApplication?.id == app.id {
                     selectedApplication = recentApplications[index]
                 }
+
+                performWorkflow(
+                    for: recentApplications[index],
+                    action: .requestDocuments(documentTypes: [Self.backendDocumentType(docName)]),
+                    note: note.isEmpty ? nil : note
+                )
             }
         }
     }

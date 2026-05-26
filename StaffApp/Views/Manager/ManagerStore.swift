@@ -45,33 +45,53 @@ final class ManagerStore {
     func refreshAll() async {
         guard let environment else { return }
         do {
-            // Reconcile statuses against the shared service while keeping the
-            // manager-only context (officer, recommendation, note) intact.
-            let server = try await environment.loans.fetchAssignedApplications(
-                officerID: MockOfficerData.officerUserID
+            // Managers review escalated applications. RLS scopes this to the
+            // manager's own team, so a direct query is safe.
+            let server = try await environment.loans.fetchApplications(
+                statuses: ["manager_review", "approved", "disbursed", "rejected"]
             )
-            let serverByID = Dictionary(server.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-            applications = applications.map { existing in
-                guard let updated = serverByID[existing.id] else { return existing }
-                let rebased = OfficerApplication(
-                    application: updated,
-                    borrower: existing.base.borrower,
-                    profile: existing.base.profile,
-                    employer: existing.base.employer,
-                    existingLiabilities: existing.base.existingLiabilities,
-                    purpose: existing.base.purpose,
-                    fraudFlag: existing.base.fraudFlag
-                )
-                return ManagerApplication(
-                    base: rebased,
-                    officerName: existing.officerName,
-                    recommendation: existing.recommendation,
-                    evaluationNote: existing.evaluationNote
-                )
-            }
+            guard !server.isEmpty else { return }
+            applications = server.map(Self.makeManagerApplication)
         } catch {
             // Seed data already populates the UI; ignore transient failures.
         }
+    }
+
+    private static func makeManagerApplication(from app: LoanApplication) -> ManagerApplication {
+        let name = app.borrowerName ?? "Borrower"
+        let borrower = User(
+            id: app.borrowerID,
+            fullName: name,
+            email: app.borrowerEmail ?? "",
+            phone: "",
+            role: .borrower
+        )
+        let profile = BorrowerProfile(
+            id: app.borrowerID,
+            dateOfBirth: Calendar.current.date(byAdding: .year, value: -30, to: .now) ?? .now,
+            address: nil,
+            panNumber: nil,
+            aadhaarLast4: nil,
+            employmentType: nil,
+            monthlyIncome: nil,
+            kycStatus: .pending,
+            creditScore: nil
+        )
+        let base = OfficerApplication(
+            application: app,
+            borrower: borrower,
+            profile: profile,
+            employer: "—",
+            existingLiabilities: 0,
+            purpose: "—",
+            fraudFlag: false
+        )
+        return ManagerApplication(
+            base: base,
+            officerName: "",
+            recommendation: OfficerRecommendation.from(risk: base.riskLevel),
+            evaluationNote: ""
+        )
     }
 
     // MARK: Derived
@@ -148,13 +168,43 @@ final class ManagerStore {
         }
 
         if let environment {
-            Task {
-                try? await environment.loans.updateStatus(
-                    applicationID: updatedApp.id,
-                    to: action.resultStatus,
-                    note: remarks
-                )
+            let appID = updatedApp.id
+            switch action {
+            case .approve:
+                Task { try? await environment.loans.approveApplication(applicationID: appID, remark: remarks) }
+            case .reject:
+                Task { try? await environment.loans.rejectApplication(applicationID: appID, remark: remarks) }
+            case .sendBack:
+                // No manager-facing "send back" endpoint exists; this stays a local-only decision.
+                break
             }
+        }
+    }
+
+    // Disburse an approved application: creates the loan + EMI schedule on the backend.
+    func disburse(_ application: ManagerApplication) async throws {
+        guard let environment else { return }
+        try await environment.loans.disburseLoan(applicationID: application.id)
+        if let idx = applications.firstIndex(where: { $0.id == application.id }) {
+            let existing = applications[idx]
+            var updatedApp = existing.base.application
+            updatedApp.status = .disbursed
+            updatedApp.updatedAt = .now
+            let rebased = OfficerApplication(
+                application: updatedApp,
+                borrower: existing.base.borrower,
+                profile: existing.base.profile,
+                employer: existing.base.employer,
+                existingLiabilities: existing.base.existingLiabilities,
+                purpose: existing.base.purpose,
+                fraudFlag: existing.base.fraudFlag
+            )
+            applications[idx] = ManagerApplication(
+                base: rebased,
+                officerName: existing.officerName,
+                recommendation: existing.recommendation,
+                evaluationNote: existing.evaluationNote
+            )
         }
     }
 

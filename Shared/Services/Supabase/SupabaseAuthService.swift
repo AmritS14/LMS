@@ -61,19 +61,37 @@ actor SupabaseAuthService: AuthService {
         }
     }
     
+    private struct DBUserProfile: Decodable {
+        let id: UUID
+        let email: String?
+        let role: String
+        let full_name: String?
+        let phone: String?
+        let is_active: Bool?
+    }
+
+    private func mapRole(_ raw: String) -> UserRole {
+        switch raw.lowercased() {
+        case "loan_officer", "loanofficer": return .loanOfficer
+        case "manager": return .manager
+        case "admin": return .admin
+        default: return .borrower
+        }
+    }
+
     private func mapSupabaseUserToLocalUser(_ sbUser: Supabase.User) async throws -> User {
         var name = "Supabase User"
         var contactPhone = sbUser.phone ?? ""
-        
+
         let meta = sbUser.userMetadata
-        
+
         // Check full_name
         if case .string(let n) = meta["full_name"] {
             name = n
         } else if let n = meta["full_name"]?.value as? String {
             name = n // Fallback just in case AnyJSON exposes .value
         }
-        
+
         // Check contact_phone if native phone is empty
         if contactPhone.isEmpty {
             if case .string(let p) = meta["contact_phone"] {
@@ -82,14 +100,35 @@ actor SupabaseAuthService: AuthService {
                 contactPhone = p
             }
         }
-        
+
+        // The real role lives in public.users. RLS lets a user read their own row.
+        // Fall back to borrower if the profile row isn't available yet.
+        var role: UserRole = .borrower
+        var isActive = true
+        if let profile = try? await fetchUserProfile(id: sbUser.id) {
+            role = mapRole(profile.role)
+            if let n = profile.full_name, !n.isEmpty { name = n }
+            if let p = profile.phone, !p.isEmpty, contactPhone.isEmpty { contactPhone = p }
+            isActive = profile.is_active ?? true
+        }
+
         return User(
             id: sbUser.id,
             fullName: name,
             email: sbUser.email ?? "",
             phone: contactPhone,
-            role: .borrower, // Ideally we query public.users for the real role in the future
-            isActive: true
+            role: role,
+            isActive: isActive
         )
+    }
+
+    private func fetchUserProfile(id: UUID) async throws -> DBUserProfile {
+        let response = try await client
+            .from("users")
+            .select("id, email, role, full_name, phone, is_active")
+            .eq("id", value: id)
+            .single()
+            .execute()
+        return try SupabaseManager.shared.decoder.decode(DBUserProfile.self, from: response.data)
     }
 }

@@ -6,10 +6,10 @@ struct StaffApp: App {
 
     private let appEnvironment = AppEnvironment(
         auth: SupabaseAuthService(),
-        loans: MockLoanService(),
-        documents: MockDocumentService(),
+        loans: SupabaseLoanService(client: SupabaseManager.shared.client),
+        documents: SupabaseDocumentService(client: SupabaseManager.shared.client),
         notifications: MockNotificationService(),
-        messaging: MockMessagingService(),
+        messaging: SupabaseMessagingService(client: SupabaseManager.shared.client),
         keychain: MockKeychainService()
     )
 

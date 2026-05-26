@@ -5,4 +5,9 @@ protocol DocumentService: Sendable {
     func list(ownerID: UUID) async throws -> [LoanDocument]
     func delete(documentID: UUID) async throws
     func updateStatus(documentID: UUID, status: DocumentVerificationStatus) async throws
+
+    // Staff document review (routed through backend for audit trail)
+    func signedURL(documentID: UUID) async throws -> URL
+    func verifyDocument(documentID: UUID, remark: String?) async throws
+    func rejectDocument(documentID: UUID, reason: String) async throws
 }

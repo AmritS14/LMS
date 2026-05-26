@@ -31,6 +31,22 @@ actor MockDocumentService: DocumentService {
             documents[idx].status = status
         }
             }
+
+    func signedURL(documentID: UUID) async throws -> URL {
+        URL(string: "https://example.com/mock/\(documentID.uuidString)")!
+    }
+
+    func verifyDocument(documentID: UUID, remark: String?) async throws {
+        if let idx = documents.firstIndex(where: { $0.id == documentID }) {
+            documents[idx].status = .verified
+        }
+    }
+
+    func rejectDocument(documentID: UUID, reason: String) async throws {
+        if let idx = documents.firstIndex(where: { $0.id == documentID }) {
+            documents[idx].status = .rejected
+        }
+    }
 }
 
 // MARK: - MockMessagingService

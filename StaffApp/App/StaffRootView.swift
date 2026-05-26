@@ -15,7 +15,7 @@ struct StaffRootView: View {
                     .environment(officerStore)
                     .task {
                         if let appEnvironment {
-                            officerStore.configure(environment: appEnvironment)
+                            officerStore.configure(environment: appEnvironment, officerID: session.currentUser?.id)
                         }
                     }
             case .manager:

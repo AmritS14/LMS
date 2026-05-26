@@ -240,6 +240,21 @@ actor MockLoanService: LoanService {
             .sorted { $0.createdAt > $1.createdAt }
     }
 
+    func fetchApplications(statuses: [String]) async throws -> [LoanApplication] {
+        try await Task.sleep(for: .milliseconds(200))
+        let wanted = Set(statuses)
+        return applications.filter { app in
+            switch app.status {
+            case .escalated: return wanted.contains("manager_review")
+            case .underReview: return wanted.contains("under_review")
+            case .approved: return wanted.contains("approved")
+            case .rejected: return wanted.contains("rejected")
+            case .disbursed: return wanted.contains("disbursed")
+            default: return false
+            }
+        }
+    }
+
     func updateStatus(applicationID: UUID, to status: ApplicationStatus, note: String?) async throws {
         try await Task.sleep(for: .milliseconds(200))
                         guard let idx = applications.firstIndex(where: { $0.id == applicationID }) else { return }
@@ -308,6 +323,13 @@ actor MockLoanService: LoanService {
         try await Task.sleep(for: .milliseconds(200))
         guard let idx = applications.firstIndex(where: { $0.id == applicationID }) else { return }
         applications[idx].status = .rejected
+        applications[idx].updatedAt = .now
+    }
+
+    func disburseLoan(applicationID: UUID) async throws {
+        try await Task.sleep(for: .milliseconds(200))
+        guard let idx = applications.firstIndex(where: { $0.id == applicationID }) else { return }
+        applications[idx].status = .disbursed
         applications[idx].updatedAt = .now
     }
 

@@ -163,11 +163,68 @@ actor SupabaseDocumentService: DocumentService {
         let updateData: [String: AnyJSON] = [
             "status": .string(mapDBStatus(status))
         ]
-        
+
         _ = try await client
             .from("loan_documents")
             .update(updateData)
             .eq("id", value: documentID)
             .execute()
+    }
+
+    // MARK: - Staff document review (via backend)
+
+    func signedURL(documentID: UUID) async throws -> URL {
+        guard let session = try? await client.auth.session else {
+            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
+        }
+
+        let url = URL(string: "\(apiBase)/documents/\(documentID.uuidString)/url")!
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, httpResponse) = try await URLSession.shared.data(for: request)
+        if let httpRes = httpResponse as? HTTPURLResponse, !(200...299).contains(httpRes.statusCode) {
+            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: errorStr])
+        }
+
+        struct SignedURLResponse: Decodable {
+            let signedUrl: String?
+            let signedURL: String?
+        }
+        let decoded = try JSONDecoder().decode(SignedURLResponse.self, from: data)
+        guard let urlStr = decoded.signedUrl ?? decoded.signedURL, let signed = URL(string: urlStr) else {
+            throw NSError(domain: "API", code: 500, userInfo: [NSLocalizedDescriptionKey: "Missing signed URL in response"])
+        }
+        return signed
+    }
+
+    func verifyDocument(documentID: UUID, remark: String?) async throws {
+        var body: [String: Any]? = nil
+        if let remark { body = ["remark": remark] }
+        try await postDocumentAction(documentID: documentID, action: "verify", body: body)
+    }
+
+    func rejectDocument(documentID: UUID, reason: String) async throws {
+        try await postDocumentAction(documentID: documentID, action: "reject", body: ["reason": reason])
+    }
+
+    private func postDocumentAction(documentID: UUID, action: String, body: [String: Any]?) async throws {
+        guard let session = try? await client.auth.session else {
+            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
+        }
+
+        let url = URL(string: "\(apiBase)/documents/\(documentID.uuidString)/\(action)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body ?? [:])
+
+        let (data, httpResponse) = try await URLSession.shared.data(for: request)
+        if let httpRes = httpResponse as? HTTPURLResponse, !(200...299).contains(httpRes.statusCode) {
+            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: "\(action) failed: \(errorStr)"])
+        }
     }
 }

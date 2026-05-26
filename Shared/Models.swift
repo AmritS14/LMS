@@ -197,6 +197,11 @@ struct LoanApplication: Identifiable, Codable, Sendable, Hashable {
     var documentIDs: [UUID] = []
     var createdAt: Date = .now
     var updatedAt: Date = .now
+
+    // Optional enriched fields populated by the backend's joined responses.
+    var borrowerName: String? = nil
+    var borrowerEmail: String? = nil
+    var productName: String? = nil
 }
 
 struct ApplicationEvent: Identifiable, Codable, Sendable {

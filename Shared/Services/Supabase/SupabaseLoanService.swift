@@ -38,6 +38,23 @@ actor SupabaseLoanService: LoanService {
         let updated_at: Date
     }
     
+    private struct DBEnrichedApplication: Decodable {
+        struct NestedUser: Decodable { let id: UUID; let email: String?; let full_name: String? }
+        struct NestedProduct: Decodable { let id: UUID; let name: String? }
+        let id: UUID
+        let borrower_id: UUID
+        let assigned_officer_id: UUID?
+        let loan_product_id: UUID
+        let requested_amount: Decimal
+        let tenure_months: Int
+        let interest_rate: Double
+        let status: String
+        let created_at: Date
+        let updated_at: Date
+        let users: NestedUser?
+        let loan_products: NestedProduct?
+    }
+
     private struct DBLoan: Decodable {
         let id: UUID
         let application_id: UUID
@@ -139,8 +156,28 @@ actor SupabaseLoanService: LoanService {
         )
     }
 
+    private func toDomainEnriched(_ db: DBEnrichedApplication) -> LoanApplication {
+        let name = db.users?.full_name.flatMap { $0.isEmpty ? nil : $0 }
+        return LoanApplication(
+            id: db.id,
+            borrowerID: db.borrower_id,
+            assignedOfficerID: db.assigned_officer_id,
+            loanType: productCache[db.loan_product_id] ?? .personal,
+            requestedAmount: db.requested_amount,
+            tenureMonths: db.tenure_months,
+            interestRate: db.interest_rate,
+            status: mapAppStatus(db.status),
+            documentIDs: [],
+            createdAt: db.created_at,
+            updatedAt: db.updated_at,
+            borrowerName: name,
+            borrowerEmail: db.users?.email,
+            productName: db.loan_products?.name
+        )
+    }
+
     // MARK: - LoanService Protocol
-    
+
     func fetchLoanProducts() async throws -> [LoanProduct] {
         let response = try await client
             .from("loan_products")
@@ -202,16 +239,36 @@ actor SupabaseLoanService: LoanService {
     }
 
     func fetchAssignedApplications(officerID: UUID) async throws -> [LoanApplication] {
+        guard let session = try? await client.auth.session else {
+            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
+        }
+
+        let url = URL(string: "\(apiBase)/applications/assigned")!
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, httpResponse) = try await URLSession.shared.data(for: request)
+        if let httpRes = httpResponse as? HTTPURLResponse, !(200...299).contains(httpRes.statusCode) {
+            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: errorStr])
+        }
+
+        try await ensureProductCache()
+        let dbApps = try SupabaseManager.shared.decoder.decode([DBEnrichedApplication].self, from: data)
+        return dbApps.map(toDomainEnriched)
+    }
+
+    func fetchApplications(statuses: [String]) async throws -> [LoanApplication] {
         try await ensureProductCache()
         let response = try await client
             .from("loan_applications")
-            .select()
-            .eq("assigned_officer_id", value: officerID)
+            .select("id, borrower_id, assigned_officer_id, loan_product_id, requested_amount, tenure_months, interest_rate, status, created_at, updated_at, users:users!loan_applications_borrower_id_fkey(id, email, full_name), loan_products(id, name)")
+            .in("status", values: statuses)
             .order("created_at", ascending: false)
             .execute()
-            
-        let dbApps = try SupabaseManager.shared.decoder.decode([DBLoanApplication].self, from: response.data)
-        return dbApps.map(toDomainApplication)
+
+        let dbApps = try SupabaseManager.shared.decoder.decode([DBEnrichedApplication].self, from: response.data)
+        return dbApps.map(toDomainEnriched)
     }
 
     func updateStatus(applicationID: UUID, to status: ApplicationStatus, note: String?) async throws {
@@ -375,6 +432,25 @@ actor SupabaseLoanService: LoanService {
         var body: [String: Any]? = nil
         if let remark { body = ["remark": remark] }
         try await postWorkflowAction(applicationID: applicationID, action: "reject", body: body)
+    }
+
+    func disburseLoan(applicationID: UUID) async throws {
+        guard let session = try? await client.auth.session else {
+            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
+        }
+
+        let url = URL(string: "\(apiBase)/loans/applications/\(applicationID.uuidString)/disburse")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = "{}".data(using: .utf8)
+
+        let (data, httpResponse) = try await URLSession.shared.data(for: request)
+        if let httpRes = httpResponse as? HTTPURLResponse, !(200...299).contains(httpRes.statusCode) {
+            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: "Disbursement failed: \(errorStr)"])
+        }
     }
 
     func fetchApplicationDetails(applicationID: UUID) async throws -> LoanApplication {
