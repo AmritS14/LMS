@@ -110,9 +110,13 @@ struct LoanReviewView: View {
         
         .sheet(isPresented: $bindableViewModel.showEscalateSheet) {
             escalateSheetContent
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $bindableViewModel.showDocumentRequest) {
             requestDocumentSheetContent
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
         }
         .sheet(item: $selectedReviewDocument) { doc in
             DocumentReviewSheet(
@@ -120,6 +124,8 @@ struct LoanReviewView: View {
                 application: application,
                 document: doc
             )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
         .alert("Send Back for Revision", isPresented: $showSendBackAlert) {
             Button("Send Back") {

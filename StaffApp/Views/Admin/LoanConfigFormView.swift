@@ -54,12 +54,16 @@ struct LoanConfigFormView: View {
                         selectedProduct = nil
                     }
                 )
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
             }
         }
         .sheet(isPresented: $showAddLoanSheet) {
             AddLoanProductSheet(viewModel: viewModel) {
                 showAddLoanSheet = false
             }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
         .navigationTitle("Loan Configurations")
         .alert("Configuration Saved", isPresented: $viewModel.showSaveAlert) {

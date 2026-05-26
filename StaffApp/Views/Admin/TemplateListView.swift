@@ -60,6 +60,8 @@ struct TemplateListView: View {
             AddTemplateSheet(viewModel: viewModel) {
                 showAddTemplateSheet = false
             }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
     }
 }

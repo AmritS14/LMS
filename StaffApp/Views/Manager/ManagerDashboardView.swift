@@ -50,7 +50,11 @@ struct ManagerDashboardView: View {
                 .accessibilityLabel("Profile")
             }
         }
-        .sheet(isPresented: $showProfile) { StaffProfileView() }
+        .sheet(isPresented: $showProfile) {
+            StaffProfileView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
         .task { await store.refreshAll() }
     }
 

@@ -40,6 +40,8 @@ struct HomeDashboardView: View {
         .sheet(item: $emiToPay, content: paySheet)
         .sheet(isPresented: $showSupportSheet) {
             NavigationStack { BorrowerMessagingView() }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
         }
     }
 

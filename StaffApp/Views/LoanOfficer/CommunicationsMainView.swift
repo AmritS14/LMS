@@ -125,9 +125,10 @@ struct CommunicationsMainView: View {
         .navigationTitle("Communications")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $bindableViewModel.selectedConversation) { conversation in
-
             ChatView(conversation: conversation)
                 .environment(viewModel)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
         }
     }
 }

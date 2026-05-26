@@ -36,15 +36,21 @@ struct RootView: View {
 }
 
 struct BorrowerTabView: View {
+    @State private var selectedTab: Int = 0
+
     var body: some View {
-        TabView {
-            Tab("Home", systemImage: "house.fill") {
+        TabView(selection: $selectedTab) {
+            Tab("Home", systemImage: "house.fill", value: 0) {
                 NavigationStack { HomeDashboardView() }
             }
-            Tab("Apply", systemImage: "plus.circle.fill") {
-                NavigationStack { NewLoanApplicationView() }
+            Tab("Apply", systemImage: "plus.circle.fill", value: 1) {
+                NavigationStack {
+                    NewLoanApplicationView(onComplete: {
+                        withAnimation { selectedTab = 0 }
+                    })
+                }
             }
-            Tab("Messages", systemImage: "bubble.left.and.bubble.right.fill") {
+            Tab("Messages", systemImage: "bubble.left.and.bubble.right.fill", value: 2) {
                 NavigationStack { BorrowerMessagingView() }
             }
         }

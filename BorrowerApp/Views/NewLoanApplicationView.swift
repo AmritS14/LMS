@@ -7,6 +7,10 @@ struct NewLoanApplicationView: View {
     @Environment(\.appEnvironment) private var env
     @Environment(\.dismiss) private var dismiss
 
+    /// Called when the user completes (or skips) the application flow.
+    /// When embedded in a tab, this switches back to the Home tab.
+    var onComplete: (() -> Void)? = nil
+
     @State private var viewModel = LoanApplicationViewModel()
 
     // Flow state: form → submitted → upload docs → done
@@ -271,9 +275,19 @@ struct NewLoanApplicationView: View {
                 }
             }
             Spacer()
-            PrimaryButton("Done") { dismiss() }
-                .padding(.horizontal, Spacing.m)
-                .padding(.bottom, Spacing.m)
+            PrimaryButton("Done") {
+                if let onComplete {
+                    // Embedded in TabView — reset form, switch to Home tab
+                    viewModel = LoanApplicationViewModel()
+                    uploadedKinds = []
+                    flowStep = .form
+                    onComplete()
+                } else {
+                    dismiss()
+                }
+            }
+            .padding(.horizontal, Spacing.m)
+            .padding(.bottom, Spacing.m)
         }
     }
 
