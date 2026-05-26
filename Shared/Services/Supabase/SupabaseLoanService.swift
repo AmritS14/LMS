@@ -189,6 +189,34 @@ actor SupabaseLoanService: LoanService {
         return dbProducts.map(toDomainProduct)
     }
 
+    func createLoanProduct(_ product: LoanProduct) async throws -> LoanProduct {
+        // RLS: only the admin role may insert into loan_products.
+        let insertData: [String: AnyJSON] = [
+            "name": .string(product.name),
+            "description": product.description.map { AnyJSON.string($0) } ?? .null,
+            "minimum_amount": .double(NSDecimalNumber(decimal: product.minimumAmount).doubleValue),
+            "maximum_amount": .double(NSDecimalNumber(decimal: product.maximumAmount).doubleValue),
+            "minimum_tenure_months": .integer(product.minimumTenureMonths),
+            "maximum_tenure_months": .integer(product.maximumTenureMonths),
+            "minimum_interest_rate": .double(product.minimumInterestRate),
+            "maximum_interest_rate": .double(product.maximumInterestRate),
+            "is_active": .bool(product.isActive)
+        ]
+
+        let response = try await client
+            .from("loan_products")
+            .insert(insertData)
+            .select()
+            .single()
+            .execute()
+
+        let dbProduct = try SupabaseManager.shared.decoder.decode(DBLoanProduct.self, from: response.data)
+        let created = toDomainProduct(dbProduct)
+        // Refresh the product→type cache so new products map correctly.
+        productCache[created.id] = created.loanType
+        return created
+    }
+
     func createApplication(productID: UUID, requestedAmount: Decimal, tenureMonths: Int) async throws -> LoanApplication {
         guard let session = try? await client.auth.session else {
             throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "You must be logged in to apply"])

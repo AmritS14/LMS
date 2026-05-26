@@ -128,9 +128,23 @@ actor SupabaseDocumentService: DocumentService {
             .eq("owner_id", value: ownerID)
             .order("uploaded_at", ascending: false)
             .execute()
-            
+
         let dbDocs = try SupabaseManager.shared.decoder.decode([DBLoanDocument].self, from: response.data)
         return dbDocs.map(toDomainDocument)
+    }
+
+    func documents(forApplication applicationID: UUID) async throws -> [LoanDocument] {
+        // Join the application⇄document link table to the documents themselves.
+        // RLS lets the assigned officer / managing manager read these rows.
+        struct LinkRow: Decodable { let loan_documents: DBLoanDocument? }
+        let response = try await client
+            .from("loan_application_documents")
+            .select("loan_documents(*)")
+            .eq("application_id", value: applicationID)
+            .execute()
+
+        let rows = try SupabaseManager.shared.decoder.decode([LinkRow].self, from: response.data)
+        return rows.compactMap { $0.loan_documents }.map(toDomainDocument)
     }
     
     func delete(documentID: UUID) async throws {

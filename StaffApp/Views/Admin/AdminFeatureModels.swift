@@ -464,9 +464,48 @@ final class TemplateViewModel {
 final class LoanConfigViewModel {
     var productsByCategory: [LoanCategory: [AdminLoanProduct]] = AdminLoanProduct.sampleProducts
     var showSaveAlert: Bool = false
+    var isSaving: Bool = false
+
+    private var environment: AppEnvironment?
+
+    func configure(environment: AppEnvironment?) {
+        self.environment = environment
+    }
 
     var activeCategories: [LoanCategory] {
         LoanCategory.allCases.filter { !(productsByCategory[$0] ?? []).isEmpty }
+    }
+
+    /// Persists a new loan product to the backend (admin-only), then reflects it
+    /// locally. Throws on failure so the sheet can surface an error.
+    func createProduct(_ product: AdminLoanProduct, category: LoanCategory) async throws {
+        let maxMonths = product.tenureUnit == .years ? product.maxTenure * 12 : product.maxTenure
+        let minMonths = min(maxMonths, product.tenureUnit == .years ? 12 : 6)
+
+        let domain = LoanProduct(
+            name: product.name,
+            description: category.rawValue,
+            minimumAmount: Decimal(product.minAmount),
+            maximumAmount: Decimal(product.maxAmount),
+            minimumTenureMonths: minMonths,
+            maximumTenureMonths: maxMonths,
+            minimumInterestRate: product.interestRate,
+            maximumInterestRate: product.interestRate,
+            isActive: true
+        )
+
+        if let environment {
+            isSaving = true
+            defer { isSaving = false }
+            let created = try await environment.loans.createLoanProduct(domain)
+            // Reuse the backend ID locally so edits map back correctly.
+            var stored = product
+            stored.id = created.id
+            productsByCategory[category, default: []].append(stored)
+        } else {
+            // No backend (previews) — keep it local only.
+            productsByCategory[category, default: []].append(product)
+        }
     }
 
     func binding(for productID: UUID) -> Binding<AdminLoanProduct>? {

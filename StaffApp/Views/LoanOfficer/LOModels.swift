@@ -657,6 +657,8 @@ extension ApplicationStatus {
 
 struct LOLoanDocument: Identifiable, Hashable {
     let id = UUID()
+    /// Backend document UUID (nil for sample data). Used to verify/reject via the API.
+    var sourceDocumentID: UUID? = nil
 
     var name: String
     var type: String
@@ -664,7 +666,7 @@ struct LOLoanDocument: Identifiable, Hashable {
     var uploadDate: Date?
     var ocrVerified: Bool
     var icon: String
-    
+
     var reviewNotes: String? = nil
     var rejectionReason: String? = nil
 }

@@ -118,11 +118,13 @@ import Combine
                 officerID: officerID ?? MockOfficerData.officerUserID
             )
 
-            // Build real officer rows, hydrating each timeline from the events feed.
+            // Build real officer rows, hydrating each timeline from the events
+            // feed and the document vault from the application's linked uploads.
             var rows: [LOLoanApplication] = []
             for app in sharedApplications {
                 let events = (try? await environment.loans.fetchApplicationEvents(applicationID: app.id)) ?? []
-                rows.append(Self.makeOfficerApplication(from: app, events: events))
+                let docs = (try? await environment.documents.documents(forApplication: app.id)) ?? []
+                rows.append(Self.makeOfficerApplication(from: app, events: events, documents: docs))
             }
 
             recentApplications = rows
@@ -137,7 +139,8 @@ import Combine
 
     private static func makeOfficerApplication(
         from app: LoanApplication,
-        events: [ApplicationEvent]
+        events: [ApplicationEvent],
+        documents: [LoanDocument] = []
     ) -> LOLoanApplication {
         let name = app.borrowerName ?? "Borrower"
         let initials = name
@@ -148,6 +151,19 @@ import Combine
             .uppercased()
         let amount = NSDecimalNumber(decimal: app.requestedAmount).doubleValue
         let officerStatus = app.status.officerStatus
+
+        let loDocuments = documents.map(Self.makeOfficerDocument)
+        // Derive KYC status from the real document vault.
+        let kyc: LOKYCStatus
+        if loDocuments.isEmpty {
+            kyc = .pending
+        } else if loDocuments.allSatisfy({ $0.status == .verified }) {
+            kyc = .verified
+        } else if loDocuments.contains(where: { $0.status == .rejected }) {
+            kyc = .partial
+        } else {
+            kyc = .pending
+        }
 
         let timeline: [TimelineEvent] = events
             .sorted { $0.createdAt > $1.createdAt }
@@ -169,7 +185,7 @@ import Combine
             creditScore: 720,
             loanAmount: amount,
             riskLevel: .low,
-            kycStatus: .pending,
+            kycStatus: kyc,
             fraudFlag: false,
             status: officerStatus,
             applicationDate: app.createdAt,
@@ -186,8 +202,36 @@ import Combine
             email: app.borrowerEmail ?? "—",
             address: "—",
             purpose: "—",
-            documents: [],
+            documents: loDocuments,
             timeline: timeline
+        )
+    }
+
+    /// Maps a backend document to the officer's rich document model.
+    private static func makeOfficerDocument(_ doc: LoanDocument) -> LOLoanDocument {
+        let status: DocumentStatus
+        switch doc.status {
+        case .verified: status = .verified
+        case .rejected: status = .rejected
+        case .pending:  status = .needsReview
+        }
+        let (type, icon): (String, String)
+        switch doc.kind {
+        case .identityProof: (type, icon) = ("Identity Proof", "person.text.rectangle.fill")
+        case .addressProof:  (type, icon) = ("Address Proof", "house.fill")
+        case .incomeProof:   (type, icon) = ("Income Proof", "doc.text.fill")
+        case .bankStatement: (type, icon) = ("Bank Statement", "building.columns.fill")
+        case .collateral:    (type, icon) = ("Collateral", "shield.fill")
+        case .other:         (type, icon) = ("Document", "doc.fill")
+        }
+        return LOLoanDocument(
+            sourceDocumentID: doc.id,
+            name: doc.fileName,
+            type: type,
+            status: status,
+            uploadDate: doc.uploadedAt,
+            ocrVerified: doc.status == .verified,
+            icon: icon
         )
     }
 
@@ -632,6 +676,21 @@ import Combine
                     // Sync selected application
                     if selectedApplication?.id == app.id {
                         selectedApplication = recentApplications[appIdx]
+                    }
+                }
+
+                // Persist the decision to the backend (audited verify/reject).
+                if let sourceDocID = recentApplications[appIdx].documents[docIdx].sourceDocumentID,
+                   let environment {
+                    Task {
+                        switch status {
+                        case .verified:
+                            try? await environment.documents.verifyDocument(documentID: sourceDocID, remark: reviewNotes)
+                        case .rejected, .tampered, .missing:
+                            try? await environment.documents.rejectDocument(documentID: sourceDocID, reason: rejectionReason ?? reviewNotes ?? "Document rejected")
+                        default:
+                            break
+                        }
                     }
                 }
             }

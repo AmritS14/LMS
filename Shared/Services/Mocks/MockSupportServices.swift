@@ -22,6 +22,11 @@ actor MockDocumentService: DocumentService {
                         return documents.filter { $0.ownerID == ownerID }
     }
 
+    func documents(forApplication applicationID: UUID) async throws -> [LoanDocument] {
+        // Mock store isn't application-scoped; return everything for previews.
+        return documents
+    }
+
     func delete(documentID: UUID) async throws {
                 documents.removeAll { $0.id == documentID }
             }

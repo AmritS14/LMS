@@ -2,6 +2,8 @@ import Foundation
 
 protocol LoanService: Sendable {
     func fetchLoanProducts() async throws -> [LoanProduct]
+    /// Admin-only: create a new loan product. Requires the admin role server-side.
+    func createLoanProduct(_ product: LoanProduct) async throws -> LoanProduct
     func createApplication(productID: UUID, requestedAmount: Decimal, tenureMonths: Int) async throws -> LoanApplication
     func submitApplication(id: UUID) async throws -> LoanApplication
     func fetchApplications(for borrowerID: UUID) async throws -> [LoanApplication]

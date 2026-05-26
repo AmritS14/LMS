@@ -14,7 +14,8 @@ import SwiftUI
 /// with inline editing and a prominent Save button.
 struct LoanConfigFormView: View {
     @Bindable var viewModel: LoanConfigViewModel
-    
+    @Environment(\.appEnvironment) private var env
+
     @State private var showAddLoanSheet = false
     @State private var errorMessage: String? = nil
     @State private var selectedProduct: AdminLoanProduct? = nil
@@ -66,6 +67,7 @@ struct LoanConfigFormView: View {
             .presentationDragIndicator(.visible)
         }
         .navigationTitle("Loan Configurations")
+        .onAppear { viewModel.configure(environment: env) }
         .alert("Configuration Saved", isPresented: $viewModel.showSaveAlert) {
             Button("OK", role: .cancel) {}
         } message: {
