@@ -47,7 +47,7 @@ struct SystemSettingsView: View {
                     .textCase(nil)
             }
         }
-        .navigationTitle("Settings")
+        .navigationTitle("Configure")
         .background(AdminColor.background)
     }
 
