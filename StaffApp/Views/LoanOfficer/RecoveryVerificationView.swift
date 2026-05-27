@@ -139,55 +139,6 @@ extension RecoveryVerificationView {
 
                     Spacer()
                 }
-
-                HStack(spacing: 0) {
-
-                    efficiencyMiniStat(
-                        label: "Urgent",
-                        count: viewModel.overdueBorrowers.filter {
-                            $0.priority == .urgent
-                        }.count,
-                        color: .red
-                    )
-
-                    Divider()
-                        .frame(height: 28)
-
-                    efficiencyMiniStat(
-                        label: "High",
-                        count: viewModel.overdueBorrowers.filter {
-                            $0.priority == .high
-                        }.count,
-                        color: .orange
-                    )
-
-                    Divider()
-                        .frame(height: 28)
-
-                    efficiencyMiniStat(
-                        label: "Normal",
-                        count: viewModel.overdueBorrowers.filter {
-                            $0.priority == .normal
-                        }.count,
-                        color: .blue
-                    )
-
-                    Divider()
-                        .frame(height: 28)
-
-                    efficiencyMiniStat(
-                        label: "Low",
-                        count: viewModel.overdueBorrowers.filter {
-                            $0.priority == .low
-                        }.count,
-                        color: .green
-                    )
-                }
-                .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.tertiarySystemGroupedBackground))
-                )
             }
         }
     }
@@ -260,8 +211,7 @@ extension RecoveryVerificationView {
 
             LOSectionHeader(
                 title: "Overdue Borrowers",
-                subtitle: "\(viewModel.overdueBorrowers.count) accounts",
-                icon: "person.crop.circle.badge.exclamationmark.fill"
+                subtitle: "\(viewModel.overdueBorrowers.count) accounts"
             )
 
             ForEach(viewModel.overdueBorrowers) { borrower in
@@ -295,10 +245,6 @@ extension RecoveryVerificationView {
 
                         Text(borrower.borrowerName)
                             .font(.system(size: 15, weight: .semibold))
-
-                        Text(borrower.loanId)
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
                     }
 
                     Spacer()
@@ -399,7 +345,11 @@ extension RecoveryVerificationView {
                 value: "\(borrower.dpdDays) days",
                 valueColor: borrower.dpdDays > 30 ? .red : .orange
             )
-
+            LODetailRow(
+                icon: "person.text.rectangle",
+                title: "Loan Id",
+                value: "\(borrower.loanId)"
+            )
             HStack(spacing: 12) {
 
                 // MARK: Message Button

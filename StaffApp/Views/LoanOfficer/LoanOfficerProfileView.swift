@@ -27,11 +27,11 @@ struct LoanOfficerProfileView: View {
                 // Header Profile Info
                 ProfileHeaderView()
 
-                // KPI Performance Grid
-                PerformanceGridView()
-
                 // Collapsible Branch details
                 BranchDetailsSection(isExpanded: $isBranchExpanded)
+                
+                // KPI Performance Grid
+                PerformanceGridView()
 
                 // App settings & Preferences
                 SettingsSection(
@@ -172,15 +172,6 @@ struct PerformanceGridView: View {
                     subtitle: "Applications approved"
                 )
                 
-                // Approval Rate
-                MetricCard(
-                    title: "Approval Rate",
-                    value: String(format: "%.1f%%", viewModel.officerProfile.approvalRate),
-                    icon: "chart.line.uptrend.xyaxis",
-                    color: .blue,
-                    subtitle: "Industry avg: 65%"
-                )
-                
                 // Active Tasks
                 MetricCard(
                     title: "Pending Cases",
@@ -188,15 +179,6 @@ struct PerformanceGridView: View {
                     icon: "doc.plaintext.fill",
                     color: .orange,
                     subtitle: "Awaiting review"
-                )
-                
-                // Disbursed Volume
-                MetricCard(
-                    title: "Disbursed Value",
-                    value: "₹45.8 Cr",
-                    icon: "indianrupeesign.circle.fill",
-                    color: .purple,
-                    subtitle: "FY 2025-26"
                 )
             }
             .padding(.horizontal, 20)
@@ -306,7 +288,7 @@ struct BranchDetailsSection: View {
                 .background(Color(.secondarySystemGroupedBackground))
                 .cornerRadius(18)
                 .padding(.horizontal, 20)
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                
             }
         }
     }
