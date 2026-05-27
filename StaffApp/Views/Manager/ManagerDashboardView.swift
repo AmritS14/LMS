@@ -22,6 +22,7 @@ struct ManagerDashboardView: View {
                 .padding(.horizontal, Spacing.m)
 
                 branchPerformanceSection
+                recentActivitySection
                 smartInsightsSection
             }
             .padding(.vertical, Spacing.m)
@@ -209,6 +210,42 @@ struct ManagerDashboardView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(Spacing.m)
                 .background(Color.lmsBackground, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+            }
+        }
+        .padding(.horizontal, Spacing.m)
+    }
+
+    // MARK: Recent activity
+
+    @ViewBuilder
+    private var recentActivitySection: some View {
+        SectionCard(title: "Recent Activity") {
+            if store.recentActions.isEmpty {
+                Text("No decisions yet.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, Spacing.xs)
+            } else {
+                ForEach(store.recentActions.prefix(5)) { action in
+                    HStack(spacing: Spacing.sm) {
+                        Image(systemName: action.kind.rowIcon)
+                            .font(.title3)
+                            .foregroundStyle(action.kind.themeColor)
+                            .frame(width: 28)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("\(action.kind.verb) • \(action.name)")
+                                .font(.subheadline)
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                            Text("\(action.amount) • \(action.timeText)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.vertical, 2)
+                }
             }
         }
         .padding(.horizontal, Spacing.m)

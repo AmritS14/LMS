@@ -54,6 +54,7 @@ final class ManagerStore {
                 rows.append(Self.makeManagerApplication(from: app, documents: docs))
             }
             applications = rows
+            recentActions = Self.makeRecentActions(from: rows)
             recomputeMetrics(from: server)
         } catch {
             // Seed data already populates the UI; ignore transient failures.
@@ -95,6 +96,28 @@ final class ManagerStore {
         if hours >= 1 { return String(format: "%.0f hrs", hours) }
         let minutes = max(1, seconds / 60)
         return String(format: "%.0f min", minutes)
+    }
+
+    /// Builds the dashboard's recent-activity feed from the real application
+    /// set: any application that reached a decision (approved/disbursed/
+    /// rejected) or was sent back, most recent first.
+    private static func makeRecentActions(from apps: [ManagerApplication]) -> [ManagerRecentAction] {
+        apps.compactMap { app -> ManagerRecentAction? in
+            let kind: ApplicationActionType
+            switch app.status {
+            case .approved, .disbursed: kind = .approve
+            case .rejected:             kind = .reject
+            case .additionalInfoRequired: kind = .sendBack
+            default: return nil
+            }
+            return ManagerRecentAction(
+                kind: kind,
+                name: app.borrowerName,
+                amount: app.amountText,
+                date: app.base.application.updatedAt
+            )
+        }
+        .sorted { $0.date > $1.date }
     }
 
     private static func makeManagerApplication(from app: LoanApplication, documents: [LoanDocument] = []) -> ManagerApplication {
