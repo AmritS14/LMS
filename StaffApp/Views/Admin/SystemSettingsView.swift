@@ -22,6 +22,12 @@ struct SystemSettingsView: View {
                 } label: {
                     settingsRow(title: "Loan Configurations", subtitle: "Adjust products and repayment terms")
                 }
+
+                NavigationLink {
+                    EMISchedulerView()
+                } label: {
+                    settingsRow(title: "EMI Reminder Schedules", subtitle: "Manage timing and templates for reminders")
+                }
             } header: {
                 Text("Catalog")
                     .font(.lmsTitle3)

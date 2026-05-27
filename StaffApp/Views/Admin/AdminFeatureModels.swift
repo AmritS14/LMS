@@ -596,6 +596,7 @@ final class UserManagementViewModel {
     var successMessage: String = ""
     var isLoading: Bool = false
     var loadError: String?
+    var usersPendingReset: Set<UUID> = []
 
     private var environment: AppEnvironment?
 

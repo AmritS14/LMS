@@ -44,7 +44,11 @@ struct UserListView: View {
                         }
                         .opacity(0)
                         
-                        UserRowView(user: user, profile: viewModel.staffProfiles[user.id])
+                        UserRowView(
+                            user: user,
+                            profile: viewModel.staffProfiles[user.id],
+                            isResetPending: viewModel.usersPendingReset.contains(user.id)
+                        )
                     }
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)

@@ -12,6 +12,7 @@ import SwiftUI
 struct UserRowView: View {
     let user: User
     let profile: StaffProfile?
+    var isResetPending: Bool = false
 
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.m) {
@@ -32,6 +33,20 @@ struct UserRowView: View {
                     .font(.lmsCaption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+
+                if isResetPending {
+                    HStack(spacing: 4) {
+                        Image(systemName: "key.fill")
+                            .font(.system(size: 9))
+                        Text("Password Reset Pending")
+                            .font(.system(size: 9, weight: .semibold))
+                    }
+                    .foregroundStyle(.orange)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.orange.opacity(0.12), in: Capsule())
+                    .padding(.top, 2)
+                }
             }
             
             Spacer()
@@ -83,6 +98,12 @@ struct UserDetailsView: View {
     let user: User
 
     @State private var showDeleteConfirmation = false
+    @State private var showResetConfirmation = false
+    @State private var isResetting = false
+    @State private var generatedPassword: String? = nil
+    @State private var showResetSuccessSheet = false
+    @State private var showResetFailureAlert = false
+    @State private var resetAttempts = 0
 
     private var currentUser: User {
         viewModel.users.first { $0.id == user.id } ?? user
@@ -136,6 +157,49 @@ struct UserDetailsView: View {
             }
             Button("Cancel", role: .cancel) {}
         }
+        .alert("Reset Password?", isPresented: $showResetConfirmation) {
+            Button("Reset", role: .destructive) {
+                resetPassword()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Confirm Account to Reset:\n\nName: \(currentUser.fullName)\nRole: \(currentUser.role.displayName)\nStatus: \(currentUser.isActive ? "Active" : "Inactive")\n\nGenerate temporary password?")
+        }
+        .alert("Could not reset password", isPresented: $showResetFailureAlert) {
+            Button("Retry") {
+                resetPassword()
+            }
+            Button("Cancel", role: .cancel) {
+                resetAttempts = 0
+            }
+        } message: {
+            Text("A network connection problem was detected. Please check your credentials and try again.")
+        }
+        .sheet(isPresented: $showResetSuccessSheet) {
+            if let tempPassword = generatedPassword {
+                PasswordResetSuccessSheet(temporaryPassword: tempPassword, userName: currentUser.fullName)
+            }
+        }
+    }
+
+    private func resetPassword() {
+        isResetting = true
+        
+        Task {
+            try? await Task.sleep(for: .seconds(1.2))
+            
+            await MainActor.run {
+                isResetting = false
+                if resetAttempts == 0 {
+                    resetAttempts += 1
+                    showResetFailureAlert = true
+                } else {
+                    generatedPassword = "LMS-Temp-\(Int.random(in: 100000...999999))"
+                    viewModel.usersPendingReset.insert(currentUser.id)
+                    showResetSuccessSheet = true
+                }
+            }
+        }
     }
 
     // MARK: - Shared Manage Account Section
@@ -172,6 +236,31 @@ struct UserDetailsView: View {
                 }
                 .pickerStyle(.menu)
                 .tint(.blue)
+            }
+            
+            HStack {
+                Text("Reset Password")
+                Spacer()
+                if isResetting {
+                    ProgressView()
+                } else {
+                    Button(viewModel.usersPendingReset.contains(currentUser.id) ? "Reset Again" : "Reset") {
+                        showResetConfirmation = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.orange)
+                    .disabled(isResetting)
+                }
+            }
+
+            if viewModel.usersPendingReset.contains(currentUser.id) {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                    Text("Password Reset Pending (Next login reset required)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             
             Button(role: .destructive) {
@@ -435,5 +524,97 @@ struct NavigationKeyValueRow: View {
                     .foregroundStyle(AdminColor.accent)
             }
         }
+    }
+}
+
+// MARK: - Password Reset Success Sheet
+struct PasswordResetSuccessSheet: View {
+    let temporaryPassword: String
+    let userName: String
+    @Environment(\.dismiss) private var dismiss
+    @State private var isCopied = false
+
+    var body: some View {
+        VStack(spacing: 24) {
+            Image(systemName: "key.fill")
+                .font(.system(size: 64))
+                .foregroundStyle(.orange)
+                .padding(.top, 36)
+
+            Text("Password Generated")
+                .font(.title2)
+                .fontWeight(.bold)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Temporary password for \(userName):")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                HStack {
+                    Text(temporaryPassword)
+                        .font(.system(.title3, design: .monospaced))
+                        .fontWeight(.bold)
+                        .foregroundStyle(.primary)
+
+                    Spacer()
+
+                    Button {
+                        UIPasteboard.general.string = temporaryPassword
+                        withAnimation {
+                            isCopied = true
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            isCopied = false
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: isCopied ? "checkmark" : "doc.on.doc.fill")
+                            Text(isCopied ? "Copied" : "Copy")
+                        }
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(isCopied ? .green : .blue)
+                }
+                .padding()
+                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))
+            }
+            .padding(.horizontal)
+
+            VStack(spacing: 8) {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                    Text("Password Reset Pending")
+                        .font(.headline)
+                        .foregroundStyle(.orange)
+                }
+
+                Text("Password change required at next login.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding()
+            .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+            .padding(.horizontal)
+
+            Spacer()
+
+            Button {
+                dismiss()
+            } label: {
+                Text("Done")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.horizontal)
+            .padding(.bottom, 24)
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
     }
 }
