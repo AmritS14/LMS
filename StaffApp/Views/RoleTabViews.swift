@@ -119,11 +119,11 @@ struct AdminTabView: View {
                     )
                 }
             }
-//            Tab("Audit", systemImage: "list.clipboard") {
-//                NavigationStack {
-//                    AuditTrailView()
-//                }
-//            }
+            Tab("Audit", systemImage: "list.clipboard") {
+                NavigationStack {
+                    AuditTrailView()
+                }
+            }
         }
     }
 }
