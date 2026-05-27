@@ -163,31 +163,25 @@ struct ManagerDashboardView: View {
     // MARK: Smart insight
 
     private var smartInsightsSection: some View {
-        NavigationLink(value: ManagerRoute.applications) {
-            HStack(spacing: Spacing.m) {
-                Image(systemName: "lightbulb.fill")
-                    .font(.title3)
-                    .foregroundStyle(Color.lmsWarning)
-                    .frame(width: 40, height: 40)
-                    .background(Color.lmsWarning.opacity(0.15), in: Circle())
+        HStack(spacing: Spacing.m) {
+            Image(systemName: "lightbulb.fill")
+                .font(.title3)
+                .foregroundStyle(Color.lmsWarning)
+                .frame(width: 40, height: 40)
+                .background(Color.lmsWarning.opacity(0.15), in: Circle())
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Approval rate increased 2.5% this week")
-                        .font(.subheadline)
-                        .foregroundStyle(.primary)
-                    Text("\(store.highRiskCount) applications need urgent review")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Approval rate increased 2.5% this week")
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                Text("\(store.highRiskCount) applications need urgent review")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            .padding(Spacing.m)
-            .background(Color.lmsWarning.opacity(0.08), in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
+            Spacer()
         }
-        .buttonStyle(ScaleButtonStyle())
+        .padding(Spacing.m)
+        .background(Color.lmsWarning.opacity(0.08), in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
         .padding(.horizontal, Spacing.m)
     }
 }
