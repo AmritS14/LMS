@@ -130,10 +130,6 @@ struct NewLoanApplicationView: View {
 
                 // Document rows
                 VStack(spacing: 0) {
-                    docUploadRow(kind: .identityProof, title: "ID Proof", icon: "person.text.rectangle.fill", iconColor: .blue)
-                    Divider().padding(.leading, 56)
-                    docUploadRow(kind: .addressProof, title: "Address Proof", icon: "house.fill", iconColor: .teal)
-                    Divider().padding(.leading, 56)
                     docUploadRow(kind: .incomeProof, title: "Salary Slips", icon: "doc.text.fill", iconColor: .orange)
                     Divider().padding(.leading, 56)
                     docUploadRow(kind: .bankStatement, title: "Bank Statement", icon: "building.columns.fill", iconColor: .indigo)

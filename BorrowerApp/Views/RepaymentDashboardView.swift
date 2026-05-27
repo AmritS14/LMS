@@ -9,36 +9,37 @@ struct RepaymentDashboardView: View {
     @State private var emiToPay: EMI?
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: Spacing.xl) {
-                if viewModel.isLoading {
-                    ProgressView()
-                        .padding(.top, 40)
-                } else if let error = viewModel.errorMessage {
-                    Label(error, systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(Color.lmsDanger)
-                        .padding(.top, 40)
-                } else if let activeLoan = viewModel.activeLoan {
-                    
-                    // Next Payment Card
-                    if activeLoan.status == .active {
+        List {
+            if viewModel.isLoading {
+                HStack { Spacer(); ProgressView(); Spacer() }
+                    .listRowBackground(Color.clear)
+            } else if let error = viewModel.errorMessage {
+                Label(error, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(Color.lmsDanger)
+            } else if let activeLoan = viewModel.activeLoan {
+                
+                // Next Payment Card
+                if activeLoan.status == .active {
+                    Section {
                         nextPaymentCard(for: activeLoan)
                     }
-                    
-                    // Loan Details Card
-                    loanDetailsSection(for: activeLoan)
-                    
-                } else {
-                    ContentUnavailableView(
-                        "No Loan Data",
-                        systemImage: "doc.text",
-                        description: Text("Loan information is not available.")
-                    )
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
                 }
+                
+                // Loan Details Card
+                loanDetailsSection(for: activeLoan)
+                
+            } else {
+                ContentUnavailableView(
+                    "No Loan Data",
+                    systemImage: "doc.text",
+                    description: Text("Loan information is not available.")
+                )
+                .listRowBackground(Color.clear)
             }
-            .padding(.vertical, Spacing.m)
         }
-        .background(Color.lmsBackground.ignoresSafeArea())
+        .listStyle(.insetGrouped)
         .navigationTitle(loan?.status == .settled ? "Loan History" : "Repayments")
         .navigationBarTitleDisplayMode(.large)
         .task {
@@ -108,63 +109,26 @@ struct RepaymentDashboardView: View {
         .frame(maxWidth: .infinity)
         .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .shadow(color: .black.opacity(0.04), radius: 10, y: 4)
-        .padding(.horizontal, Spacing.m)
     }
 
     // MARK: - Loan Details Section
+    @ViewBuilder
     private func loanDetailsSection(for activeLoan: Loan) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.s) {
-            Text("LOAN DETAILS")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, Spacing.m)
+        Section(header: Text("LOAN DETAILS")) {
+            LabeledContent("Principal", value: Formatting.currency(activeLoan.principal))
+            LabeledContent("Outstanding", value: Formatting.currency(activeLoan.outstandingBalance))
+            LabeledContent("Disbursed on", value: Formatting.date(activeLoan.disbursementDate))
+            LabeledContent("Status", value: activeLoan.status.rawValue.capitalized)
             
-            VStack(spacing: 0) {
-                detailRow(title: "Principal", value: Formatting.currency(activeLoan.principal))
-                detailRow(title: "Outstanding", value: Formatting.currency(activeLoan.outstandingBalance))
-                detailRow(title: "Disbursed on", value: Formatting.date(activeLoan.disbursementDate))
-                detailRow(title: "Status", value: activeLoan.status.rawValue.capitalized)
-                
-                let remaining = viewModel.emiSchedule.filter { $0.status != .paid }.count
-                detailRow(title: "Remaining EMIs", value: "\(remaining)")
-                
-                Divider()
-                    .padding(.vertical, Spacing.m)
-                
-                NavigationLink(destination: FullScheduleView(emiSchedule: viewModel.emiSchedule, onPayEMI: { emi in
-                    emiToPay = emi
-                })) {
-                    HStack {
-                        Text("View Full Schedule")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.primary)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(PlainButtonStyle())
+            let remaining = viewModel.emiSchedule.filter { $0.status != .paid }.count
+            LabeledContent("Remaining EMIs", value: "\(remaining)")
+            
+            NavigationLink(destination: FullScheduleView(emiSchedule: viewModel.emiSchedule, onPayEMI: { emi in
+                emiToPay = emi
+            })) {
+                Text("View Full Schedule")
             }
-            .padding(Spacing.m)
-            .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .shadow(color: .black.opacity(0.04), radius: 10, y: 4)
-            .padding(.horizontal, Spacing.m)
         }
-    }
-    
-    private func detailRow(title: String, value: String) -> some View {
-        HStack {
-            Text(title)
-                .font(.subheadline)
-                .foregroundColor(.primary)
-            Spacer()
-            Text(value)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.bottom, Spacing.m)
     }
 }
 
