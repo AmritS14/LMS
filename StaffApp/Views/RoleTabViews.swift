@@ -82,7 +82,7 @@ struct ManagerTabView: View {
 //            }
             Tab("Reports", systemImage: "doc.text.magnifyingglass") { ReportsView() }
             Tab("Profile", systemImage: "person.crop.circle") {
-                NavigationStack { StaffProfileView() }
+                NavigationStack { ManagerProfileView() }
             }
         }
     }

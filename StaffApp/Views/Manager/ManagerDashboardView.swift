@@ -9,7 +9,6 @@ struct ManagerDashboardView: View {
             VStack(spacing: Spacing.l) {
                 subtitleRow
                 priorityActionsSection
-                todaySummarySection
 
                 NavigationLink(value: ManagerRoute.applications) {
                     Text("Review Applications")
@@ -43,12 +42,7 @@ struct ManagerDashboardView: View {
                 .badge(store.unreadNotificationCount)
                 .accessibilityLabel("Notifications")
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { showProfile = true } label: {
-                    Image(systemName: "person.crop.circle").font(.title3)
-                }
-                .accessibilityLabel("Profile")
-            }
+
         }
         .sheet(isPresented: $showProfile) { StaffProfileView() }
         .task { await store.refreshAll() }
@@ -127,52 +121,8 @@ struct ManagerDashboardView: View {
             }
             .background(Color.lmsSurface)
             .clipShape(.rect(cornerRadius: CornerRadius.medium))
-            .frame(height: 210)
+            .frame(height: 170)
             .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(ScaleButtonStyle())
-    }
-
-    // MARK: Today's summary
-
-    private var todaySummarySection: some View {
-        VStack(alignment: .leading, spacing: Spacing.s) {
-            Text("Today's Summary")
-                .font(.lmsTitle3)
-                .padding(.horizontal, Spacing.m)
-
-            HStack(spacing: Spacing.m) {
-                summaryCard(count: store.approvedToday, title: "Approved Today",
-                            accent: .lmsSuccess)
-                summaryCard(count: store.rejectedToday, title: "Rejected Today",
-                            accent: .lmsDanger)
-            }
-            .padding(.horizontal, Spacing.m)
-        }
-    }
-
-    private func summaryCard(count: Int, title: String, accent: Color) -> some View {
-        NavigationLink(value: ManagerRoute.applications) {
-            VStack(alignment: .leading, spacing: Spacing.s) {
-                HStack {
-                    Spacer()
-                    
-                    Circle()
-                        .fill(accent.opacity(0.15))
-                        .frame(width: 36, height: 36)
-                        .overlay(Circle().fill(accent).frame(width: 10, height: 10))
-                }
-
-                Text("\(count)")
-                    .font(.system(.title, design: .rounded).weight(.bold))
-                    .foregroundStyle(.primary)
-                Text(title)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(Spacing.m)
-            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
         }
         .buttonStyle(ScaleButtonStyle())
     }
