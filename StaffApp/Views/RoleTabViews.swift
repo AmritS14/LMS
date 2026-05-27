@@ -96,7 +96,7 @@ struct AdminTabView: View {
 
     var body: some View {
         TabView {
-            Tab("Dashboard", systemImage: "rectangle.grid.2x2.fill") {
+            Tab("Overview", systemImage: "rectangle.grid.2x2.fill") {
                 NavigationStack {
                     AdminDashboardView(viewModel: dashboardViewModel, userVM: userManagementViewModel)
                 }
@@ -106,7 +106,7 @@ struct AdminTabView: View {
                     UserListView(viewModel: userManagementViewModel)
                 }
             }
-            Tab("Settings", systemImage: "gearshape.2") {
+            Tab("Configure", systemImage: "command.circle") {
                 NavigationStack {
                     SystemSettingsView(
                         templateViewModel: templateViewModel,

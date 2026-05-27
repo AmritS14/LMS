@@ -50,7 +50,7 @@ struct AdminDashboardView: View {
             recentApplicationsList
         }
         .listStyle(.insetGrouped)
-        .navigationTitle("Dashboard")
+        .navigationTitle("Overview")
         .navigationDestination(isPresented: $showDetails) {
             DistributionDetailsView(viewModel: viewModel, userVM: userVM)
         }
