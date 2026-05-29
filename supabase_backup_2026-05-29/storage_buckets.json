@@ -1,0 +1,11 @@
+[
+  {
+    "id": "loan_documents",
+    "name": "loan_documents",
+    "public": false,
+    "file_size_limit": 10485760,
+    "allowed_mime_types": ["application/pdf", "image/jpeg", "image/png"],
+    "created_at": "2026-05-20T10:13:41.343695+00:00",
+    "updated_at": "2026-05-20T10:13:41.343695+00:00"
+  }
+]

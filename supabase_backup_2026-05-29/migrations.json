@@ -1,0 +1,23 @@
+[
+  {
+    "version": "20260526090420",
+    "name": "grant_admin_loan_product_writes",
+    "statements": [
+      "-- Allow the `authenticated` role to write loan_products at the table level.\n-- Row-level security still restricts these operations to admins via the\n-- existing \"Admins manage loan products\" policy (has_role('admin')).\ngrant insert, update, delete on public.loan_products to authenticated;"
+    ]
+  },
+  {
+    "version": "20260526184756",
+    "name": "admin_update_users_policy",
+    "statements": [
+      "create policy \"Admins update users\"\non public.users\nfor update\nto public\nusing (public.has_role('admin'::user_role))\nwith check (public.has_role('admin'::user_role));"
+    ]
+  },
+  {
+    "version": "20260526185934",
+    "name": "grant_update_users_to_authenticated",
+    "statements": [
+      "grant update on public.users to authenticated;"
+    ]
+  }
+]
