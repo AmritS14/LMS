@@ -163,7 +163,40 @@ final class ManagerStore {
         riskAlerts.filter { !$0.isRead }.count
     }
 
+    // MARK: Derived — Reports
+
+    var reportsStorageSizeString: String {
+        var totalBytes: Double = 0
+        for report in reportHistory {
+            guard report.status == .completed else { continue }
+            let parts = report.size.split(separator: " ")
+            if parts.count == 2, let val = Double(parts[0]) {
+                let unit = parts[1].uppercased()
+                if unit == "MB" {
+                    totalBytes += val * 1024 * 1024
+                } else if unit == "KB" {
+                    totalBytes += val * 1024
+                } else if unit == "GB" {
+                    totalBytes += val * 1024 * 1024 * 1024
+                } else {
+                    totalBytes += val
+                }
+            }
+        }
+        if totalBytes == 0 {
+            return "0 KB"
+        }
+        if totalBytes >= 1024 * 1024 * 1024 {
+            return String(format: "%.1f GB", totalBytes / (1024 * 1024 * 1024))
+        } else if totalBytes >= 1024 * 1024 {
+            return String(format: "%.1f MB", totalBytes / (1024 * 1024))
+        } else {
+            return String(format: "%.0f KB", totalBytes / 1024)
+        }
+    }
+
     // MARK: Mutations — Decisions
+
 
     func decide(_ action: ApplicationActionType, on application: ManagerApplication, remarks: String?) {
         guard let idx = applications.firstIndex(where: { $0.id == application.id }) else { return }
@@ -273,6 +306,13 @@ final class ManagerStore {
 
     func deleteReport(_ report: ReportItem) {
         reportHistory.removeAll { $0.id == report.id }
+    }
+
+    func clearOldReports() {
+        // Clear reports older than 24 hours to simulate removing old history.
+        reportHistory.removeAll { report in
+            report.generatedAt < Date.now.addingTimeInterval(-60 * 60 * 24)
+        }
     }
 
     // MARK: Mutations — Risk Alerts

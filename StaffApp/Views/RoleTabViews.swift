@@ -70,11 +70,11 @@ struct OfficerNavigationStack<Root: View>: View {
 struct ManagerTabView: View {
     var body: some View {
         TabView {
-            Tab("Applications", systemImage: "doc.text") {
-                ManagerNavigationStack { ManagerApplicationsTabView() }
-            }
-            Tab("Portfolio", systemImage: "chart.pie") {
+            Tab("Dashboard", systemImage: "rectangle.grid.2x2.fill") {
                 ManagerNavigationStack { ManagerPortfolioView() }
+            }
+            Tab("Applications", systemImage: "doc.text") {
+                ManagerNavigationStack { ManagerApplicationsView() }
             }
             Tab("Reports", systemImage: "doc.text.magnifyingglass") {
                 ManagerNavigationStack { ManagerReportsView() }

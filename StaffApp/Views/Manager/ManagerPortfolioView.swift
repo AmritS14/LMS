@@ -9,27 +9,29 @@ struct ManagerPortfolioView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: Spacing.l) {
+                greetingSection
                 summaryCardsSection
                 portfolioHealthSection
                 loanCategoriesSection
+                officerPerformanceSection
+                branchPerformanceSection
                 collectionSection
                 npaSection
-                branchPerformanceSection
             }
             .padding(.vertical, Spacing.m)
         }
         .background(Color.lmsBackground)
-        .navigationTitle("Portfolio")
+        .navigationTitle("Dashboard")
         .toolbarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showFilters = true
-                } label: {
-                    Image(systemName: "line.3.horizontal.decrease.circle")
-                        .font(.title3)
-                }
-                .accessibilityLabel("Filters")
+                    Button {
+                        showFilters = true
+                    } label: {
+                        Image(systemName: "line.3.horizontal.decrease.circle")
+                            .font(.title3)
+                    }
+                    .accessibilityLabel("Filters")
             }
         }
         .sheet(isPresented: $showFilters) {
@@ -298,6 +300,75 @@ struct ManagerPortfolioView: View {
                 .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
                 .padding(.horizontal, Spacing.m)
             }
+        }
+    }
+
+    // MARK: Greeting
+
+    private var greetingSection: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(store.greetingDateText)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text("Branch: \(store.branchName)")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, Spacing.m)
+    }
+
+    // MARK: Officer Performance
+
+    private var officerPerformanceSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.s) {
+            SectionHeader(title: "Officer Performance",
+                          actionTitle: "See All") {
+                // "See All" navigates to the full list
+            }
+            .padding(.horizontal, Spacing.m)
+
+            VStack(spacing: 0) {
+                ForEach(store.officerPerformance.prefix(3)) { officer in
+                    NavigationLink(value: ManagerRoute.officerDetail(officer.name)) {
+                        HStack(spacing: Spacing.sm) {
+                            AvatarView(initials: officer.initials, size: 40)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(officer.name)
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(.primary)
+                            }
+
+                            Spacer()
+
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text(officer.avgDecisionTime)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                                Text("Avg time")
+                                    .font(.caption2)
+                                    .foregroundStyle(.tertiary)
+                            }
+
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding(.vertical, Spacing.s)
+                    }
+                    .buttonStyle(.plain)
+
+                    if officer.id != store.officerPerformance.prefix(3).last?.id {
+                        Divider().padding(.leading, 56 + Spacing.m)
+                    }
+                }
+            }
+            .padding(.vertical, Spacing.xs)
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+            .padding(.horizontal, Spacing.m)
         }
     }
 

@@ -54,34 +54,6 @@ struct ManagerProfileView: View {
                 LabeledContent("Region", value: "South India")
             }
 
-            // MARK: Approval Limit
-
-            Section("Approval Limit") {
-                HStack {
-                    Label("Maximum Authority", systemImage: "checkmark.seal")
-                    Spacer()
-                    Text(Formatting.currency(5_000_000))
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.lmsAccent)
-                }
-
-                HStack {
-                    Label("Single Approval Limit", systemImage: "person.badge.shield.checkmark")
-                    Spacer()
-                    Text(Formatting.currency(2_500_000))
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
-                }
-
-                HStack {
-                    Label("Committee Required Above", systemImage: "person.3")
-                    Spacer()
-                    Text(Formatting.currency(5_000_000))
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
-                }
-            }
-
             // MARK: Notification Preferences
 
             Section("Notification Preferences") {
@@ -122,25 +94,8 @@ struct ManagerProfileView: View {
                 }
             }
 
-            // MARK: Administration
 
-            Section("Administration") {
-                NavigationLink(value: ManagerRoute.officerPerformance) {
-                    Label("Officer Performance", systemImage: "person.3")
-                }
-                
-                NavigationLink(value: ManagerRoute.riskAlerts) {
-                    Label("Risk Alerts", systemImage: "exclamationmark.shield")
-                }
-                
-                NavigationLink(value: ManagerRoute.auditLogs) {
-                    Label("Audit Logs", systemImage: "list.clipboard")
-                }
-                
-                NavigationLink(value: ManagerRoute.loanPolicies) {
-                    Label("Loan Policies", systemImage: "gearshape.2")
-                }
-            }
+
 
             // MARK: Help
 

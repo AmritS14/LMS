@@ -8,6 +8,8 @@ struct ManagerReportsView: View {
     @State private var pendingReportType: ReportKind?
     @State private var selectedFormat: ReportFormat = .pdf
     @State private var previewReport: ReportItem?
+    @State private var showClearConfirmation = false
+
 
     var body: some View {
         List {
@@ -60,15 +62,12 @@ struct ManagerReportsView: View {
                 HStack {
                     Label("Reports Storage", systemImage: "internaldrive")
                     Spacer()
-                    Text("12.4 MB")
+                    Text(store.reportsStorageSizeString)
                         .foregroundStyle(.secondary)
                 }
 
                 Button(role: .destructive) {
-                    // Clear old reports
-                    store.reportHistory.removeAll { report in
-                        report.generatedAt < Date.now.addingTimeInterval(-60 * 60 * 24 * 90)
-                    }
+                    showClearConfirmation = true
                 } label: {
                     Label("Clear Old Exports", systemImage: "trash")
                 }
@@ -90,6 +89,13 @@ struct ManagerReportsView: View {
                 if let type = pendingReportType {
                     store.generateReport(type: type, format: .csv)
                 }
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+        .confirmationDialog("Are you sure you want to clear old exports?", isPresented: $showClearConfirmation,
+                            titleVisibility: .visible) {
+            Button("Clear Old Exports", role: .destructive) {
+                store.clearOldReports()
             }
             Button("Cancel", role: .cancel) {}
         }
@@ -243,18 +249,14 @@ struct ManagerReportsView: View {
                 }
             }
             .safeAreaInset(edge: .bottom) {
-                HStack(spacing: Spacing.m) {
-                    shareButtonLarge(report)
-
+                VStack(spacing: 0) {
                     Button {
                         previewReport = nil
                     } label: {
                         Text("Done")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity, minHeight: 28)
+                            .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
-                    .buttonBorderShape(.roundedRectangle(radius: CornerRadius.button))
                     .controlSize(.large)
                 }
                 .padding(Spacing.m)

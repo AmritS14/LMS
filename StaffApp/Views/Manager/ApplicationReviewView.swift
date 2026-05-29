@@ -326,25 +326,23 @@ struct ApplicationReviewView: View {
                     Label("Reject", systemImage: "slash.circle").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
-                .tint(.lmsDanger)
+                .tint(.red)
 
                 Button { activeSheet = .sendBack } label: {
                     Label("Send Back", systemImage: "arrow.uturn.backward").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
-                .tint(.lmsWarning)
+                .tint(.orange)
             }
             .controlSize(.large)
 
             Button { activeSheet = .approve } label: {
                 Label("Approve", systemImage: "checkmark.seal.fill")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity, minHeight: 28)
+                    .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .buttonBorderShape(.roundedRectangle(radius: CornerRadius.button))
             .controlSize(.large)
-            .tint(.lmsSuccess)
+            .tint(.green)
         }
         .padding(Spacing.m)
         .background(.bar)
