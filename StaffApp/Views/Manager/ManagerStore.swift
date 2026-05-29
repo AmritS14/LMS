@@ -9,7 +9,7 @@ import SwiftUI
 @MainActor
 @Observable
 final class ManagerStore {
-    // MARK: State
+    // MARK: State — Applications
 
     var managerProfile: OfficerProfileSummary = MockManagerData.managerProfile
     var branchName: String = MockManagerData.branchName
@@ -25,6 +25,38 @@ final class ManagerStore {
 
     var selectedApplicationID: UUID?
 
+    // MARK: State — Portfolio
+
+    var portfolioSummary: PortfolioSummaryData = MockManagerData.portfolioSummary()
+    var loanCategories: [LoanCategoryBreakdown] = MockManagerData.loanCategories()
+    var branchPerformanceItems: [BranchPerformanceItem] = MockManagerData.branchPerformance()
+
+    // Portfolio filters
+    var selectedBranch: String? = nil
+    var selectedRegion: String? = nil
+    var selectedLoanTypeFilter: LoanType? = nil
+    var selectedRiskFilter: String? = nil
+
+    // MARK: State — Officers
+
+    var officerPerformance: [OfficerPerformanceData] = []
+
+    // MARK: State — Audit
+
+    var auditLogs: [ManagerAuditLogEntry] = []
+
+    // MARK: State — Reports
+
+    var reportHistory: [ReportItem] = []
+
+    // MARK: State — Risk Alerts
+
+    var riskAlerts: [RiskAlert] = []
+
+    // MARK: State — Loan Policies
+
+    var loanPolicies: [LoanPolicyConfig] = []
+
     private var environment: AppEnvironment?
 
     // MARK: Bootstrap
@@ -39,6 +71,21 @@ final class ManagerStore {
         }
         if notifications.isEmpty {
             notifications = MockManagerData.notifications()
+        }
+        if officerPerformance.isEmpty {
+            officerPerformance = MockManagerData.officerPerformance()
+        }
+        if auditLogs.isEmpty {
+            auditLogs = MockManagerData.auditLogs()
+        }
+        if reportHistory.isEmpty {
+            reportHistory = MockManagerData.reportHistory()
+        }
+        if riskAlerts.isEmpty {
+            riskAlerts = MockManagerData.riskAlerts()
+        }
+        if loanPolicies.isEmpty {
+            loanPolicies = MockManagerData.loanPolicies()
         }
     }
 
@@ -74,7 +121,7 @@ final class ManagerStore {
         }
     }
 
-    // MARK: Derived
+    // MARK: Derived — Applications
 
     func application(id: UUID) -> ManagerApplication? {
         applications.first { $0.id == id }
@@ -110,7 +157,13 @@ final class ManagerStore {
         "Today, " + Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide))
     }
 
-    // MARK: Mutations
+    // MARK: Derived — Risk Alerts
+
+    var unreadRiskAlertCount: Int {
+        riskAlerts.filter { !$0.isRead }.count
+    }
+
+    // MARK: Mutations — Decisions
 
     func decide(_ action: ApplicationActionType, on application: ManagerApplication, remarks: String?) {
         guard let idx = applications.firstIndex(where: { $0.id == application.id }) else { return }
@@ -138,7 +191,8 @@ final class ManagerStore {
         // Reflect on the dashboard.
         recentActions.insert(
             ManagerRecentAction(kind: action, name: existing.borrowerName,
-                                amount: existing.amountText, date: .now),
+                                amount: existing.amountText, date: .now,
+                                applicationID: existing.id),
             at: 0
         )
         switch action {
@@ -146,6 +200,18 @@ final class ManagerStore {
         case .reject: rejectedToday += 1
         case .sendBack: break
         }
+
+        // Append to audit log
+        auditLogs.insert(
+            ManagerAuditLogEntry(
+                loanReferenceCode: existing.referenceCode,
+                action: action.verb,
+                managerName: managerProfile.name,
+                timestamp: .now,
+                status: .completed
+            ),
+            at: 0
+        )
 
         if let environment {
             Task {
@@ -157,6 +223,8 @@ final class ManagerStore {
             }
         }
     }
+
+    // MARK: Mutations — Notifications
 
     func markAllNotificationsRead() {
         for i in notifications.indices { notifications[i].isRead = true }
@@ -171,6 +239,72 @@ final class ManagerStore {
         notifications.removeAll { $0.id == notification.id }
     }
 
+    // MARK: Mutations — Reports
+
+    func generateReport(type: ReportKind, format: ReportFormat) {
+        let name: String
+        switch type {
+        case .daily: name = "Daily Report — \(Date.now.formatted(.dateTime.month().day()))"
+        case .weekly: name = "Weekly Report — W\(Calendar.current.component(.weekOfYear, from: .now))"
+        case .monthly: name = "Monthly Report — \(Date.now.formatted(.dateTime.month(.wide)))"
+        case .npa: name = "NPA Analysis — \(Date.now.formatted(.dateTime.month(.abbreviated).year()))"
+        case .collectionEfficiency: name = "Collection Report — \(Date.now.formatted(.dateTime.month(.abbreviated)))"
+        }
+
+        let report = ReportItem(
+            name: name, type: type, format: format,
+            size: "—", generatedAt: .now, status: .generating
+        )
+        reportHistory.insert(report, at: 0)
+
+        // Simulate generation completing after a delay
+        let reportID = report.id
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            if let idx = reportHistory.firstIndex(where: { $0.id == reportID }) {
+                reportHistory[idx] = ReportItem(
+                    name: name, type: type, format: format,
+                    size: format == .pdf ? "1.4 MB" : "280 KB",
+                    generatedAt: .now, status: .completed
+                )
+            }
+        }
+    }
+
+    func deleteReport(_ report: ReportItem) {
+        reportHistory.removeAll { $0.id == report.id }
+    }
+
+    // MARK: Mutations — Risk Alerts
+
+    func markRiskAlertRead(_ alert: RiskAlert) {
+        guard let idx = riskAlerts.firstIndex(where: { $0.id == alert.id }) else { return }
+        riskAlerts[idx].isRead = true
+    }
+
+    func dismissRiskAlert(_ alert: RiskAlert) {
+        riskAlerts.removeAll { $0.id == alert.id }
+    }
+
+    // MARK: Mutations — Loan Policies
+
+    func updatePolicy(_ policy: LoanPolicyConfig) {
+        guard let idx = loanPolicies.firstIndex(where: { $0.id == policy.id }) else { return }
+        loanPolicies[idx] = policy
+
+        // Audit the change
+        auditLogs.insert(
+            ManagerAuditLogEntry(
+                loanReferenceCode: "POLICY-\(policy.loanType.rawValue.uppercased())",
+                action: "Policy Updated",
+                managerName: managerProfile.name,
+                timestamp: .now,
+                status: .completed
+            ),
+            at: 0
+        )
+    }
+
 #if DEBUG
     // Hydrated from mock data so SwiftUI previews show content without an
     // AppEnvironment. refreshAll()/decide() service calls no-op when the
@@ -180,6 +314,11 @@ final class ManagerStore {
         store.applications = MockManagerData.applications()
         store.recentActions = MockManagerData.recentActions()
         store.notifications = MockManagerData.notifications()
+        store.officerPerformance = MockManagerData.officerPerformance()
+        store.auditLogs = MockManagerData.auditLogs()
+        store.reportHistory = MockManagerData.reportHistory()
+        store.riskAlerts = MockManagerData.riskAlerts()
+        store.loanPolicies = MockManagerData.loanPolicies()
         return store
     }
 #endif

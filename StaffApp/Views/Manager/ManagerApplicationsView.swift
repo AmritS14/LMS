@@ -5,7 +5,10 @@ struct ManagerApplicationsView: View {
     @State private var searchText = ""
     @State private var filter: Filter = .all
 
-    enum Filter: String, CaseIterable, Identifiable {
+    // Allow pre-setting the filter from navigation
+    var initialFilter: Filter? = nil
+
+    enum Filter: String, CaseIterable, Identifiable, Hashable {
         case all = "All"
         case pending = "Pending"
         case escalated = "Escalated"
@@ -66,6 +69,12 @@ struct ManagerApplicationsView: View {
         .navigationTitle("Applications")
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText, prompt: "Search applicant, ref, or officer")
+        .refreshable { await store.refreshAll() }
+        .onAppear {
+            if let initialFilter, filter == .all {
+                filter = initialFilter
+            }
+        }
     }
 
     // MARK: Filter chips
@@ -131,6 +140,27 @@ struct ManagerApplicationsView: View {
             .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
         }
         .buttonStyle(ScaleButtonStyle())
+        .contextMenu {
+            if app.status != .approved && app.status != .rejected && app.status != .disbursed {
+                Button {
+                    store.decide(.approve, on: app, remarks: "Quick approved from list.")
+                } label: {
+                    Label("Quick Approve", systemImage: "checkmark.seal.fill")
+                }
+
+                Button(role: .destructive) {
+                    store.decide(.reject, on: app, remarks: "Quick rejected from list.")
+                } label: {
+                    Label("Quick Reject", systemImage: "xmark.octagon.fill")
+                }
+
+                Divider()
+            }
+
+            NavigationLink(value: ManagerRoute.review(app.id)) {
+                Label("View Details", systemImage: "doc.text.magnifyingglass")
+            }
+        }
     }
 
     private func labeled(_ title: String, _ value: String) -> some View {
@@ -144,6 +174,6 @@ struct ManagerApplicationsView: View {
 #Preview {
     NavigationStack {
         ManagerApplicationsView()
-            .environment(ManagerStore())
+            .environment(ManagerStore.preview)
     }
 }

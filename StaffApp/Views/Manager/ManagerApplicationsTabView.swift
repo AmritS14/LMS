@@ -1,8 +1,13 @@
 import SwiftUI
 
-struct ManagerDashboardView: View {
+// MARK: - Tab 1 Root: Applications
+
+// Unified manager daily workflow screen. Replaces the old Dashboard with a
+// single scrollable view combining the priority queue, review CTA, recent
+// decisions, and quick insights. Title: "Applications", Subtitle: "Branch Overview".
+struct ManagerApplicationsTabView: View {
     @Environment(ManagerStore.self) private var store
-    @State private var showProfile = false
+    @State private var showRecentDecisions = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -20,32 +25,28 @@ struct ManagerDashboardView: View {
                 .controlSize(.large)
                 .padding(.horizontal, Spacing.m)
 
-                branchPerformanceSection
-                smartInsightsSection
+                recentDecisionsSection
+                smartInsightBanner
             }
             .padding(.vertical, Spacing.m)
         }
         .background(Color.lmsBackground)
-        .navigationTitle("Dashboard")
-        .toolbarTitleDisplayMode(.inlineLarge)
+        .navigationTitle("Applications")
+        .toolbarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink(value: ManagerRoute.notifications) {
-                    ZStack(alignment: .topTrailing) {
-                        Image(systemName: "bell").font(.title3)
-//                        if store.unreadNotificationCount > 0 {
-//                            CountBadge(count: store.unreadNotificationCount)
-//                                .offset(x: 8, y: -6)
-//                        }
-                    }
+                    Image(systemName: "bell")
+                        .font(.title3)
                 }
                 .badge(store.unreadNotificationCount)
                 .accessibilityLabel("Notifications")
             }
-
         }
-        .sheet(isPresented: $showProfile) { StaffProfileView() }
-        .task { await store.refreshAll() }
+        .refreshable { await store.refreshAll() }
+        .navigationDestination(isPresented: $showRecentDecisions) {
+            ManagerRecentDecisionsView()
+        }
     }
 
     // MARK: Subtitle
@@ -53,47 +54,52 @@ struct ManagerDashboardView: View {
     private var subtitleRow: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
+                Text("Branch Overview")
+                    .font(.lmsTitle3)
+                    .foregroundStyle(.primary)
                 Text(store.greetingDateText)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Text("Branch: \(store.branchName)")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.tertiary)
             }
             Spacer()
         }
         .padding(.horizontal, Spacing.m)
     }
 
-    // MARK: Priority actions
+    // MARK: Priority Queue
 
     private var priorityActionsSection: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
-            Text("Applications")
-                .font(.lmsTitle3)
+            Text("PRIORITY QUEUE")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
                 .padding(.horizontal, Spacing.m)
 
             HStack(spacing: Spacing.m) {
                 priorityCard(icon: "clock.badge.exclamationmark",
                              count: store.pendingReviewCount,
                              title: "Pending Review", subtitle: "Needs attention",
-                             accent: .lmsAccent)
-                priorityCard(icon: "arrow.uturn.backward.circle",
-                             count: store.sentBackCount,
-                             title: "Sent Back", subtitle: "Awaiting correction",
-                             accent: .lmsWarning)
+                             accent: .lmsAccent, filter: .pending)
                 priorityCard(icon: "exclamationmark.triangle",
                              count: store.escalatedCount,
                              title: "Escalated", subtitle: "Critical review",
-                             accent: .lmsDanger)
+                             accent: .lmsDanger, filter: .escalated)
+                priorityCard(icon: "arrow.uturn.backward.circle",
+                             count: store.sentBackCount,
+                             title: "Sent Back", subtitle: "Awaiting correction",
+                             accent: .lmsWarning, filter: .sentBack)
             }
             .padding(.horizontal, Spacing.m)
         }
     }
 
     private func priorityCard(icon: String, count: Int, title: String,
-                              subtitle: String, accent: Color) -> some View {
-        NavigationLink(value: ManagerRoute.applications) {
+                               subtitle: String, accent: Color,
+                               filter: ManagerApplicationsView.Filter) -> some View {
+        NavigationLink(value: ManagerRoute.applicationsFiltered(filter)) {
             VStack(alignment: .leading, spacing: 0) {
                 accent
                     .frame(height: 6)
@@ -115,7 +121,6 @@ struct ManagerDashboardView: View {
                         Text(subtitle).font(.caption).foregroundStyle(.secondary)
                         Spacer()
                     }
-//                    .frame(minHeight: 30)
                 }
                 .padding(Spacing.m)
             }
@@ -127,42 +132,61 @@ struct ManagerDashboardView: View {
         .buttonStyle(ScaleButtonStyle())
     }
 
-    // MARK: Branch performance
+    // MARK: Recent Decisions
 
-    private var branchPerformanceSection: some View {
-        SectionCard(title: "Branch Performance") {
-            HStack(spacing: Spacing.l) {
-                VStack(spacing: Spacing.s) {
-                    CircularProgress(progress: store.approvalRate, color: .lmsAccent, lineWidth: 7, size: 76)
-                    Text("Approval Rate")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    Text("Avg Decision Time")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(store.avgDecisionTime)
-                        .font(.system(.title2, design: .rounded).weight(.bold))
-                    HStack(spacing: 4) {
-                        Image(systemName: "arrow.down").font(.caption2.weight(.bold))
-                        Text("14% faster").font(.caption2)
-                    }
-                    .foregroundStyle(Color.lmsSuccess)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(Spacing.m)
-                .background(Color.lmsBackground, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+    private var recentDecisionsSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.s) {
+            SectionHeader(title: "Recent Decisions",
+                          actionTitle: "See All") {
+                showRecentDecisions = true
             }
+            .padding(.horizontal, Spacing.m)
+
+            VStack(spacing: 0) {
+                ForEach(store.recentActions.prefix(5)) { action in
+                    recentActionRow(action)
+                    if action.id != store.recentActions.prefix(5).last?.id {
+                        Divider().padding(.leading, 56)
+                    }
+                }
+            }
+            .padding(.vertical, Spacing.xs)
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+            .padding(.horizontal, Spacing.m)
         }
-        .padding(.horizontal, Spacing.m)
     }
 
-    // MARK: Smart insight
+    private func recentActionRow(_ action: ManagerRecentAction) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: action.kind.rowIcon)
+                .font(.title3)
+                .foregroundStyle(action.kind.themeColor)
+                .frame(width: 36, height: 36)
+                .background(action.kind.themeColor.opacity(0.12),
+                             in: RoundedRectangle(cornerRadius: CornerRadius.small))
 
-    private var smartInsightsSection: some View {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(action.name)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                Text("\(action.kind.verb) • \(action.amount)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Text(action.timeText)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, Spacing.m)
+        .padding(.vertical, Spacing.s)
+    }
+
+    // MARK: Smart Insight Banner
+
+    private var smartInsightBanner: some View {
         HStack(spacing: Spacing.m) {
             Image(systemName: "lightbulb.fill")
                 .font(.title3)
@@ -188,7 +212,7 @@ struct ManagerDashboardView: View {
 
 #Preview {
     ManagerNavigationStack {
-        ManagerDashboardView()
+        ManagerApplicationsTabView()
     }
     .environment(ManagerStore.preview)
     .environment(SessionStore())

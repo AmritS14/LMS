@@ -157,6 +157,7 @@ struct ManagerRecentAction: Identifiable, Hashable {
     let name: String
     let amount: String
     let date: Date
+    var applicationID: UUID? = nil
 
     var timeText: String { OfficerFormat.timeAgo(date) }
 }
@@ -167,8 +168,14 @@ struct ManagerRecentAction: Identifiable, Hashable {
 // so individual screens stay free of navigationDestination boilerplate.
 enum ManagerRoute: Hashable {
     case applications
+    case applicationsFiltered(ManagerApplicationsView.Filter)
     case review(UUID)
     case notifications
+    case officerPerformance
+    case officerDetail(String)          // officer name as identifier
+    case auditLogs
+    case loanPolicies
+    case riskAlerts
 }
 
 // MARK: - Shared button press feedback
@@ -180,4 +187,242 @@ struct ScaleButtonStyle: ButtonStyle {
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
             .opacity(configuration.isPressed ? 0.9 : 1)
     }
+}
+
+// MARK: - Portfolio models
+
+struct PortfolioSummaryData: Hashable {
+    var totalLoans: Int
+    var totalDisbursement: Decimal
+    var collectionEfficiency: Double   // 0–1
+    var npaRatio: Double               // 0–1
+    var activeLoans: Int
+    var overdueLoans: Int
+    var recoveryRate: Double           // 0–1
+    var paidEMIPercent: Double         // 0–1
+}
+
+struct LoanCategoryBreakdown: Identifiable, Hashable {
+    let id = UUID()
+    var loanType: LoanType
+    var count: Int
+    var amount: Decimal
+    var percentage: Double             // 0–1
+
+    var amountText: String { Formatting.currency(amount) }
+}
+
+struct BranchPerformanceItem: Identifiable, Hashable {
+    let id = UUID()
+    var branchName: String
+    var approvalRate: Double
+    var avgDecisionTime: String
+    var totalApplications: Int
+    var npaRatio: Double
+}
+
+// MARK: - Officer performance
+
+struct OfficerPerformanceData: Identifiable, Hashable {
+    let id = UUID()
+    var name: String
+    var initials: String
+    var applicationsProcessed: Int
+    var approvalRate: Double           // 0–1
+    var avgDecisionTime: String
+    var recoveryRate: Double           // 0–1
+    var recentDecisions: [OfficerDecisionRecord]
+}
+
+struct OfficerDecisionRecord: Identifiable, Hashable {
+    let id = UUID()
+    var applicantName: String
+    var amount: String
+    var action: ApplicationActionType
+    var date: Date
+
+    var timeText: String { OfficerFormat.timeAgo(date) }
+}
+
+// MARK: - Audit logs
+
+struct ManagerAuditLogEntry: Identifiable, Hashable {
+    let id = UUID()
+    var loanReferenceCode: String
+    var action: String
+    var managerName: String
+    var timestamp: Date
+    var status: AuditStatus
+
+    var dateText: String { Formatting.date(timestamp) }
+    var timeText: String { timestamp.formatted(date: .omitted, time: .shortened) }
+}
+
+enum AuditStatus: String, CaseIterable, Hashable {
+    case completed = "Completed"
+    case pending = "Pending"
+    case failed = "Failed"
+
+    var tone: StatusBadge.Tone {
+        switch self {
+        case .completed: .success
+        case .pending: .warning
+        case .failed: .danger
+        }
+    }
+}
+
+// MARK: - Reports
+
+struct ReportItem: Identifiable, Hashable {
+    let id = UUID()
+    var name: String
+    var type: ReportKind
+    var format: ReportFormat
+    var size: String
+    var generatedAt: Date
+    var status: ReportStatus
+
+    var dateText: String { OfficerFormat.timeAgo(generatedAt) }
+
+    var formatIcon: String {
+        switch format {
+        case .csv: "tablecells"
+        case .pdf: "doc.richtext"
+        }
+    }
+
+    var formatColor: Color {
+        switch format {
+        case .csv: .lmsSuccess
+        case .pdf: .lmsDanger
+        }
+    }
+}
+
+enum ReportStatus: String, Hashable {
+    case generating = "Generating"
+    case completed = "Completed"
+    case failed = "Failed"
+
+    var tone: StatusBadge.Tone {
+        switch self {
+        case .generating: .info
+        case .completed: .success
+        case .failed: .danger
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .generating: "arrow.trianglehead.2.clockwise"
+        case .completed: "checkmark.circle.fill"
+        case .failed: "exclamationmark.triangle.fill"
+        }
+    }
+}
+
+// MARK: - Risk alerts
+
+struct RiskAlert: Identifiable, Hashable {
+    let id = UUID()
+    var title: String
+    var message: String
+    var severity: RiskAlertSeverity
+    var loanReferenceCode: String
+    var timestamp: Date
+    var isRead: Bool
+
+    var timeText: String { OfficerFormat.timeAgo(timestamp) }
+}
+
+enum RiskAlertSeverity: String, CaseIterable, Hashable {
+    case critical = "Critical"
+    case high = "High"
+    case medium = "Medium"
+
+    var tone: StatusBadge.Tone {
+        switch self {
+        case .critical: .danger
+        case .high: .warning
+        case .medium: .info
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .critical: "exclamationmark.octagon.fill"
+        case .high: "exclamationmark.triangle.fill"
+        case .medium: "info.circle.fill"
+        }
+    }
+}
+
+// MARK: - Loan policies
+
+struct LoanPolicyConfig: Identifiable, Hashable {
+    let id = UUID()
+    var loanType: LoanType
+    var interestRateMin: Double
+    var interestRateMax: Double
+    var maxTenureMonths: Int
+    var maxAmount: Decimal
+    var minCreditScore: Int
+    var maxDTIRatio: Double
+    var isActive: Bool
+
+    var interestRangeText: String {
+        "\(String(format: "%.1f", interestRateMin))% – \(String(format: "%.1f", interestRateMax))%"
+    }
+    var maxAmountText: String { Formatting.currency(maxAmount) }
+    var maxTenureText: String {
+        let years = maxTenureMonths / 12
+        return years > 0 ? "\(years) Years" : "\(maxTenureMonths) Months"
+    }
+}
+
+// MARK: - Detailed Report Entities
+
+struct OverdueCustomer: Identifiable, Hashable {
+    let id = UUID()
+    let name: String
+    let daysLate: Int
+    let pendingAmount: Decimal
+}
+
+struct DailyReportData: Hashable {
+    let loansApproved: Int
+    let totalAmount: Decimal
+    let activeLoans: Int
+    let emiCollected: Decimal
+    let pendingCollections: Decimal
+    let newCustomers: Int
+    let missedPayments: Int
+}
+
+struct WeeklyReportData: Hashable {
+    let weeklyLoanGrowth: Double // percentage
+    let totalRepaymentCollected: Decimal
+    let numberOfDefaults: Int
+    let recoveryPerformance: Double // percentage
+    let topPayingCustomers: Int
+}
+
+struct LoanTypeAnalytics: Identifiable, Hashable {
+    let id = UUID()
+    let type: String
+    let percentage: Double
+    let color: Color
+}
+
+struct MonthlyReportData: Hashable {
+    let monthlyRevenue: Decimal
+    let totalDistributed: Decimal
+    let loanRecoveryRate: Double
+    let totalProfit: Decimal
+    let interestEarned: Decimal
+    let penaltyCollected: Decimal
+    let processingFees: Decimal
+    let bestPerformingCategory: String
+    let loanTypeAnalytics: [LoanTypeAnalytics]
 }
