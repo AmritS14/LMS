@@ -18,14 +18,18 @@ struct KYCView: View {
     @State private var showFilePicker = false
     @State private var selectedPhotoItem: PhotosPickerItem?
 
+    // Aadhaar KYC chooser
+    @State private var showAadhaarChooser = false
+    @State private var showAadhaarXMLView = false
+
     var body: some View {
         List {
             Section {
-                documentRow(kind: .identityProof, title: "ID Proof", icon: "person.text.rectangle.fill", iconColor: .blue)
+                aadhaarIdentityRow
             } header: {
                 Text("Identity")
             } footer: {
-                Text("Government-issued photo ID, e.g., passport or driver's licence.")
+                Text("Verify instantly using Aadhaar XML, or upload a photo for manual review.")
             }
 
             Section {
@@ -74,6 +78,20 @@ struct KYCView: View {
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: uploadMessage)
+        .confirmationDialog("Upload ID Proof", isPresented: $showAadhaarChooser, titleVisibility: .visible) {
+            Button("Aadhaar XML — Instant Verification") {
+                showAadhaarXMLView = true
+            }
+            Button("Upload Photo (slower — manual review required)") {
+                activeDocumentKind = .identityProof
+                showSourcePicker = true
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+        .sheet(isPresented: $showAadhaarXMLView) {
+            AadhaarKYCView()
+                .onDisappear { Task { await fetchDocuments() } }
+        }
         .confirmationDialog("Choose File Source", isPresented: $showSourcePicker, titleVisibility: .visible) {
             Button {
                 showPhotoPicker = true
@@ -118,6 +136,38 @@ struct KYCView: View {
                 activeDocumentKind = nil
             }
         }
+    }
+
+    @ViewBuilder
+    private var aadhaarIdentityRow: some View {
+        let isUploaded = uploadedDocuments.contains(.identityProof)
+        Button(action: { showAadhaarChooser = true }) {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "person.text.rectangle.fill")
+                    .font(.system(size: 16))
+                    .foregroundStyle(Color.blue)
+                    .frame(width: 30, height: 30)
+                    .background(Color.blue.opacity(0.15), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("ID Proof (Aadhaar)")
+                        .foregroundStyle(.primary)
+                    Text("XML · Photo")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                if isUploaded {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(Color.lmsSuccess)
+                        .symbolEffectIfAvailable(value: isUploaded)
+                } else {
+                    Text("Upload")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.tint)
+                }
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder

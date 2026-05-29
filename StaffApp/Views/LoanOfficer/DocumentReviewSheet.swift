@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DocumentReviewSheet: View {
     @Environment(\.dismiss) var dismiss
+    @Environment(\.appEnvironment) private var env
     var viewModel: AppViewModel
     let application: LOLoanApplication
     let document: LOLoanDocument
@@ -9,6 +10,8 @@ struct DocumentReviewSheet: View {
     @State private var selectedStatus: DocumentStatus
     @State private var reviewNotes: String
     @State private var rejectionReason: String
+    @State private var kycReport: AadhaarVerificationReport? = nil
+    @State private var isLoadingReport = false
 
     init(viewModel: AppViewModel, application: LOLoanApplication, document: LOLoanDocument) {
         self.viewModel = viewModel
@@ -49,6 +52,15 @@ struct DocumentReviewSheet: View {
                     }
                 }
             }
+            .task {
+                guard let docID = document.sourceDocumentID,
+                      document.type == "Identity",
+                      let env
+                else { return }
+                isLoadingReport = true
+                kycReport = try? await env.aadhaarKYC.report(documentID: docID)
+                isLoadingReport = false
+            }
         }
     }
 
@@ -82,57 +94,67 @@ struct DocumentReviewSheet: View {
             }
             .padding(.horizontal, 4)
 
-            // Interactive Mock Attached Document File Box
-            VStack(spacing: 12) {
-                Image(systemName: "doc.text.viewfinder")
-                    .font(.system(size: 40))
-                    .foregroundColor(.blue.opacity(0.7))
+            // Verification block: UIDAI report card or mock OCR placeholder
+            Group {
+                if isLoadingReport {
+                    HStack(spacing: 10) {
+                        ProgressView().scaleEffect(0.8)
+                        Text("Loading verification report…")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 20)
+                } else if let report = kycReport {
+                    AadhaarVerificationReportCard(report: report)
+                } else {
+                    VStack(spacing: 12) {
+                        Image(systemName: "doc.text.viewfinder")
+                            .font(.system(size: 40))
+                            .foregroundColor(.blue.opacity(0.7))
 
-                Text(document.name.replacingOccurrences(of: " ", with: "_").lowercased() + "_borrower_copy.pdf")
-                    .font(.system(size: 12, weight: .medium, design: .monospaced))
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                        Text(document.name.replacingOccurrences(of: " ", with: "_").lowercased() + "_borrower_copy.pdf")
+                            .font(.system(size: 12, weight: .medium, design: .monospaced))
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
 
-                HStack(spacing: 12) {
-                    Label("PDF Document", systemImage: "doc.fill")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.secondary)
+                        HStack(spacing: 12) {
+                            Label("PDF Document", systemImage: "doc.fill")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.secondary)
+                            Text("•").foregroundColor(.secondary)
+                            Text("2.4 MB")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.secondary)
+                        }
 
-                    Text("•")
-                        .foregroundColor(.secondary)
-
-                    Text("2.4 MB")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.secondary)
+                        HStack(spacing: 6) {
+                            Image(systemName: document.ocrVerified ? "checkmark.shield.fill" : "exclamationmark.shield.fill")
+                                .font(.system(size: 11))
+                                .foregroundColor(document.ocrVerified ? .green : .orange)
+                            Text(document.ocrVerified ? "OCR Match: 98% (Verified Security Hash)" : "OCR Status: Pending Auto-Scanning")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(document.ocrVerified ? .green : .orange)
+                        }
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 12)
+                        .background(document.ocrVerified ? Color.green.opacity(0.08) : Color.orange.opacity(0.08))
+                        .cornerRadius(8)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 24)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(.secondarySystemGroupedBackground))
+                            .shadow(color: .black.opacity(0.02), radius: 4)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color(.separator).opacity(0.2), lineWidth: 0.5)
+                    )
                 }
-
-                // OCR Verification details
-                HStack(spacing: 6) {
-                    Image(systemName: document.ocrVerified ? "checkmark.shield.fill" : "exclamationmark.shield.fill")
-                        .font(.system(size: 11))
-                        .foregroundColor(document.ocrVerified ? .green : .orange)
-
-                    Text(document.ocrVerified ? "OCR Match: 98% (Verified Security Hash)" : "OCR Status: Pending Auto-Scanning")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(document.ocrVerified ? .green : .orange)
-                }
-                .padding(.vertical, 6)
-                .padding(.horizontal, 12)
-                .background(document.ocrVerified ? Color.green.opacity(0.08) : Color.orange.opacity(0.08))
-                .cornerRadius(8)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 24)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(.secondarySystemGroupedBackground))
-                    .shadow(color: .black.opacity(0.02), radius: 4)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color(.separator).opacity(0.2), lineWidth: 0.5)
-            )
         }
         .padding(16)
         .background(Color(.systemBackground))

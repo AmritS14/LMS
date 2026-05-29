@@ -1,5 +1,48 @@
 import Foundation
 
+// MARK: - MockAadhaarKYCService
+
+actor MockAadhaarKYCService: AadhaarKYCService {
+    func verify(zipData: Data, sharePhrase: String, applicationID: UUID?) async throws -> AadhaarVerificationReport {
+        try await Task.sleep(for: .seconds(1))
+        return AadhaarVerificationReport(
+            documentId: UUID().uuidString,
+            signatureValid: true,
+            signerCert: AadhaarSignerCert(
+                subject: "CN=UIDAI, O=Unique Identification Authority of India, C=IN",
+                signingTime: ISO8601DateFormatter().string(from: .now)
+            ),
+            mobileHashMatch: .match,
+            emailHashMatch: .match,
+            referenceId: "1\(Int.random(in: 10000000000000...99999999999999))123",
+            xmlGeneratedAt: ISO8601DateFormatter().string(from: Date().addingTimeInterval(-86400 * 30)),
+            xmlAgeDays: 30,
+            demographics: AadhaarDemographics(
+                name: "Ravi Kumar",
+                dob: "1990-06-15",
+                gender: "M",
+                careOf: "Sh. Ramesh Kumar",
+                address: [
+                    "house": "12A",
+                    "street": "MG Road",
+                    "city": "Bengaluru",
+                    "state": "Karnataka",
+                    "pinCode": "560001",
+                    "country": "INDIA"
+                ]
+            ),
+            photoUrl: nil,
+            autoDecision: .auto_verified,
+            rejectionReason: nil
+        )
+    }
+
+    func report(documentID: UUID) async throws -> AadhaarVerificationReport? {
+        try await Task.sleep(for: .milliseconds(500))
+        return nil
+    }
+}
+
 // MARK: - MockAdminService
 
 actor MockAdminService: AdminService {

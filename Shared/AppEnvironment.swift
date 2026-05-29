@@ -10,6 +10,7 @@ struct AppEnvironment: Sendable {
     var messaging: any MessagingService
     var keychain: any KeychainService
     var admin: any AdminService
+    var aadhaarKYC: any AadhaarKYCService
 
     init(
         auth: any AuthService,
@@ -18,7 +19,8 @@ struct AppEnvironment: Sendable {
         notifications: any NotificationService,
         messaging: any MessagingService,
         keychain: any KeychainService,
-        admin: any AdminService = MockAdminService()
+        admin: any AdminService = MockAdminService(),
+        aadhaarKYC: any AadhaarKYCService = MockAadhaarKYCService()
     ) {
         self.auth = auth
         self.loans = loans
@@ -27,6 +29,7 @@ struct AppEnvironment: Sendable {
         self.messaging = messaging
         self.keychain = keychain
         self.admin = admin
+        self.aadhaarKYC = aadhaarKYC
     }
 }
 

@@ -111,6 +111,11 @@
 		F872AD1A8550E9CF19A04C1D /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E121B25741BC258047859E /* PrimaryButton.swift */; };
 		FE5DE3B39ECD459E53A65878 /* MockAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88BD61862F57DAB1E646A694 /* MockAuthService.swift */; };
 		FE5E0902A300F4E68D4F8455 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5311FB36A8266E69CFD93D54 /* Models.swift */; };
+		AA00KYC000000001FF02 /* AadhaarKYCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00KYC000000001FF01 /* AadhaarKYCService.swift */; };
+		AA00KYC000000001FF03 /* AadhaarKYCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00KYC000000001FF01 /* AadhaarKYCService.swift */; };
+		AA00KYC000000002FF02 /* SupabaseAadhaarKYCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00KYC000000002FF01 /* SupabaseAadhaarKYCService.swift */; };
+		AA00KYC000000002FF03 /* SupabaseAadhaarKYCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00KYC000000002FF01 /* SupabaseAadhaarKYCService.swift */; };
+		AA00KYC000000003FF02 /* AadhaarKYCView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00KYC000000003FF01 /* AadhaarKYCView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -181,6 +186,9 @@
 		F3F99DE09F9F0CC21967249D /* SupabaseAdminService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseAdminService.swift; path = Supabase/SupabaseAdminService.swift; sourceTree = "<group>"; };
 		F582C8AB54B323AD8E169865 /* EMICalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EMICalculator.swift; sourceTree = "<group>"; };
 		FEE98171A238045C22C2F9E8 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
+		AA00KYC000000001FF01 /* AadhaarKYCService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AadhaarKYCService.swift; sourceTree = "<group>"; };
+		AA00KYC000000002FF01 /* SupabaseAadhaarKYCService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseAadhaarKYCService.swift; path = Supabase/SupabaseAadhaarKYCService.swift; sourceTree = "<group>"; };
+		AA00KYC000000003FF01 /* AadhaarKYCView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AadhaarKYCView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -286,6 +294,7 @@
 				EFFD5FBBDCCA3CA7CBA97EB3 /* EMICalculatorView.swift */,
 				11538E6ED3D89A812369BF88 /* HomeDashboardView.swift */,
 				DA0D234D5F91C703EA095E10 /* KYCView.swift */,
+				AA00KYC000000003FF01 /* AadhaarKYCView.swift */,
 				106AFA5E311F8E8EB97A16CA /* LoginView.swift */,
 				AA001122334455667788AA00 /* RegisterView.swift */,
 				BB001122334455667788BB00 /* ForgotPasswordView.swift */,
@@ -314,6 +323,8 @@
 				9459DAEBCBCB9D3C2250C401 /* SupabaseMessagingService.swift */,
 				19A749024376B4E1C30F4B83 /* SupabaseDocumentService.swift */,
 				F3F99DE09F9F0CC21967249D /* SupabaseAdminService.swift */,
+				AA00KYC000000001FF01 /* AadhaarKYCService.swift */,
+				AA00KYC000000002FF01 /* SupabaseAadhaarKYCService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -586,6 +597,9 @@
 				11E257368809C6692698BD2B /* SupabaseDocumentService.swift in Sources */,
 				16228464F2B8DED10C1F71D7 /* UploadRequestedDocumentsView.swift in Sources */,
 				E5346A35720FA359BF32D66B /* SupabaseAdminService.swift in Sources */,
+				AA00KYC000000001FF02 /* AadhaarKYCService.swift in Sources */,
+				AA00KYC000000002FF02 /* SupabaseAadhaarKYCService.swift in Sources */,
+				AA00KYC000000003FF02 /* AadhaarKYCView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -636,6 +650,8 @@
 				A1AA0000000000000010AA03 /* SupabaseDocumentService.swift in Sources */,
 				A1AA0000000000000011AA03 /* SupabaseMessagingService.swift in Sources */,
 				897313B6AB4253FB09D4B397 /* SupabaseAdminService.swift in Sources */,
+				AA00KYC000000001FF03 /* AadhaarKYCService.swift in Sources */,
+				AA00KYC000000002FF03 /* SupabaseAadhaarKYCService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

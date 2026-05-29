@@ -326,6 +326,46 @@ struct PortfolioSummary: Codable, Sendable, Hashable {
     var activeLoans: Int
 }
 
+// MARK: - Aadhaar KYC Verification
+
+enum HashMatchResult: String, Codable, Sendable {
+    case match, mismatch, no_profile_value
+}
+
+enum AadhaarAutoDecision: String, Codable, Sendable {
+    case auto_verified, needs_review, auto_rejected
+}
+
+struct AadhaarSignerCert: Codable, Sendable {
+    var subject: String
+    var signingTime: String
+}
+
+struct AadhaarDemographics: Codable, Sendable {
+    var name: String?
+    var dob: String?
+    var gender: String?
+    var careOf: String?
+    var address: [String: String]?
+}
+
+struct AadhaarVerificationReport: Codable, Sendable, Identifiable {
+    var documentId: String
+    var signatureValid: Bool
+    var signerCert: AadhaarSignerCert?
+    var mobileHashMatch: HashMatchResult
+    var emailHashMatch: HashMatchResult
+    var referenceId: String
+    var xmlGeneratedAt: String
+    var xmlAgeDays: Int
+    var demographics: AadhaarDemographics
+    var photoUrl: String?
+    var autoDecision: AadhaarAutoDecision
+    var rejectionReason: String?
+
+    var id: String { documentId }
+}
+
 // MARK: - Notifications
 
 enum NotificationTopic: String, Codable, Sendable {

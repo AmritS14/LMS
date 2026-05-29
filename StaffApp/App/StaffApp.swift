@@ -11,7 +11,8 @@ struct StaffApp: App {
         notifications: MockNotificationService(),
         messaging: SupabaseMessagingService(client: SupabaseManager.shared.client),
         keychain: MockKeychainService(),
-        admin: SupabaseAdminService(client: SupabaseManager.shared.client)
+        admin: SupabaseAdminService(client: SupabaseManager.shared.client),
+        aadhaarKYC: SupabaseAadhaarKYCService(client: SupabaseManager.shared.client)
     )
 
     var body: some Scene {
