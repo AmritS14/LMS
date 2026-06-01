@@ -39,7 +39,7 @@ actor SupabaseLoanService: LoanService {
     }
     
     private struct DBEnrichedApplication: Decodable {
-        struct NestedUser: Decodable { let id: UUID; let email: String?; let full_name: String? }
+        struct NestedUser: Decodable { let id: UUID; let email: String?; let full_name: String?; let phone: String? }
         struct NestedProduct: Decodable { let id: UUID; let name: String? }
         let id: UUID
         let borrower_id: UUID
@@ -172,6 +172,7 @@ actor SupabaseLoanService: LoanService {
             updatedAt: db.updated_at,
             borrowerName: name,
             borrowerEmail: db.users?.email,
+            borrowerPhone: db.users?.phone,
             productName: db.loan_products?.name
         )
     }
@@ -290,7 +291,7 @@ actor SupabaseLoanService: LoanService {
         try await ensureProductCache()
         let response = try await client
             .from("loan_applications")
-            .select("id, borrower_id, assigned_officer_id, loan_product_id, requested_amount, tenure_months, interest_rate, status, created_at, updated_at, users:users!loan_applications_borrower_id_fkey(id, email, full_name), loan_products(id, name)")
+            .select("id, borrower_id, assigned_officer_id, loan_product_id, requested_amount, tenure_months, interest_rate, status, created_at, updated_at, users:users!loan_applications_borrower_id_fkey(id, email, full_name, phone), loan_products(id, name)")
             .in("status", values: statuses)
             .order("created_at", ascending: false)
             .execute()
