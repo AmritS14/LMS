@@ -129,12 +129,7 @@ import Combine
                 let docs = (try? await environment.documents.documents(forApplication: app.id)) ?? []
                 rows.append(Self.makeOfficerApplication(from: app, events: events, documents: docs))
             }
-
-            let updateCount = min(sharedApplications.count, recentApplications.count)
-            for index in 0..<updateCount {
-                recentApplications[index].sourceApplicationID = sharedApplications[index].id
-                recentApplications[index].status = sharedApplications[index].status.officerStatus
-            }
+            self.recentApplications = rows
             
             // Build Activity Feed
             var feed: [ActivityItem] = []
