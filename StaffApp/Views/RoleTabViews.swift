@@ -2,23 +2,16 @@ import SwiftUI
 
 struct OfficerTabView: View {
     var body: some View {
-//        TabView {
-//            Tab("Dashboard", systemImage: "rectangle.grid.2x2.fill") {
-//                OfficerNavigationStack { DashboardView() }
-//            }
-//            Tab("Queue", systemImage: "tray.full") {
-//                OfficerNavigationStack { AllApplicationsView() }
-//            }
-//            Tab("Documents", systemImage: "doc.richtext") {
-//                OfficerNavigationStack { DocumentsView() }
-//            }
-//            Tab("Messages", systemImage: "bubble.left.and.bubble.right") {
-//                OfficerNavigationStack { CommunicationsMainView() }
-//            }
-//        }
-        
-        OfficerNavigationStack {
-            DashboardView()
+        TabView {
+            Tab("Dashboard", systemImage: "rectangle.grid.2x2.fill") {
+                OfficerNavigationStack { DashboardView() }
+            }
+            Tab("Applications", systemImage: "tray.full.fill") {
+                OfficerNavigationStack { AllApplicationsView() }
+            }
+            Tab("Recovery", systemImage: "arrow.clockwise.circle.fill") {
+                OfficerNavigationStack { RecoveryVerificationView() }
+            }
         }
     }
 }

@@ -37,7 +37,7 @@ import Combine
     var recentApplications: [LOLoanApplication] = []
     var activityFeed: [ActivityItem] = []
     var notifications: [AppNotification] = []
-    var overdueBorrowers: [OverdueBorrower] = []
+    var overdueBorrowers: [OverdueBorrower] = SampleRecoveryData.overdueBorrowers
     //var fieldVisits: [FieldVisit] = []
     var conversations: [BorrowerConversation] = []
     var digitalDocuments: [DigitalDocument] = []

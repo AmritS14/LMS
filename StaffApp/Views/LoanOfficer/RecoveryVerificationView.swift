@@ -400,95 +400,89 @@ extension RecoveryVerificationView {
                 valueColor: borrower.dpdDays > 30 ? .red : .orange
             )
 
-            HStack(spacing: 12) {
-
-                // MARK: Message Button
-
-                Button {
-
-                    if let conversation = viewModel.conversations.first(where: {
-                        $0.borrowerName == borrower.borrowerName
-                    }) {
-
-                        viewModel.selectedConversation = conversation
-
-                        viewModel.navigationPath.append(
-                            AppDestination.communications
-                        )
-                    }
-
-                } label: {
-
-                    HStack(spacing: 6) {
-
-                        Image(systemName: "message.fill")
-
-                        Text("Message")
-                    }
-                    .font(
-                        .system(
-                            size: 13,
-                            weight: .semibold
-                        )
-                    )
-                    .foregroundStyle(.blue)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(
-                                Color.blue.opacity(0.1)
-                            )
-                    )
-                }
-                .buttonStyle(.plain)
-
-                // MARK: Log Call Button
-
-                Button {
-
-                    viewModel.markBorrowerContacted(borrower)
-
-                } label: {
-
-                    Label("Log Call", systemImage: "phone.fill")
+            VStack(spacing: 8) {
+                HStack(spacing: 12) {
+                    // MARK: Message Button
+                    Button {
+                        if let conversation = viewModel.conversations.first(where: {
+                            $0.borrowerName == borrower.borrowerName
+                        }) {
+                            viewModel.selectedConversation = conversation
+                            viewModel.navigationPath.append(AppDestination.communications)
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "message.fill")
+                            Text("Message")
+                        }
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.blue)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .background(
                             RoundedRectangle(cornerRadius: 10)
-                                .fill(.green)
+                                .fill(Color.blue.opacity(0.1))
                         )
+                    }
+                    .buttonStyle(.plain)
+
+                    // MARK: Log Call Button
+                    Button {
+                        viewModel.markBorrowerContacted(borrower)
+                    } label: {
+                        Label("Log Call", systemImage: "phone.fill")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(.green)
+                            )
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
 
-                // MARK: Add Note Button
+                HStack(spacing: 12) {
+                    // MARK: Add Note Button
+                    Button {
+                        selectedBorrower = borrower
+                        callLogNotes = ""
+                        callLogOutcome = .promiseToPay
+                        showCallLogSheet = true
+                    } label: {
+                        Label("Add Note", systemImage: "note.text.badge.plus")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(.blue)
+                            )
+                    }
+                    .buttonStyle(.plain)
 
-                Button {
-
-                    selectedBorrower = borrower
-                    callLogNotes = ""
-                    callLogOutcome = .promiseToPay
-
-                    showCallLogSheet = true
-
-                } label: {
-
-                    Label(
-                        "Add Note",
-                        systemImage: "note.text.badge.plus"
-                    )
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(.blue)
-                    )
+                    // MARK: Schedule Follow-up Button
+                    Button {
+                        selectedBorrower = borrower
+                        followUpNotes = ""
+                        followUpOutcome = .promiseToPay
+                        followUpDate = Date().addingTimeInterval(86400)
+                        showFollowUpSheet = true
+                    } label: {
+                        Label("Schedule", systemImage: "calendar.badge.clock")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(.purple)
+                            )
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
     }
@@ -579,15 +573,23 @@ extension RecoveryVerificationView {
             .navigationTitle("Add Call Log")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-
                 ToolbarItem(
                     placement: .cancellationAction
                 ) {
-
                     Button("Cancel") {
-
                         showCallLogSheet = false
                     }
+                }
+                ToolbarItem(
+                    placement: .confirmationAction
+                ) {
+                    Button("Save") {
+                        if let borrower = selectedBorrower {
+                            viewModel.markBorrowerContacted(borrower)
+                        }
+                        showCallLogSheet = false
+                    }
+                    .font(.system(size: 15, weight: .semibold))
                 }
             }
         }
@@ -644,15 +646,23 @@ extension RecoveryVerificationView {
             .navigationTitle("Schedule Follow-up")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-
                 ToolbarItem(
                     placement: .cancellationAction
                 ) {
-
                     Button("Cancel") {
-
                         showFollowUpSheet = false
                     }
+                }
+                ToolbarItem(
+                    placement: .confirmationAction
+                ) {
+                    Button("Schedule") {
+                        if let borrower = selectedBorrower {
+                            viewModel.markBorrowerContacted(borrower)
+                        }
+                        showFollowUpSheet = false
+                    }
+                    .font(.system(size: 15, weight: .semibold))
                 }
             }
         }
