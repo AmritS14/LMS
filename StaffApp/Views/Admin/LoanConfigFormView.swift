@@ -14,7 +14,8 @@ import SwiftUI
 /// with inline editing and a prominent Save button.
 struct LoanConfigFormView: View {
     @Bindable var viewModel: LoanConfigViewModel
-    
+    @Environment(\.appEnvironment) private var env
+
     @State private var showAddLoanSheet = false
     @State private var errorMessage: String? = nil
     @State private var selectedProduct: AdminLoanProduct? = nil
@@ -48,6 +49,16 @@ struct LoanConfigFormView: View {
                 LoanProductEditorSheet(
                     product: binding,
                     onSave: {
+                        // Find the category for this product
+                        if let category = LoanCategory.allCases.first(where: { viewModel.productsByCategory[$0]?.contains(where: { $0.id == product.id }) == true }) {
+                            Task {
+                                do {
+                                    try await viewModel.updateProduct(binding.wrappedValue, category: category)
+                                } catch {
+                                    errorMessage = "Failed to update loan product: \(error.localizedDescription)"
+                                }
+                            }
+                        }
                         selectedProduct = nil
                     },
                     onCancel: {
@@ -62,6 +73,11 @@ struct LoanConfigFormView: View {
             }
         }
         .navigationTitle("Loan Configurations")
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            viewModel.configure(environment: env)
+            await viewModel.load()
+        }
         .alert("Configuration Saved", isPresented: $viewModel.showSaveAlert) {
             Button("OK", role: .cancel) {}
         } message: {

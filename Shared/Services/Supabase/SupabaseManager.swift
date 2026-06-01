@@ -43,4 +43,23 @@ public struct SupabaseManager: Sendable {
             )
         )
     }
+
+    func logAuditEvent(action: String, entityType: String, entityID: UUID, metadata: [String: AnyJSON]) async {
+        do {
+            let insertData: [String: AnyJSON] = [
+                "actor_id": .string(try await client.auth.session.user.id.uuidString),
+                "actor_role": .string("admin"),
+                "action": .string(action),
+                "entity_type": .string(entityType),
+                "entity_id": .string(entityID.uuidString),
+                "metadata": .object(metadata)
+            ]
+            _ = try await client
+                .from("audit_entries")
+                .insert(insertData)
+                .execute()
+        } catch {
+            print("Failed to log audit event: \(error)")
+        }
+    }
 }

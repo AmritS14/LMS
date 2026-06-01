@@ -91,27 +91,23 @@ struct AdminTabView: View {
 
     var body: some View {
         TabView {
-            Tab("Dashboard", systemImage: "rectangle.grid.2x2.fill") {
+            Tab("Overview", systemImage: "rectangle.grid.2x2.fill") {
                 NavigationStack {
                     AdminDashboardView(viewModel: dashboardViewModel, userVM: userManagementViewModel)
                 }
             }
-            Tab("Users", systemImage: "person.3") {
+            Tab("Users", systemImage: "person.2.fill") {
                 NavigationStack {
                     UserListView(viewModel: userManagementViewModel)
                 }
             }
-            Tab("Settings", systemImage: "gearshape.2") {
+
+            Tab("Configure", systemImage: "command.circle") {
                 NavigationStack {
                     SystemSettingsView(
                         templateViewModel: templateViewModel,
                         loanConfigViewModel: loanConfigViewModel
                     )
-                }
-            }
-            Tab("Audit", systemImage: "list.clipboard") {
-                NavigationStack {
-                    AuditTrailView()
                 }
             }
         }

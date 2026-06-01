@@ -193,6 +193,30 @@ actor MockLoanService: LoanService {
 
     // MARK: - LoanService Protocol
 
+    func fetchLoanProducts() async throws -> [LoanProduct] {
+        try await Task.sleep(for: .milliseconds(200))
+        return [
+            LoanProduct(name: "Home Loan", minimumAmount: 500_000, maximumAmount: 50_000_000, minimumTenureMonths: 60, maximumTenureMonths: 360, minimumInterestRate: 6, maximumInterestRate: 12),
+            LoanProduct(name: "Personal Loan", minimumAmount: 10_000, maximumAmount: 1_000_000, minimumTenureMonths: 6, maximumTenureMonths: 60, minimumInterestRate: 10, maximumInterestRate: 24),
+            LoanProduct(name: "Vehicle Loan", minimumAmount: 50_000, maximumAmount: 5_000_000, minimumTenureMonths: 12, maximumTenureMonths: 84, minimumInterestRate: 7, maximumInterestRate: 15)
+        ]
+    }
+
+    func createLoanProduct(_ product: LoanProduct) async throws -> LoanProduct {
+        try await Task.sleep(for: .milliseconds(200))
+        return product
+    }
+
+    func updateLoanProduct(_ product: LoanProduct) async throws -> LoanProduct {
+        try await Task.sleep(for: .milliseconds(200))
+        return product
+    }
+
+    func deleteLoanProduct(id: UUID) async throws {
+        try await Task.sleep(for: .milliseconds(200))
+    }
+
+
     func createApplication(productID: UUID, requestedAmount: Decimal, tenureMonths: Int) async throws -> LoanApplication {
         try await Task.sleep(for: .milliseconds(400))
         let app = LoanApplication(
@@ -252,8 +276,6 @@ actor MockLoanService: LoanService {
         throw NSError(domain: "Mock", code: 501, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
     }
 
-    func fetchLoanProducts() async throws -> [LoanProduct] { return [] }
-    func createLoanProduct(_ product: LoanProduct) async throws -> LoanProduct { return product }
     func fetchApplications(statuses: [String]) async throws -> [LoanApplication] { return applications }
     func startReview(applicationID: UUID) async throws {}
     func requestDocuments(applicationID: UUID, documentTypes: [String], remark: String?) async throws {}

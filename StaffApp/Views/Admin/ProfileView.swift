@@ -5,10 +5,24 @@ import SwiftUI
 /// A native iOS Profile view matching the requested layout.
 @MainActor
 struct ProfileView: View {
+    @Environment(\.appEnvironment) private var env
+    @Environment(SessionStore.self) private var session
+
     @State private var isTwoFactorEnabled = true
     @State private var isBiometricEnabled = true
     @State private var showSignOutConfirmation = false
     @State private var showSignOutSuccess = false
+
+    private func signOut() {
+        Task {
+            try? await env?.auth.signOut()
+            await MainActor.run {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    session.currentUser = nil
+                }
+            }
+        }
+    }
 
     var body: some View {
         List {
@@ -24,19 +38,30 @@ struct ProfileView: View {
             securitySection
             
             // Preferences Section
-            preferencesSection
-            
-            // Support & Sign Out Section
-            footerSection
+//            preferencesSection
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
-        .confirmationDialog("Are you sure you want to sign out?", isPresented: $showSignOutConfirmation, titleVisibility: .visible) {
-            Button("Sign Out", role: .destructive) {
-                showSignOutSuccess = true
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button(role: .destructive) {
+                        showSignOutConfirmation = true
+                    } label: {
+                        Label("Logout", systemImage: "rectangle.portrait.and.arrow.forward")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.body)
+                }
             }
+        }
+        .alert("Log Out?", isPresented: $showSignOutConfirmation) {
+            Button("Log Out", role: .destructive) { signOut() }
             Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Are you sure you want to sign out from your account?")
         }
         .alert("Signed Out", isPresented: $showSignOutSuccess) {
             Button("OK", role: .cancel) {}
@@ -123,15 +148,7 @@ struct ProfileView: View {
         }
     }
 
-    private var footerSection: some View {
-        Section {
-            NavigationLink("Support", destination: SupportDetailedView())
-            Button("Sign Out") {
-                showSignOutConfirmation = true
-            }
-            .foregroundStyle(.red)
-        }
-    }
+
 }
 
 // MARK: - Detailed Subviews

@@ -12,27 +12,48 @@ import SwiftUI
 struct AdminDashboardView: View {
     @Bindable var viewModel: DashboardViewModel
     @Bindable var userVM: UserManagementViewModel
-    @State private var isAmountVisible: Bool = true
+    @Environment(\.appEnvironment) private var env
     @State private var showDetails: Bool = false
+
 
     var body: some View {
         List {
-            // Total Distribution Card
-            Button {
-                showDetails = true
-            } label: {
-                distributionCard
+            if let error = viewModel.error {
+                Section {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.red)
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Retry") {
+                            Task { await viewModel.loadDashboard() }
+                        }
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.blue)
+                    }
+                }
             }
-            .buttonStyle(.plain)
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets())
-            .padding(.bottom, Spacing.m)
+
+            // Total Distribution Card
+            distributionCard
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    showDetails = true
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+                .padding(.bottom, Spacing.m)
+
+
 
             // Recent Applications List
             recentApplicationsList
         }
         .listStyle(.insetGrouped)
-        .navigationTitle("Dashboard")
+        .navigationTitle("Overview")
         .navigationDestination(isPresented: $showDetails) {
             DistributionDetailsView(viewModel: viewModel, userVM: userVM)
         }
@@ -45,7 +66,18 @@ struct AdminDashboardView: View {
             }
         }
         .refreshable {
-            await viewModel.refreshDashboard()
+            try? await viewModel.refreshDashboard()
+        }
+        .task {
+            viewModel.configure(environment: env)
+            await viewModel.loadDashboard()
+            viewModel.subscribeToRealtimeChanges()
+        }
+        .onAppear {
+            viewModel.isAmountVisible = false
+        }
+        .onDisappear {
+            viewModel.unsubscribeFromRealtime()
         }
     }
 
@@ -59,20 +91,26 @@ struct AdminDashboardView: View {
                     Text("TOTAL DISTRIBUTION")
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.8))
-                    Text(isAmountVisible ? viewModel.snapshot.stats.totalAmount : "••••••")
+                    Text(viewModel.isAmountVisible ? Formatting.compactIndianRupee(viewModel.rawTotalAmount) : "₹••••••")
                         .font(.system(size: 34, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                 }
                 
                 Spacer()
                 
-                Button {
-                    isAmountVisible.toggle()
-                } label: {
-                    Image(systemName: isAmountVisible ? "eye" : "eye.slash")
-                        .font(.title2)
-                        .foregroundStyle(.white)
-                }
+                Image(systemName: viewModel.isAmountVisible ? "eye" : "eye.slash")
+                    .font(.title2)
+                    .foregroundStyle(.white)
+                    .padding(8)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                            viewModel.isAmountVisible.toggle()
+                        }
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(viewModel.isAmountVisible ? "Hide amount" : "Show amount")
+                    .accessibilityAddTraits(.isButton)
             }
             
             HStack(spacing: 0) {
@@ -89,7 +127,7 @@ struct AdminDashboardView: View {
         }
         .padding(20)
         .background(
-            Color.blue.gradient,
+            AdminColor.accentGradient,
             in: RoundedRectangle(cornerRadius: 24, style: .continuous)
         )
     }
@@ -107,32 +145,58 @@ struct AdminDashboardView: View {
         .frame(maxWidth: .infinity)
     }
 
+
     /// List of separate Recent Application cards
     private var recentApplicationsList: some View {
         Section {
-            ForEach(viewModel.snapshot.recentApplications) { app in
-                HStack(alignment: .center) {
-                    VStack(alignment: .leading, spacing: Spacing.xs) {
-                        Text(app.name)
-                            .font(.lmsHeadline)
-                            .foregroundStyle(.primary)
-                        Text("\(app.loanType.rawValue.capitalized) • \(app.amount)")
-                            .font(.lmsCaption)
-                            .foregroundStyle(.secondary)
-                    }
-                    
+            if viewModel.isLoading && viewModel.snapshot.recentApplications.isEmpty {
+                HStack {
                     Spacer()
-                    
-                    VStack(alignment: .trailing, spacing: Spacing.xs) {
-                        StatusBadge(
-                            app.status.rawValue.capitalized,
-                            tone: app.status == .approved ? .success : .warning
-                        )
-                        
-                        Text(app.date)
-                            .font(.lmsCaption)
-                            .foregroundStyle(.secondary)
+                    ProgressView("Loading applications...")
+                    Spacer()
+                }
+                .listRowBackground(Color.clear)
+                .padding(.vertical, 20)
+            } else if viewModel.snapshot.recentApplications.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "tray")
+                        .font(.largeTitle)
+                        .foregroundStyle(.secondary)
+                    Text("No Recent Applications")
+                        .font(.lmsHeadline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 24)
+                .listRowBackground(Color.clear)
+            } else {
+                ForEach(viewModel.snapshot.recentApplications) { app in
+                    NavigationLink(destination: AdminApplicationDetailView(applicationID: app.id)) {
+                        HStack(alignment: .center) {
+                            VStack(alignment: .leading, spacing: Spacing.xs) {
+                                Text(app.name)
+                                    .font(.lmsHeadline)
+                                    .foregroundStyle(.primary)
+                                Text("\(app.loanType.rawValue.capitalized) • \(app.amount)")
+                                    .font(.lmsCaption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            VStack(alignment: .trailing, spacing: Spacing.xs) {
+                                StatusBadge(
+                                    app.status.displayLabel.capitalized,
+                                    tone: app.status == .approved ? .success : .warning
+                                )
+                                
+                                Text(app.date)
+                                    .font(.lmsCaption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
+                    .buttonStyle(.plain)
                 }
             }
         } header: {

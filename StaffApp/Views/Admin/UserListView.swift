@@ -13,6 +13,7 @@ import SwiftUI
 /// Displays a searchable list of all system users with role-based filters.
 struct UserListView: View {
     @Bindable var viewModel: UserManagementViewModel
+    @State private var showAddStaff = false
 
     var body: some View {
         List {
@@ -41,7 +42,11 @@ struct UserListView: View {
                         }
                         .opacity(0)
                         
-                        UserRowView(user: user, profile: viewModel.staffProfiles[user.id])
+                        UserRowView(
+                            user: user,
+                            profile: viewModel.staffProfiles[user.id],
+                            isResetPending: viewModel.usersPendingReset.contains(user.id)
+                        )
                     }
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
@@ -64,10 +69,13 @@ struct UserListView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink(destination: ProfileView()) {
-                    Image(systemName: "person.crop.circle")
+                Button {
+                    showAddStaff = true
+                } label: {
+                    Image(systemName: "person.badge.plus")
                         .font(.title3)
                 }
+                .accessibilityLabel("Add staff user")
             }
         }
     }

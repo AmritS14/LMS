@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import SwiftUI
+import Supabase
 
 enum NotificationChannel: String, Codable, Sendable, CaseIterable, Identifiable {
     case email = "Email"
@@ -250,13 +251,332 @@ enum AdminSeedData {
     ]
 }
 
+private func mapAppStatus(_ raw: String) -> ApplicationStatus {
+    switch raw.lowercased() {
+    case "submitted": return .submitted
+    case "assigned": return .submitted
+    case "under_review": return .underReview
+    case "document_pending": return .additionalInfoRequired
+    case "manager_review", "pending_manager_approval": return .escalated
+    case "approved": return .approved
+    case "rejected": return .rejected
+    case "disbursed": return .disbursed
+    case "closed": return .closed
+    default: return .draft
+    }
+}
+
+struct DBEnrichedApplication: Decodable {
+    struct NestedUser: Decodable { let id: UUID; let email: String?; let full_name: String? }
+    struct NestedProduct: Decodable { let id: UUID; let name: String? }
+    let id: UUID
+    let borrower_id: UUID
+    let assigned_officer_id: UUID?
+    let loan_product_id: UUID
+    let requested_amount: Decimal
+    let tenure_months: Int
+    let interest_rate: Double
+    let status: String
+    let created_at: Date
+    let updated_at: Date
+    let users: NestedUser?
+    let loan_products: NestedProduct?
+}
+
 @MainActor
 @Observable
 final class DashboardViewModel {
     var snapshot: DashboardSnapshot = AdminSeedData.dashboardSnapshot
+    var isAmountVisible: Bool = false
+    var rawTotalAmount: Decimal = 12_850_000
+    var isLoading: Bool = false
+    var error: String? = nil
 
-    func refreshDashboard() async {
-        snapshot = AdminSeedData.dashboardSnapshot
+    private var environment: AppEnvironment?
+    private var realtimeTask: Task<Void, Never>? = nil
+    private var productCache: [UUID: LoanType] = [:]
+
+    func configure(environment: AppEnvironment?) {
+        self.environment = environment
+    }
+
+    private func ensureProductCache() async throws {
+        guard let environment else { return }
+        if productCache.isEmpty {
+            let products = try await environment.loans.fetchLoanProducts()
+            for p in products {
+                productCache[p.id] = p.loanType
+            }
+        }
+    }
+
+    func loadDashboard() async {
+        isLoading = true
+        error = nil
+
+        if environment == nil {
+            // Preview / Mock fallback
+            self.snapshot = AdminSeedData.dashboardSnapshot
+            self.rawTotalAmount = 12_850_000
+            isLoading = false
+            return
+        }
+
+        do {
+            try await refreshDashboard()
+        } catch {
+            self.error = error.localizedDescription
+        }
+        isLoading = false
+    }
+
+    func refreshDashboard() async throws {
+        guard let environment else { return }
+        let client = SupabaseManager.shared.client
+
+        try await ensureProductCache()
+
+        async let usersRes = client.from("users").select("id").execute()
+        async let loansRes = client.from("loans").select("principal, status").execute()
+        async let appsRes = client.from("loan_applications").select("id").execute()
+
+        // Relationship query for recent applications
+        async let recentAppsRes = client.from("loan_applications")
+            .select("id, borrower_id, assigned_officer_id, loan_product_id, requested_amount, tenure_months, interest_rate, status, created_at, updated_at, users:users!loan_applications_borrower_id_fkey(id, email, full_name), loan_products(id, name)")
+            .order("created_at", ascending: false)
+            .limit(10)
+            .execute()
+
+        let (uData, lData, aData, rData) = try await (usersRes, loansRes, appsRes, recentAppsRes)
+
+        struct DBUserSummary: Decodable { let id: UUID }
+        struct DBLoanSummary: Decodable { let principal: Decimal; let status: String }
+        struct DBAppSummary: Decodable { let id: UUID }
+
+        let dbUsers = try SupabaseManager.shared.decoder.decode([DBUserSummary].self, from: uData.data)
+        let dbLoans = try SupabaseManager.shared.decoder.decode([DBLoanSummary].self, from: lData.data)
+        let dbApps = try SupabaseManager.shared.decoder.decode([DBAppSummary].self, from: aData.data)
+        let dbRecentApps = try SupabaseManager.shared.decoder.decode([DBEnrichedApplication].self, from: rData.data)
+
+        let totalDisbursed = dbLoans.reduce(0) { $0 + $1.principal }
+        let activeLoansCount = dbLoans.filter { $0.status.lowercased() == "active" }.count
+
+        self.rawTotalAmount = totalDisbursed
+
+        // Map to domain RecentApplication
+        let recent = dbRecentApps.map { db -> RecentApplication in
+            let name = db.users?.full_name ?? "Unknown Borrower"
+            let loanType = productCache[db.loan_product_id] ?? .personal
+            let amountStr = Formatting.currency(db.requested_amount)
+            let status = mapAppStatus(db.status)
+            let dateStr = Formatting.date(db.updated_at)
+
+            return RecentApplication(
+                id: db.id,
+                name: name.isEmpty ? "Unknown Borrower" : name,
+                loanType: loanType,
+                amount: amountStr,
+                status: status,
+                date: dateStr
+            )
+        }
+
+        self.snapshot = DashboardSnapshot(
+            stats: DashboardStats(
+                totalAmount: Formatting.currency(totalDisbursed),
+                totalUser: dbUsers.count,
+                activeLoans: activeLoansCount,
+                applications: dbApps.count
+            ),
+            recentApplications: recent
+        )
+    }
+
+    func subscribeToRealtimeChanges() {
+        guard environment != nil else { return }
+        realtimeTask?.cancel()
+        realtimeTask = Task {
+            let client = SupabaseManager.shared.client
+            let channel = client.channel("admin-dashboard-changes")
+            let changes = channel.postgresChange(
+                AnyAction.self,
+                schema: "public",
+                table: "loan_applications"
+            )
+            do {
+                await channel.subscribe()
+                for await _ in changes {
+                    try? await self.refreshDashboard()
+                }
+            } catch {
+                print("Realtime subscription error: \(error)")
+            }
+        }
+    }
+
+    func unsubscribeFromRealtime() {
+        realtimeTask?.cancel()
+        realtimeTask = nil
+    }
+}
+
+@MainActor
+@Observable
+final class AdminApplicationDetailViewModel {
+    var applicationID: UUID
+    var application: LoanApplication? = nil
+    var borrower: User? = nil
+    var loanOfficer: User? = nil
+    var manager: User? = nil
+    var events: [ApplicationEvent] = []
+
+    var isLoading: Bool = false
+    var error: String? = nil
+
+    private var environment: AppEnvironment?
+    private var realtimeTask: Task<Void, Never>? = nil
+
+    init(applicationID: UUID) {
+        self.applicationID = applicationID
+    }
+
+    func configure(environment: AppEnvironment?) {
+        self.environment = environment
+    }
+
+    func loadDetails() async {
+        isLoading = true
+        error = nil
+
+        guard let env = environment else {
+            loadMockDetails()
+            isLoading = false
+            return
+        }
+
+        do {
+            let app = try await env.loans.fetchApplicationDetails(applicationID: applicationID)
+            self.application = app
+
+            let fetchedEvents = try await env.loans.fetchApplicationEvents(applicationID: applicationID)
+            self.events = fetchedEvents
+
+            self.borrower = try await fetchUser(id: app.borrowerID)
+
+            if let officerID = app.assignedOfficerID {
+                self.loanOfficer = try await fetchUser(id: officerID)
+            } else {
+                self.loanOfficer = nil
+            }
+
+            self.manager = nil
+            let managerEventTypes: Set<String> = ["approved", "rejected", "sent_to_manager"]
+            if let managerEvent = fetchedEvents.first(where: { managerEventTypes.contains($0.eventType.lowercased()) }),
+               let actorID = managerEvent.actorID {
+                if let user = try? await fetchUser(id: actorID) {
+                    if user.role == .manager || user.role == .admin {
+                        self.manager = user
+                    }
+                }
+            }
+
+            if self.manager == nil, let officerID = app.assignedOfficerID {
+                let profiles = try await env.admin.listStaffProfiles()
+                if let officerProfile = profiles.first(where: { $0.id == officerID }),
+                   let managerID = officerProfile.reportsToID {
+                    self.manager = try? await fetchUser(id: managerID)
+                }
+            }
+
+        } catch {
+            self.error = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
+    private func fetchUser(id: UUID) async throws -> User {
+        let response = try await SupabaseManager.shared.client
+            .from("users")
+            .select("id, full_name, email, phone, role, is_active, created_at")
+            .eq("id", value: id)
+            .single()
+            .execute()
+
+        struct DBUser: Decodable {
+            let id: UUID
+            let full_name: String?
+            let email: String?
+            let phone: String?
+            let role: String?
+            let is_active: Bool?
+            let created_at: Date?
+        }
+
+        let db = try SupabaseManager.shared.decoder.decode(DBUser.self, from: response.data)
+
+        func mapRole(_ raw: String?) -> UserRole {
+            switch (raw ?? "").lowercased() {
+            case "loan_officer", "loanofficer": return .loanOfficer
+            case "manager": return .manager
+            case "admin": return .admin
+            default: return .borrower
+            }
+        }
+
+        return User(
+            id: db.id,
+            fullName: (db.full_name?.isEmpty == false ? db.full_name! : "—"),
+            email: db.email ?? "",
+            phone: db.phone ?? "",
+            role: mapRole(db.role),
+            isActive: db.is_active ?? true,
+            createdAt: db.created_at ?? .now
+        )
+    }
+
+    private func loadMockDetails() {
+        let mockApps = MockOfficerData.assignedApplications()
+        if let mockApp = mockApps.first(where: { $0.id == applicationID }) ?? mockApps.first {
+            self.application = mockApp
+            self.borrower = User(id: mockApp.borrowerID, fullName: "Priya Sharma", email: "priya@lms.com", phone: "+91 99999 88888", role: .borrower)
+            if let loID = mockApp.assignedOfficerID {
+                self.loanOfficer = User(id: loID, fullName: "Sarah Mehta", email: "sarah.mehta@lms.com", phone: "+91 99887 76543", role: .loanOfficer)
+            }
+            self.manager = User(id: UUID(), fullName: "Aditi Rao", email: "aditi.rao@lms.com", phone: "+91 99887 65432", role: .manager)
+            self.events = [
+                ApplicationEvent(applicationID: applicationID, actorID: mockApp.borrowerID, eventType: "submitted", remark: "Application submitted", fromStatus: nil, toStatus: "submitted", createdAt: mockApp.createdAt),
+                ApplicationEvent(applicationID: applicationID, actorID: mockApp.assignedOfficerID, eventType: "start-review", remark: "Review started", fromStatus: "submitted", toStatus: "under_review", createdAt: mockApp.createdAt.addingTimeInterval(3600))
+            ]
+        }
+    }
+
+    func subscribeToRealtimeChanges() {
+        guard environment != nil else { return }
+        realtimeTask?.cancel()
+        realtimeTask = Task {
+            let client = SupabaseManager.shared.client
+            let channel = client.channel("admin-app-details-\(applicationID.uuidString)")
+            let changes = channel.postgresChange(
+                AnyAction.self,
+                schema: "public",
+                table: "loan_applications",
+                filter: "id=eq.\(applicationID.uuidString)"
+            )
+            do {
+                await channel.subscribe()
+                for await _ in changes {
+                    await self.loadDetails()
+                }
+            } catch {
+                print("Realtime subscription error: \(error)")
+            }
+        }
+    }
+
+    func unsubscribeFromRealtime() {
+        realtimeTask?.cancel()
+        realtimeTask = nil
     }
 }
 
@@ -274,6 +594,51 @@ final class UserManagementViewModel {
     var searchText: String = ""
     var showSuccessAlert: Bool = false
     var successMessage: String = ""
+    var isLoading: Bool = false
+    var loadError: String?
+    var usersPendingReset: Set<UUID> = []
+
+    private var environment: AppEnvironment?
+
+    func configure(environment: AppEnvironment?) {
+        self.environment = environment
+    }
+
+    /// Replaces the seeded mock users with the real directory from the backend.
+    func load() async {
+        guard let environment else { return }
+        isLoading = true
+        loadError = nil
+        do {
+            async let usersReq = environment.admin.listUsers(ids: nil)
+            async let profilesReq = environment.admin.listStaffProfiles()
+            let fetchedUsers = try await usersReq
+            let fetchedProfiles = try await profilesReq
+            users = fetchedUsers
+            staffProfiles = Dictionary(uniqueKeysWithValues: fetchedProfiles.map { ($0.id, $0) })
+        } catch {
+            loadError = error.localizedDescription
+        }
+        isLoading = false
+    }
+
+    /// Creates a new staff user via the backend, then reloads the directory.
+    func createStaff(email: String, fullName: String, role: UserRole, employeeID: String, temporaryPassword: String) async throws {
+        guard role != .admin else {
+            throw NSError(domain: "Admin", code: 400, userInfo: [NSLocalizedDescriptionKey: "Creating Admin accounts is not allowed."])
+        }
+        guard let environment else {
+            throw NSError(domain: "Admin", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not connected to backend."])
+        }
+        _ = try await environment.admin.createStaff(
+            email: email,
+            fullName: fullName,
+            role: role,
+            employeeID: employeeID,
+            temporaryPassword: temporaryPassword
+        )
+        await load()
+    }
 
     private var loanHistory: [UUID: [Loan]] = AdminSeedData.loanHistory
     private var borrowerAssignments: [UUID: UUID] = AdminSeedData.borrowerOfficerAssignments
@@ -307,28 +672,53 @@ final class UserManagementViewModel {
 
     func updateRole(for userID: UUID, to role: UserRole) async {
         guard let index = users.firstIndex(where: { $0.id == userID }) else { return }
-        users[index].role = role
-        if role == .admin || role == .manager || role == .loanOfficer {
-            if staffProfiles[userID] == nil {
-                staffProfiles[userID] = StaffProfile(
-                    id: userID,
-                    employeeID: "ST-\(userID.uuidString.prefix(6).uppercased())",
-                    branchID: nil,
-                    department: nil,
-                    reportsToID: nil,
-                    permissions: []
-                )
+        
+        do {
+            if let env = environment {
+                try await env.admin.updateUserRole(userID: userID, role: role)
+                await load() // Reload to ensure sync
+            } else {
+                // Fallback for previews if environment is not set
+                users[index].role = role
+                if role == .admin || role == .manager || role == .loanOfficer {
+                    if staffProfiles[userID] == nil {
+                        staffProfiles[userID] = StaffProfile(
+                            id: userID,
+                            employeeID: "ST-\(userID.uuidString.prefix(6).uppercased())",
+                            branchID: nil,
+                            department: nil,
+                            reportsToID: nil,
+                            permissions: []
+                        )
+                    }
+                }
             }
+            
+            showSuccessAlert = true
+            successMessage = "Role updated for \(users[index].fullName)."
+        } catch {
+            loadError = "Failed to update role: \(error.localizedDescription)"
         }
-        showSuccessAlert = true
-        successMessage = "Role updated for \(users[index].fullName)."
     }
 
     func toggleUserStatus(for userID: UUID) async {
         guard let index = users.firstIndex(where: { $0.id == userID }) else { return }
-        users[index].isActive.toggle()
-        showSuccessAlert = true
-        successMessage = users[index].isActive ? "User reactivated." : "User deactivated."
+        
+        // Optimistic UI update
+        let newStatus = !users[index].isActive
+        users[index].isActive = newStatus
+        
+        do {
+            if let env = environment {
+                try await env.admin.updateUserStatus(userID: userID, isActive: newStatus)
+            }
+            successMessage = newStatus ? "User reactivated." : "User deactivated."
+            showSuccessAlert = true
+        } catch {
+            // Revert UI on failure
+            users[index].isActive = !newStatus
+            print("Failed to update user status: \(error)")
+        }
     }
 
     func deleteUser(for userID: UUID) async {
@@ -370,18 +760,6 @@ final class UserManagementViewModel {
         users.filter { $0.role == .loanOfficer && staffProfiles[$0.id]?.reportsToID == managerID }
     }
 
-    func createStaff(email: String, fullName: String, role: UserRole, employeeID: String, temporaryPassword: String) async throws {
-        let newUser = User(id: UUID(), fullName: fullName, email: email, phone: "", role: role)
-        users.append(newUser)
-        staffProfiles[newUser.id] = StaffProfile(
-            id: newUser.id,
-            employeeID: employeeID,
-            branchID: nil,
-            department: nil,
-            reportsToID: nil,
-            permissions: []
-        )
-    }
 }
 
 @MainActor
@@ -477,6 +855,46 @@ final class TemplateViewModel {
 final class LoanConfigViewModel {
     var productsByCategory: [LoanCategory: [AdminLoanProduct]] = AdminLoanProduct.sampleProducts
     var showSaveAlert: Bool = false
+    var isSaving: Bool = false
+    var isLoading: Bool = false
+
+    private var environment: AppEnvironment?
+
+    func configure(environment: AppEnvironment?) {
+        self.environment = environment
+    }
+
+    func load() async {
+        guard let environment else { return }
+        isLoading = true
+        defer { isLoading = false }
+        guard let products = try? await environment.loans.fetchLoanProducts() else { return }
+
+        var grouped: [LoanCategory: [AdminLoanProduct]] = [:]
+        for p in products {
+            let admin = AdminLoanProduct(
+                id: p.id,
+                name: p.name,
+                minAmount: NSDecimalNumber(decimal: p.minimumAmount).doubleValue,
+                maxAmount: NSDecimalNumber(decimal: p.maximumAmount).doubleValue,
+                interestRate: p.displayRate,
+                maxTenure: p.maximumTenureMonths,
+                tenureUnit: .months
+            )
+            grouped[Self.category(for: p.loanType), default: []].append(admin)
+        }
+        productsByCategory = grouped
+    }
+
+    private static func category(for type: LoanType) -> LoanCategory {
+        switch type {
+        case .personal: return .personal
+        case .home: return .home
+        case .vehicle: return .vehicle
+        case .education: return .education
+        case .business: return .business
+        }
+    }
 
     var activeCategories: [LoanCategory] {
         LoanCategory.allCases.filter { !(productsByCategory[$0] ?? []).isEmpty }
@@ -501,11 +919,50 @@ final class LoanConfigViewModel {
     }
 
     func deleteLoans(category: LoanCategory, at offsets: IndexSet) {
-        productsByCategory[category]?.remove(atOffsets: offsets)
-        markDirty()
+        guard let environment, let products = productsByCategory[category] else { return }
+        
+        Task {
+            for index in offsets {
+                let product = products[index]
+                do {
+                    try await environment.loans.deleteLoanProduct(id: product.id)
+                } catch {
+                    print("Failed to delete loan product: \(error)")
+                }
+            }
+            await MainActor.run {
+                productsByCategory[category]?.remove(atOffsets: offsets)
+                showSaveAlert = true
+            }
+        }
+    }
+
+    func updateProduct(_ product: AdminLoanProduct, category: LoanCategory) async throws {
+        let maxMonths = product.tenureUnit == .years ? product.maxTenure * 12 : product.maxTenure
+        let minMonths = min(maxMonths, product.tenureUnit == .years ? 12 : 6)
+
+        let domain = LoanProduct(
+            id: product.id,
+            name: product.name,
+            description: category.rawValue,
+            minimumAmount: Decimal(product.minAmount),
+            maximumAmount: Decimal(product.maxAmount),
+            minimumTenureMonths: minMonths,
+            maximumTenureMonths: maxMonths,
+            minimumInterestRate: product.interestRate,
+            maximumInterestRate: product.interestRate,
+            isActive: true
+        )
+        
+        if let environment {
+            isSaving = true
+            defer { isSaving = false }
+            _ = try await environment.loans.updateLoanProduct(domain)
+            showSaveAlert = true
+        }
     }
 
     func markDirty() {
-        showSaveAlert = true
+        // Not used as we now save immediately
     }
 }
