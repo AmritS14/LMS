@@ -335,5 +335,4 @@ actor MockLoanService: LoanService {
         
         return loans[idx]
     }
->>>>>>> SP2-Borrower
 }

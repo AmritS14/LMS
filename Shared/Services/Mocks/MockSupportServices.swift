@@ -58,7 +58,7 @@ actor MockAdminService: AdminService {
     func updateUserStatus(userID: UUID, isActive: Bool) async throws { }
     func archiveLoan(id: UUID) async throws { }
     func restoreLoan(id: UUID) async throws { }
-    func fetchAuditLogs() async throws -> [AuditEntry] { AdminSeedData.auditEntries }
+    func fetchAuditLogs() async throws -> [AuditEntry] { [] }
 }
 
 // MARK: - MockDocumentService
