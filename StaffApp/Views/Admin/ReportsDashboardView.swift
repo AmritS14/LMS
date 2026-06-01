@@ -81,66 +81,7 @@ struct ReportsDashboardView: View {
                     } else {
                         Section {
                             ForEach(Array(filteredData.enumerated()), id: \.element.id) { index, item in
-                                let isExpanded = expandedRowIDs.contains(item.id)
-                                
-                                VStack(alignment: .leading, spacing: 0) {
-                                    Button {
-                                        withAnimation {
-                                            if isExpanded {
-                                                expandedRowIDs.remove(item.id)
-                                            } else {
-                                                expandedRowIDs.insert(item.id)
-                                            }
-                                        }
-                                    } label: {
-                                        HStack(alignment: .top, spacing: 12) {
-                                            VStack(alignment: .leading, spacing: 4) {
-                                                Text(item.borrowerName)
-                                                    .font(.headline)
-                                                    .foregroundStyle(.primary)
-                                                Text("\(item.branch) Branch • \(item.loanType)")
-                                                    .font(.subheadline)
-                                                    .foregroundStyle(.secondary)
-                                                Text(item.date.formatted(date: .abbreviated, time: .omitted))
-                                                    .font(.caption)
-                                                    .foregroundStyle(.tertiary)
-                                            }
-
-                                            Spacer()
-
-                                            VStack(alignment: .trailing, spacing: 4) {
-                                                Text(Formatting.currency(item.disbursedAmount))
-                                                    .font(.subheadline.bold())
-                                                    .foregroundStyle(.primary)
-                                                
-                                                Text(item.status)
-                                                    .font(.caption.bold())
-                                                    .foregroundStyle(statusColor(item.status))
-                                            }
-                                            
-                                            Image(systemName: "chevron.right")
-                                                .font(.caption)
-                                                .foregroundStyle(.tertiary)
-                                                .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                                                .padding(.top, 4)
-                                        }
-                                        .padding(.vertical, 4)
-                                    }
-                                    .buttonStyle(.plain)
-
-                                    if isExpanded {
-                                        VStack(spacing: 8) {
-                                            Divider().padding(.vertical, 4)
-                                            expandedRow(label: "Outstanding Principal", value: Formatting.currency(item.outstandingPrincipal))
-                                            expandedRow(label: "Avg Loan Tenure", value: "\(item.averageTenure) Months")
-                                            expandedRow(label: "Branch Division", value: "\(item.branch) Region")
-                                            expandedRow(label: "Product Type", value: "\(item.loanType) Credit")
-                                            expandedRow(label: "Audit ID", value: String(item.id.uuidString.prefix(8)).uppercased())
-                                        }
-                                        .padding(.leading, 12)
-                                        .padding(.bottom, 4)
-                                    }
-                                }
+                                reportRow(for: item)
                             }
                         } header: {
                             Text("Detailed Breakdown (\(filteredData.count) Records)")
@@ -360,6 +301,70 @@ struct ReportsDashboardView: View {
                 } else {
                     self.viewModel.hasError = true
                 }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func reportRow(for item: ReportsViewModel.ReportItem) -> some View {
+        let isExpanded = expandedRowIDs.contains(item.id)
+        
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation {
+                    if isExpanded {
+                        expandedRowIDs.remove(item.id)
+                    } else {
+                        expandedRowIDs.insert(item.id)
+                    }
+                }
+            } label: {
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(item.borrowerName)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                        Text("\(item.branch) Branch • \(item.loanType)")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Text(item.date.formatted(date: .abbreviated, time: .omitted))
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+
+                    Spacer()
+
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(Formatting.currency(item.disbursedAmount))
+                            .font(.subheadline.bold())
+                            .foregroundStyle(.primary)
+                        
+                        Text(item.status)
+                            .font(.caption.bold())
+                            .foregroundStyle(statusColor(item.status))
+                    }
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                        .padding(.top, 4)
+                }
+                .padding(.vertical, 4)
+            }
+            .buttonStyle(.plain)
+
+            if isExpanded {
+                VStack(spacing: 8) {
+                    Divider().padding(.vertical, 4)
+                    expandedRow(label: "Outstanding Principal", value: Formatting.currency(item.outstandingPrincipal))
+                    expandedRow(label: "Avg Loan Tenure", value: "\(item.averageTenure) Months")
+                    expandedRow(label: "Branch Division", value: "\(item.branch) Region")
+                    expandedRow(label: "Product Type", value: "\(item.loanType) Credit")
+                    expandedRow(label: "Audit ID", value: String(item.id.uuidString.prefix(8)).uppercased())
+                }
+                .padding(.leading, 12)
+                .padding(.bottom, 4)
             }
         }
     }

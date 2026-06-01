@@ -115,7 +115,7 @@ struct DistributionDetailsView: View {
 
 
 
-    private var psSection: some View {
+    private var reportsSection: some View {
         Section {
             NavigationLink(destination: ReportsDashboardView()) {
                 statRow(title: "Institutional Reports", count: 7, systemImage: "doc.text.magnifyingglass") // 7 is just matching the mock data count

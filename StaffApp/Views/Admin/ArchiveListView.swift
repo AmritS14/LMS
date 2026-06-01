@@ -204,91 +204,22 @@ struct ArchiveListView: View {
     }
     
     var body: some View {
-        List {
+        Group {
             if isLoading {
-                ProgressView("Loading Archives...")
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .listRowBackground(Color.clear)
+                VStack {
+                    Spacer()
+                    ProgressView("Loading Archives...")
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if hasError {
                 ContentUnavailableView("Data Error", systemImage: "exclamationmark.triangle", description: Text("Failed to load loan archives."))
             } else if filteredLoans.isEmpty {
                 ContentUnavailableView("No Archives", systemImage: "archivebox", description: Text("No records match your filters."))
             } else {
-                ForEach(filteredLoans) { loan in
-                    VStack(alignment: .leading, spacing: Spacing.xs) {
-                        HStack {
-                            Text(loan.loanIDString)
-                                .font(.lmsHeadline)
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            if loan.isArchived {
-                                Label("Archived", systemImage: "lock.fill")
-                                    .font(.lmsCaption)
-                                    .foregroundStyle(.orange)
-                            } else {
-                                Text(loan.status.rawValue.capitalized)
-                                    .font(.lmsCaption)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(loan.status == .settled ? Color.lmsSuccess.opacity(0.12) : Color.lmsInfo.opacity(0.12), in: Capsule())
-                                    .foregroundStyle(loan.status == .settled ? Color.lmsSuccess : Color.lmsInfo)
-                            }
-                        }
-                        
-                        Text(loan.borrowerName)
-                            .font(.lmsSubheadline)
-                            .foregroundStyle(.primary)
-                        
-                        Text("\(loan.loanType.rawValue.capitalized) • \(Formatting.currency(loan.principal))")
-                            .font(.lmsCaption)
-                            .foregroundStyle(.secondary)
-                        
-                        Text("Closed: \(loan.closedDate.formatted(date: .abbreviated, time: .omitted))")
-                            .font(.lmsCaption)
-                            .foregroundStyle(.secondary)
-                            
-                        if !loan.isArchived && !loan.isEligible {
-                            Text("Only completed loans can be archived.")
-                                .font(.caption)
-                                .foregroundStyle(Color.lmsWarning)
-                                .padding(.top, 4)
-                        }
-                    }
-                    .padding(.vertical, Spacing.xs)
-                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                        if loan.isArchived {
-                            Button {
-                                Task {
-                                    do {
-                                        try await viewModel.restoreLoan(loan.id)
-                                    } catch {
-                                        print("Restore error: \(error)")
-                                    }
-                                }
-                            } label: {
-                                Label("Restore", systemImage: "arrow.uturn.backward.circle.fill")
-                            }
-                            .tint(.green)
-                        } else {
-                            Button {
-                                if loan.isEligible {
-                                    Task {
-                                        do {
-                                            try await viewModel.archiveLoan(loan.id)
-                                        } catch {
-                                            print("Archive error: \(error)")
-                                        }
-                                    }
-                                } else {
-                                    errorText = "Unable to process. Only settled loans can be archived."
-                                    showSimErrorAlert = true
-                                }
-                            } label: {
-                                Label("Archive", systemImage: "archivebox.fill")
-                            }
-                            .tint(loan.isEligible ? .orange : .gray)
-                            .disabled(!loan.isEligible)
-                        }
+                List {
+                    ForEach(filteredLoans) { loan in
+                        archiveRow(for: loan)
                     }
                 }
             }
@@ -363,27 +294,6 @@ struct ArchiveListView: View {
                     Image(systemName: "square.and.arrow.up")
                 }
             }
-            
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Button {
-                        isLoading = true
-                        Task {
-                            try? await Task.sleep(for: .seconds(1.2))
-                            isLoading = false
-                        }
-                    } label: {
-                        Label("Sim Load", systemImage: "arrow.triangle.2.circlepath")
-                    }
-                    Button {
-                        hasError.toggle()
-                    } label: {
-                        Label(hasError ? "Clear Error" : "Sim Error", systemImage: "exclamationmark.triangle")
-                    }
-                } label: {
-                    Image(systemName: "hammer.circle")
-                }
-            }
         }
         // Confirmation Dialog - Archive
         .alert("Archive Loan?", isPresented: $showArchiveConfirmAlert, presenting: pendingArchiveActionItem) { item in
@@ -423,6 +333,85 @@ struct ArchiveListView: View {
         .sheet(isPresented: $showExportSheet) {
             if let url = exportURL {
                 ShareSheet(activityItems: [url])
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func archiveRow(for loan: ArchiveLoanItem) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            HStack {
+                Text(loan.loanIDString)
+                    .font(.lmsHeadline)
+                    .foregroundStyle(.primary)
+                Spacer()
+                if loan.isArchived {
+                    Label("Archived", systemImage: "lock.fill")
+                        .font(.lmsCaption)
+                        .foregroundStyle(.orange)
+                } else {
+                    Text(loan.status.rawValue.capitalized)
+                        .font(.lmsCaption)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(loan.status == .settled ? Color.lmsSuccess.opacity(0.12) : Color.lmsInfo.opacity(0.12), in: Capsule())
+                        .foregroundStyle(loan.status == .settled ? Color.lmsSuccess : Color.lmsInfo)
+                }
+            }
+            
+            Text(loan.borrowerName)
+                .font(.lmsSubheadline)
+                .foregroundStyle(.primary)
+            
+            Text("\(loan.loanType.rawValue.capitalized) • \(Formatting.currency(loan.principal))")
+                .font(.lmsCaption)
+                .foregroundStyle(.secondary)
+            
+            Text("Closed: \(loan.closedDate.formatted(date: .abbreviated, time: .omitted))")
+                .font(.lmsCaption)
+                .foregroundStyle(.secondary)
+                
+            if !loan.isArchived && !loan.isEligible {
+                Text("Only completed loans can be archived.")
+                    .font(.caption)
+                    .foregroundStyle(Color.lmsWarning)
+                    .padding(.top, 4)
+            }
+        }
+        .padding(.vertical, Spacing.xs)
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            if loan.isArchived {
+                Button {
+                    Task {
+                        do {
+                            try await viewModel.restoreLoan(loan.id)
+                        } catch {
+                            print("Restore error: \(error)")
+                        }
+                    }
+                } label: {
+                    Label("Restore", systemImage: "arrow.uturn.backward.circle.fill")
+                }
+                .tint(.green)
+            } else {
+                Button {
+                    if loan.isEligible {
+                        Task {
+                            do {
+                                try await viewModel.archiveLoan(loan.id)
+                            } catch {
+                                print("Archive error: \(error)")
+                            }
+                        }
+                    } else {
+                        errorText = "Unable to process. Only settled loans can be archived."
+                        showSimErrorAlert = true
+                    }
+                } label: {
+                    Label("Archive", systemImage: "archivebox.fill")
+                }
+                .tint(loan.isEligible ? .orange : .gray)
+                .disabled(!loan.isEligible)
             }
         }
     }

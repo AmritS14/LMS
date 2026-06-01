@@ -141,8 +141,8 @@ final class ReportsViewModel {
                 entityType: "report",
                 entityID: currentUser.id,
                 metadata: [
-                    "loans_total_count": .number(Double(dbLoans.count)),
-                    "total_portfolio_size": .number(Double(truncating: totalDisbursed as NSDecimalNumber))
+                    "loans_total_count": .integer(dbLoans.count),
+                    "total_portfolio_size": .double(NSDecimalNumber(decimal: totalDisbursed).doubleValue)
                 ]
             )
 
@@ -197,7 +197,7 @@ final class ReportsViewModel {
                 metadata: [
                     "format": .string("CSV"),
                     "filters_applied": .string(filters),
-                    "record_count": .number(Double(filteredItems.count))
+                    "record_count": .integer(filteredItems.count)
                 ]
             )
             
@@ -332,7 +332,7 @@ final class ReportsViewModel {
                 metadata: [
                     "format": .string("PDF"),
                     "filters_applied": .string(filters),
-                    "record_count": .number(Double(filteredItems.count))
+                    "record_count": .integer(filteredItems.count)
                 ]
             )
             

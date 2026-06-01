@@ -73,7 +73,7 @@ struct AuditListView: View {
     @State private var exportURL: URL?
     @State private var showExportSheet = false
     
-    private let roles = ["All Roles", "Admin", "Manager", "Loan Officer"]
+    private let roles = ["All Roles", "Admin", "Manager", "Loan Officer", "Borrower"]
     
     private var filteredEntries: [AuditEntry] {
         viewModel.entries.filter { entry in
