@@ -3,7 +3,7 @@ import Charts
 
 struct MonthlyReportPreviewView: View {
     let report: ReportItem
-    let data = MockManagerData.monthlyReportData()
+    let data: MonthlyReportData
 
     var body: some View {
         ScrollView {
@@ -26,7 +26,7 @@ struct MonthlyReportPreviewView: View {
 
                 // Main KPIs
                 HStack(spacing: Spacing.m) {
-                    ReportKPICard(title: "Monthly Revenue", value: Formatting.currency(data.monthlyRevenue), icon: "indianrupeesign.circle.fill", color: .lmsSuccess)
+                    ReportKPICard(title: "Interest Earned", value: Formatting.currency(data.interestEarned), icon: "indianrupeesign.circle.fill", color: .lmsSuccess)
                     ReportKPICard(title: "Total Profit", value: Formatting.currency(data.totalProfit), icon: "chart.line.uptrend.xyaxis", color: .lmsAccent)
                 }
                 .padding(.horizontal, Spacing.m)
@@ -41,15 +41,15 @@ struct MonthlyReportPreviewView: View {
                 // Loan Performance
                 ReportSectionCard(title: "Loan Performance") {
                     ReportDetailRow(title: "Total Distributed", value: Formatting.currency(data.totalDistributed))
-                    ReportDetailRow(title: "Loan Recovery Rate", value: "\(String(format: "%.1f", data.loanRecoveryRate))%")
+                    ReportDetailRow(title: "Loan Recovery Rate", value: String(format: "%.1f%%", data.loanRecoveryRate))
                     ReportDetailRow(title: "Best Category", value: data.bestPerformingCategory, isLast: true)
                 }
 
                 // Loan Type Analytics (Charts)
-                ReportSectionCard(title: "Loan Type Analytics") {
-                    VStack(alignment: .leading, spacing: Spacing.l) {
-                        Chart(data.loanTypeAnalytics) { item in
-                            if #available(iOS 17.0, *) {
+                if !data.loanTypeAnalytics.isEmpty {
+                    ReportSectionCard(title: "Loan Type Analytics") {
+                        VStack(alignment: .leading, spacing: Spacing.l) {
+                            Chart(data.loanTypeAnalytics) { item in
                                 SectorMark(
                                     angle: .value("Percentage", item.percentage),
                                     innerRadius: .ratio(0.5),
@@ -61,40 +61,29 @@ struct MonthlyReportPreviewView: View {
                                         .font(.caption.weight(.bold))
                                         .foregroundStyle(.white)
                                 }
-                            } else {
-                                BarMark(
-                                    x: .value("Percentage", item.percentage),
-                                    y: .value("Type", item.type)
-                                )
-                                .foregroundStyle(item.color)
-                                .annotation(position: .overlay) {
-                                    Text("\(Int(item.percentage))%")
-                                        .font(.caption2.weight(.bold))
-                                        .foregroundStyle(.white)
-                                }
                             }
-                        }
-                        .frame(height: 200)
+                            .frame(height: 200)
 
-                        VStack(alignment: .leading, spacing: Spacing.s) {
-                            ForEach(data.loanTypeAnalytics) { item in
-                                HStack {
-                                    Circle()
-                                        .fill(item.color)
-                                        .frame(width: 8, height: 8)
-                                    Text(item.type)
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                    Spacer()
-                                    Text("\(String(format: "%.0f", item.percentage))%")
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(.primary)
+                            VStack(alignment: .leading, spacing: Spacing.s) {
+                                ForEach(data.loanTypeAnalytics) { item in
+                                    HStack {
+                                        Circle()
+                                            .fill(item.color)
+                                            .frame(width: 8, height: 8)
+                                        Text(item.typeName)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                        Spacer()
+                                        Text(String(format: "%.0f%%", item.percentage))
+                                            .font(.subheadline.weight(.semibold))
+                                            .foregroundStyle(.primary)
+                                    }
                                 }
                             }
+                            .padding(.top, Spacing.s)
                         }
-                        .padding(.top, Spacing.s)
+                        .padding(Spacing.m)
                     }
-                    .padding(Spacing.m)
                 }
             }
             .padding(.vertical, Spacing.m)

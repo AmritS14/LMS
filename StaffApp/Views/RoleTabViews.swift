@@ -79,9 +79,6 @@ struct ManagerTabView: View {
             Tab("Reports", systemImage: "doc.text.magnifyingglass") {
                 ManagerNavigationStack { ManagerReportsView() }
             }
-            Tab("Profile", systemImage: "person.crop.circle") {
-                ManagerNavigationStack { ManagerProfileView() }
-            }
         }
     }
 }

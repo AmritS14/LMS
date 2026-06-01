@@ -2,7 +2,7 @@ import SwiftUI
 
 struct DailyReportPreviewView: View {
     let report: ReportItem
-    let data = MockManagerData.dailyReportData()
+    let data: DailyReportData
 
     var body: some View {
         ScrollView {
@@ -25,8 +25,8 @@ struct DailyReportPreviewView: View {
 
                 // KPI Grid
                 HStack(spacing: Spacing.m) {
-                    ReportKPICard(title: "Loans Approved", value: "\(data.loansApproved)", icon: "doc.text.fill", color: .lmsAccent)
-                    ReportKPICard(title: "Amount Disbursed", value: Formatting.currency(data.totalAmount), icon: "indianrupeesign.circle.fill", color: .lmsSuccess)
+                    ReportKPICard(title: "Loans Disbursed", value: "\(data.loansApproved)", icon: "doc.text.fill", color: .lmsAccent)
+                    ReportKPICard(title: "Amount Disbursed", value: Formatting.currency(data.totalDisbursedToday), icon: "indianrupeesign.circle.fill", color: .lmsSuccess)
                 }
                 .padding(.horizontal, Spacing.m)
 
@@ -38,14 +38,14 @@ struct DailyReportPreviewView: View {
 
                 // Loan Summary
                 ReportSectionCard(title: "Loan Summary") {
-                    ReportDetailRow(title: "Total Loans Given Today", value: "\(data.loansApproved)")
-                    ReportDetailRow(title: "Total Amount Distributed", value: Formatting.currency(data.totalAmount))
+                    ReportDetailRow(title: "Loans Disbursed Today", value: "\(data.loansApproved)")
+                    ReportDetailRow(title: "Amount Disbursed Today", value: Formatting.currency(data.totalDisbursedToday))
                     ReportDetailRow(title: "Total Active Loans", value: "\(data.activeLoans)", isLast: true)
                 }
 
                 // Customer Activity
                 ReportSectionCard(title: "Customer Activity") {
-                    ReportDetailRow(title: "New Customers Added", value: "\(data.newCustomers)")
+                    ReportDetailRow(title: "New Customers Today", value: "\(data.newCustomers)")
                     ReportDetailRow(title: "Missed Payments Today", value: "\(data.missedPayments)", isLast: true)
                 }
             }

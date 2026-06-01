@@ -2,7 +2,7 @@ import SwiftUI
 
 struct WeeklyReportPreviewView: View {
     let report: ReportItem
-    let data = MockManagerData.weeklyReportData()
+    let data: WeeklyReportData
 
     var body: some View {
         ScrollView {
@@ -25,8 +25,8 @@ struct WeeklyReportPreviewView: View {
 
                 // KPI Grid
                 HStack(spacing: Spacing.m) {
-                    ReportKPICard(title: "Loan Growth", value: "+\(String(format: "%.1f", data.weeklyLoanGrowth))%", icon: "chart.line.uptrend.xyaxis", color: .lmsAccent)
-                    ReportKPICard(title: "Recovery Perf.", value: "\(String(format: "%.1f", data.recoveryPerformance))%", icon: "arrow.triangle.2.circlepath", color: .lmsSuccess)
+                    ReportKPICard(title: "Loan Growth", value: String(format: "%+.1f%%", data.weeklyLoanGrowth), icon: "chart.line.uptrend.xyaxis", color: data.weeklyLoanGrowth >= 0 ? .lmsSuccess : .lmsDanger)
+                    ReportKPICard(title: "Recovery Perf.", value: String(format: "%.1f%%", data.recoveryPerformance), icon: "arrow.triangle.2.circlepath", color: .lmsSuccess)
                 }
                 .padding(.horizontal, Spacing.m)
 
@@ -34,14 +34,21 @@ struct WeeklyReportPreviewView: View {
                 ReportSectionCard(title: "Repayment Collection Report") {
                     ReportDetailRow(title: "Total Repayment Collected", value: Formatting.currency(data.totalRepaymentCollected))
                     ReportDetailRow(title: "Number of Defaults", value: "\(data.numberOfDefaults)")
-                    ReportDetailRow(title: "Top Paying Customers", value: "\(data.topPayingCustomers)", isLast: true)
+                    ReportDetailRow(title: "Top Paying Borrowers", value: "\(data.topPayingCustomers)", isLast: true)
                 }
 
-                // Overdue / Defaulters Report
+                // Overdue / Defaulters — snapshotted at generation time
                 ReportSectionCard(title: "Overdue / Defaulters") {
-                    let customers = MockManagerData.overdueCustomers()
-                    ForEach(Array(customers.enumerated()), id: \.element.id) { index, customer in
-                        OverdueCustomerRow(customer: customer, isLast: index == customers.count - 1)
+                    if data.overdueAccounts.isEmpty {
+                        ReportDetailRow(title: "No overdue accounts", value: "—", isLast: true)
+                    } else {
+                        ForEach(Array(data.overdueAccounts.enumerated()), id: \.element.id) { index, acct in
+                            ReportDetailRow(
+                                title: acct.title,
+                                value: acct.loanReferenceCode,
+                                isLast: index == data.overdueAccounts.count - 1
+                            )
+                        }
                     }
                 }
             }

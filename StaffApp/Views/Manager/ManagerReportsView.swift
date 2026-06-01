@@ -6,7 +6,6 @@ struct ManagerReportsView: View {
     @Environment(ManagerStore.self) private var store
     @State private var showFormatPicker = false
     @State private var pendingReportType: ReportKind?
-    @State private var selectedFormat: ReportFormat = .pdf
     @State private var previewReport: ReportItem?
     @State private var showClearConfirmation = false
 
@@ -228,16 +227,18 @@ struct ManagerReportsView: View {
     private func reportPreviewSheet(_ report: ReportItem) -> some View {
         NavigationStack {
             Group {
-                switch report.type {
-                case .daily:
-                    DailyReportPreviewView(report: report)
-                case .weekly:
-                    WeeklyReportPreviewView(report: report)
-                case .monthly:
-                    MonthlyReportPreviewView(report: report)
-                case .npa, .collectionEfficiency:
-                    // Fallback to Weekly for now or create a dedicated NPA view
-                    WeeklyReportPreviewView(report: report)
+                switch report.snapshot {
+                case .daily(let data):
+                    DailyReportPreviewView(report: report, data: data)
+                case .weekly(let data):
+                    WeeklyReportPreviewView(report: report, data: data)
+                case .monthly(let data):
+                    MonthlyReportPreviewView(report: report, data: data)
+                case .npa(let data):
+                    NPAReportPreviewView(report: report, data: data)
+                case nil:
+                    ContentUnavailableView("No Preview", systemImage: "doc.questionmark",
+                                           description: Text("Report data was not captured."))
                 }
             }
             .toolbar {
@@ -249,16 +250,13 @@ struct ManagerReportsView: View {
                 }
             }
             .safeAreaInset(edge: .bottom) {
-                VStack(spacing: 0) {
-                    Button {
-                        previewReport = nil
-                    } label: {
-                        Text("Done")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
+                Button {
+                    previewReport = nil
+                } label: {
+                    Text("Done").frame(maxWidth: .infinity)
                 }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
                 .padding(Spacing.m)
                 .background(.bar)
             }
@@ -271,20 +269,14 @@ struct ManagerReportsView: View {
 
     @ViewBuilder
     private func shareButton(_ report: ReportItem) -> some View {
-        ShareLink(item: report.name) {
+        if let url = report.fileURL, FileManager.default.fileExists(atPath: url.path) {
+            ShareLink(item: url, subject: Text(report.name)) {
+                Label("Share", systemImage: "square.and.arrow.up")
+            }
+        } else {
             Label("Share", systemImage: "square.and.arrow.up")
+                .foregroundStyle(.tertiary)
         }
-    }
-
-    private func shareButtonLarge(_ report: ReportItem) -> some View {
-        ShareLink(item: report.name) {
-            Label("Export", systemImage: "square.and.arrow.up")
-                .font(.headline)
-                .frame(maxWidth: .infinity, minHeight: 28)
-        }
-        .buttonStyle(.bordered)
-        .buttonBorderShape(.roundedRectangle(radius: CornerRadius.button))
-        .controlSize(.large)
     }
 
     private func reportPeriod(_ type: ReportKind) -> String {

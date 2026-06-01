@@ -18,8 +18,9 @@ struct ManagerProfileView: View {
         managerStore.managerProfile.employeeID
     }
 
-    private var branchName: String {
-        managerStore.branchName
+    private var branchName: String? {
+        let name = managerStore.branchName
+        return (name == "—" || name.isEmpty) ? nil : name
     }
 
     var body: some View {
@@ -48,10 +49,10 @@ struct ManagerProfileView: View {
 
             // MARK: Branch Information
 
-            Section("Branch") {
-                LabeledContent("Branch", value: branchName)
-                LabeledContent("Branch Code", value: "BLR-MG01")
-                LabeledContent("Region", value: "South India")
+            if let branchName {
+                Section("Branch") {
+                    LabeledContent("Branch", value: branchName)
+                }
             }
 
             // MARK: Notification Preferences

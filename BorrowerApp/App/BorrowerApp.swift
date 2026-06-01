@@ -4,8 +4,8 @@ import UIKit
 @main
 struct BorrowerApp: App {
     @State private var session = SessionStore(
-        currentUser: MockAuthService.seedBorrower,
-        borrowerProfile: MockAuthService.seedBorrowerProfile
+//        currentUser: MockAuthService.seedBorrower,
+//        borrowerProfile: MockAuthService.seedBorrowerProfile
     )
 
     private let appEnvironment = AppEnvironment(

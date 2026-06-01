@@ -189,6 +189,7 @@ struct LoanApplication: Identifiable, Codable, Sendable, Hashable {
     var id: UUID = UUID()
     var borrowerID: UUID
     var assignedOfficerID: UUID?
+    var assignedOfficerName: String? = nil
     var loanType: LoanType
     var requestedAmount: Decimal
     var tenureMonths: Int
@@ -310,11 +311,11 @@ struct AuditEntry: Identifiable, Codable, Sendable, Hashable {
 
 // MARK: - Reporting
 
-enum ReportKind: String, Sendable {
+enum ReportKind: String, Codable, Sendable {
     case daily, weekly, monthly, npa, collectionEfficiency
 }
 
-enum ReportFormat: String, Sendable {
+enum ReportFormat: String, Codable, Sendable {
     case pdf, csv
 }
 

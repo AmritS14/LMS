@@ -2,7 +2,7 @@ import Foundation
 
 protocol AdminService: Sendable {
     /// All users in the system (admin-only; gated by RLS).
-    func listUsers() async throws -> [User]
+    func listUsers(ids: [UUID]?) async throws -> [User]
     /// Staff profiles (employee id, department, reporting line) keyed by user id.
     func listStaffProfiles() async throws -> [StaffProfile]
     /// Creates a staff account (loan officer / manager / admin) via the backend

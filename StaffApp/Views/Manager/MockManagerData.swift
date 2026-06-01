@@ -222,11 +222,21 @@ enum MockManagerData {
     static func reportHistory() -> [ReportItem] {
         let now = Date.now
         return [
-            ReportItem(name: "Daily Report — May 27", type: .daily, format: .pdf, size: "1.2 MB", generatedAt: now.addingTimeInterval(-60 * 30), status: .completed),
-            ReportItem(name: "Weekly Report — W21", type: .weekly, format: .csv, size: "340 KB", generatedAt: now.addingTimeInterval(-60 * 60 * 24), status: .completed),
-            ReportItem(name: "Monthly Report — April", type: .monthly, format: .pdf, size: "4.8 MB", generatedAt: now.addingTimeInterval(-60 * 60 * 72), status: .completed),
-            ReportItem(name: "NPA Analysis — Q1 2026", type: .npa, format: .pdf, size: "2.1 MB", generatedAt: now.addingTimeInterval(-60 * 60 * 168), status: .completed),
-            ReportItem(name: "Daily Report — May 26", type: .daily, format: .pdf, size: "1.1 MB", generatedAt: now.addingTimeInterval(-60 * 60 * 48), status: .completed)
+            ReportItem(name: "Daily Report — May 27", type: .daily, format: .pdf, size: "1.2 MB",
+                       generatedAt: now.addingTimeInterval(-60 * 30), status: .completed,
+                       snapshot: .daily(dailyReportData())),
+            ReportItem(name: "Weekly Report — W21", type: .weekly, format: .csv, size: "340 KB",
+                       generatedAt: now.addingTimeInterval(-60 * 60 * 24), status: .completed,
+                       snapshot: .weekly(weeklyReportData())),
+            ReportItem(name: "Monthly Report — April", type: .monthly, format: .pdf, size: "4.8 MB",
+                       generatedAt: now.addingTimeInterval(-60 * 60 * 72), status: .completed,
+                       snapshot: .monthly(monthlyReportData())),
+            ReportItem(name: "NPA Analysis — Q1 2026", type: .npa, format: .pdf, size: "2.1 MB",
+                       generatedAt: now.addingTimeInterval(-60 * 60 * 168), status: .completed,
+                       snapshot: .npa(npaReportData())),
+            ReportItem(name: "Daily Report — May 26", type: .daily, format: .pdf, size: "1.1 MB",
+                       generatedAt: now.addingTimeInterval(-60 * 60 * 48), status: .completed,
+                       snapshot: .daily(dailyReportData()))
         ]
     }
 
@@ -267,13 +277,13 @@ enum MockManagerData {
 
     static func dailyReportData() -> DailyReportData {
         DailyReportData(
-            loansApproved: 25,
-            totalAmount: 2_50_000,
+            loansApproved: 5,
+            totalDisbursedToday: 2_50_000,
             activeLoans: 120,
             emiCollected: 45_000,
             pendingCollections: 10_000,
-            newCustomers: 12,
-            missedPayments: 4
+            newCustomers: 3,
+            missedPayments: 2
         )
     }
 
@@ -283,25 +293,42 @@ enum MockManagerData {
             totalRepaymentCollected: 3_20_000,
             numberOfDefaults: 8,
             recoveryPerformance: 88.5,
-            topPayingCustomers: 15
+            topPayingCustomers: 15,
+            overdueAccounts: [
+                OverdueAccountSnapshot(id: UUID(), title: "Critical NPA Risk — Anita Desai", loanReferenceCode: "LN-DDDDDD"),
+                OverdueAccountSnapshot(id: UUID(), title: "Overdue EMI Escalation — Rahul Sharma", loanReferenceCode: "LN-EEEEEE")
+            ]
         )
     }
 
     static func monthlyReportData() -> MonthlyReportData {
         MonthlyReportData(
-            monthlyRevenue: 15_00_000,
+            monthlyRevenue: 30_000,
             totalDistributed: 42_850_000,
             loanRecoveryRate: 92.4,
-            totalProfit: 4_50_000,
+            totalProfit: 30_000,
             interestEarned: 30_000,
-            penaltyCollected: 2_000,
-            processingFees: 15_000,
+            penaltyCollected: 0,
+            processingFees: 0,
             bestPerformingCategory: "Personal Loans",
             loanTypeAnalytics: [
-                LoanTypeAnalytics(type: "Personal", percentage: 40, color: .lmsAccent),
-                LoanTypeAnalytics(type: "Business", percentage: 35, color: .lmsSuccess),
-                LoanTypeAnalytics(type: "Education", percentage: 25, color: .lmsWarning)
+                LoanTypeAnalytics(id: UUID(), loanType: .personal, percentage: 40),
+                LoanTypeAnalytics(id: UUID(), loanType: .business, percentage: 35),
+                LoanTypeAnalytics(id: UUID(), loanType: .education, percentage: 25)
             ]
+        )
+    }
+
+    static func npaReportData() -> NPAReportData {
+        NPAReportData(
+            totalNPALoans: 8,
+            npaRatio: 0.054,
+            totalNPAAmount: 4_200_000,
+            totalOverdueEMIs: 14,
+            overdueAmount: 1_80_000,
+            criticalAccounts: 2,
+            highRiskAccounts: 4,
+            mediumRiskAccounts: 8
         )
     }
 }

@@ -46,7 +46,7 @@ actor MockAadhaarKYCService: AadhaarKYCService {
 // MARK: - MockAdminService
 
 actor MockAdminService: AdminService {
-    func listUsers() async throws -> [User] { [] }
+    func listUsers(ids: [UUID]?) async throws -> [User] { [] }
     func listStaffProfiles() async throws -> [StaffProfile] { [] }
     func createStaff(email: String, fullName: String, role: UserRole, employeeID: String, temporaryPassword: String) async throws -> UUID {
         UUID()

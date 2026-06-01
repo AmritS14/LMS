@@ -176,6 +176,7 @@ enum ManagerRoute: Hashable {
     case auditLogs
     case loanPolicies
     case riskAlerts
+    case profile
 }
 
 // MARK: - Shared button press feedback
@@ -274,14 +275,30 @@ enum AuditStatus: String, CaseIterable, Hashable {
 
 // MARK: - Reports
 
-struct ReportItem: Identifiable, Hashable {
-    let id = UUID()
+struct ReportItem: Identifiable, Hashable, Codable {
+    let id: UUID
     var name: String
     var type: ReportKind
     var format: ReportFormat
     var size: String
     var generatedAt: Date
     var status: ReportStatus
+    var snapshot: ReportSnapshot?
+    // Filename relative to ReportGenerator.reportsDirectory
+    var fileName: String?
+
+    init(id: UUID = UUID(), name: String, type: ReportKind, format: ReportFormat,
+         size: String, generatedAt: Date, status: ReportStatus,
+         snapshot: ReportSnapshot? = nil, fileName: String? = nil) {
+        self.id = id; self.name = name; self.type = type; self.format = format
+        self.size = size; self.generatedAt = generatedAt; self.status = status
+        self.snapshot = snapshot; self.fileName = fileName
+    }
+
+    var fileURL: URL? {
+        guard let fn = fileName else { return nil }
+        return ReportGenerator.reportsDirectory.appendingPathComponent(fn)
+    }
 
     var dateText: String { OfficerFormat.timeAgo(generatedAt) }
 
@@ -300,7 +317,7 @@ struct ReportItem: Identifiable, Hashable {
     }
 }
 
-enum ReportStatus: String, Hashable {
+enum ReportStatus: String, Hashable, Codable {
     case generating = "Generating"
     case completed = "Completed"
     case failed = "Failed"
@@ -320,6 +337,15 @@ enum ReportStatus: String, Hashable {
         case .failed: "exclamationmark.triangle.fill"
         }
     }
+}
+
+// MARK: - Report Snapshots
+
+enum ReportSnapshot: Hashable, Codable {
+    case daily(DailyReportData)
+    case weekly(WeeklyReportData)
+    case monthly(MonthlyReportData)
+    case npa(NPAReportData)
 }
 
 // MARK: - Risk alerts
@@ -390,9 +416,15 @@ struct OverdueCustomer: Identifiable, Hashable {
     let pendingAmount: Decimal
 }
 
-struct DailyReportData: Hashable {
+struct OverdueAccountSnapshot: Identifiable, Hashable, Codable {
+    let id: UUID
+    let title: String
+    let loanReferenceCode: String
+}
+
+struct DailyReportData: Hashable, Codable {
     let loansApproved: Int
-    let totalAmount: Decimal
+    let totalDisbursedToday: Decimal
     let activeLoans: Int
     let emiCollected: Decimal
     let pendingCollections: Decimal
@@ -400,22 +432,33 @@ struct DailyReportData: Hashable {
     let missedPayments: Int
 }
 
-struct WeeklyReportData: Hashable {
-    let weeklyLoanGrowth: Double // percentage
+struct WeeklyReportData: Hashable, Codable {
+    let weeklyLoanGrowth: Double
     let totalRepaymentCollected: Decimal
     let numberOfDefaults: Int
-    let recoveryPerformance: Double // percentage
+    let recoveryPerformance: Double
     let topPayingCustomers: Int
+    let overdueAccounts: [OverdueAccountSnapshot]
 }
 
-struct LoanTypeAnalytics: Identifiable, Hashable {
-    let id = UUID()
-    let type: String
+struct LoanTypeAnalytics: Identifiable, Hashable, Codable {
+    let id: UUID
+    let loanType: LoanType
     let percentage: Double
-    let color: Color
+
+    var typeName: String { loanType.rawValue.capitalized }
+    var color: Color {
+        switch loanType {
+        case .home: .lmsAccent
+        case .personal: .lmsInfo
+        case .business: .lmsWarning
+        case .vehicle: .lmsSuccess
+        case .education: .lmsDanger
+        }
+    }
 }
 
-struct MonthlyReportData: Hashable {
+struct MonthlyReportData: Hashable, Codable {
     let monthlyRevenue: Decimal
     let totalDistributed: Decimal
     let loanRecoveryRate: Double
@@ -425,4 +468,15 @@ struct MonthlyReportData: Hashable {
     let processingFees: Decimal
     let bestPerformingCategory: String
     let loanTypeAnalytics: [LoanTypeAnalytics]
+}
+
+struct NPAReportData: Hashable, Codable {
+    let totalNPALoans: Int
+    let npaRatio: Double
+    let totalNPAAmount: Decimal
+    let totalOverdueEMIs: Int
+    let overdueAmount: Decimal
+    let criticalAccounts: Int   // > 90 days overdue
+    let highRiskAccounts: Int   // 30–90 days overdue
+    let mediumRiskAccounts: Int // < 30 days overdue
 }

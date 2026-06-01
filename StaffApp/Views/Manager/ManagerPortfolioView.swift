@@ -4,8 +4,6 @@ import SwiftUI
 
 struct ManagerPortfolioView: View {
     @Environment(ManagerStore.self) private var store
-    @State private var showFilters = false
-
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: Spacing.l) {
@@ -25,17 +23,11 @@ struct ManagerPortfolioView: View {
         .toolbarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showFilters = true
-                    } label: {
-                        Image(systemName: "line.3.horizontal.decrease.circle")
-                            .font(.title3)
-                    }
-                    .accessibilityLabel("Filters")
+                NavigationLink(value: ManagerRoute.profile) {
+                    Image(systemName: "person.crop.circle").font(.title3)
+                }
+                .accessibilityLabel("Profile")
             }
-        }
-        .sheet(isPresented: $showFilters) {
-            portfolioFilterSheet
         }
         .refreshable { await store.refreshAll() }
     }
@@ -111,9 +103,9 @@ struct ManagerPortfolioView: View {
 
     private var portfolioHealthSection: some View {
         SectionCard(title: "Portfolio Health") {
-            let healthy = 1.0 - store.portfolioSummary.npaRatio - 0.08 // 8% at-risk
-            let atRisk = 0.08
             let npa = store.portfolioSummary.npaRatio
+            let atRisk = store.atRiskPercent
+            let healthy = max(0, 1.0 - npa - atRisk)
 
             VStack(alignment: .leading, spacing: Spacing.s) {
                 GeometryReader { geo in
@@ -370,111 +362,6 @@ struct ManagerPortfolioView: View {
             .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
             .padding(.horizontal, Spacing.m)
         }
-    }
-
-    // MARK: Filters Sheet
-
-    @MainActor
-    private var portfolioFilterSheet: some View {
-        NavigationStack {
-            List {
-                Section("Branch") {
-                    ForEach(["All", "MG Road"], id: \.self) { branch in
-                        Button {
-                            store.selectedBranch = branch == "All" ? nil : branch
-                        } label: {
-                            HStack {
-                                Text(branch)
-                                    .foregroundStyle(.primary)
-                                Spacer()
-                                if (store.selectedBranch ?? "All") == (branch == "All" ? (store.selectedBranch ?? "All") : branch) && branch != "All" {
-                                    Image(systemName: "checkmark").foregroundStyle(Color.lmsAccent)
-                                } else if branch == "All" && store.selectedBranch == nil {
-                                    Image(systemName: "checkmark").foregroundStyle(Color.lmsAccent)
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Section("Region") {
-                    ForEach(["All", "South India", "North India", "West India"], id: \.self) { region in
-                        Button {
-                            store.selectedRegion = region == "All" ? nil : region
-                        } label: {
-                            HStack {
-                                Text(region).foregroundStyle(.primary)
-                                Spacer()
-                                if (region == "All" && store.selectedRegion == nil) || store.selectedRegion == region {
-                                    Image(systemName: "checkmark").foregroundStyle(Color.lmsAccent)
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Section("Loan Type") {
-                    Button {
-                        store.selectedLoanTypeFilter = nil
-                    } label: {
-                        HStack {
-                            Text("All").foregroundStyle(.primary)
-                            Spacer()
-                            if store.selectedLoanTypeFilter == nil {
-                                Image(systemName: "checkmark").foregroundStyle(Color.lmsAccent)
-                            }
-                        }
-                    }
-                    ForEach(LoanType.allCases) { type in
-                        Button {
-                            store.selectedLoanTypeFilter = type
-                        } label: {
-                            HStack {
-                                Text(type.rawValue.capitalized).foregroundStyle(.primary)
-                                Spacer()
-                                if store.selectedLoanTypeFilter == type {
-                                    Image(systemName: "checkmark").foregroundStyle(Color.lmsAccent)
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Section("Risk Level") {
-                    ForEach(["All", "Low", "Medium", "High", "Critical"], id: \.self) { risk in
-                        Button {
-                            store.selectedRiskFilter = risk == "All" ? nil : risk
-                        } label: {
-                            HStack {
-                                Text(risk).foregroundStyle(.primary)
-                                Spacer()
-                                if (risk == "All" && store.selectedRiskFilter == nil) || store.selectedRiskFilter == risk {
-                                    Image(systemName: "checkmark").foregroundStyle(Color.lmsAccent)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            .listStyle(.insetGrouped)
-            .navigationTitle("Filters")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { showFilters = false }
-                }
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Reset") {
-                        store.selectedBranch = nil
-                        store.selectedRegion = nil
-                        store.selectedLoanTypeFilter = nil
-                        store.selectedRiskFilter = nil
-                    }
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
     }
 
     // MARK: Helpers

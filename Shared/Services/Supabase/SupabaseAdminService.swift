@@ -49,14 +49,27 @@ actor SupabaseAdminService: AdminService {
 
     // MARK: - AdminService
 
-    func listUsers() async throws -> [User] {
-        let response = try await client
-            .from("users")
-            .select("id, full_name, email, phone, role, is_active, created_at")
-            .order("created_at", ascending: true)
-            .execute()
+    func listUsers(ids: [UUID]? = nil) async throws -> [User] {
+        guard let session = try? await client.auth.session else {
+            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
+        }
 
-        let dbUsers = try SupabaseManager.shared.decoder.decode([DBUser].self, from: response.data)
+        var components = URLComponents(string: "\(apiBase)/admin/users")!
+        if let ids, !ids.isEmpty {
+            let value = ids.map { $0.uuidString }.joined(separator: ",")
+            components.queryItems = [URLQueryItem(name: "ids", value: value)]
+        }
+        let url = components.url!
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, httpResponse) = try await URLSession.shared.data(for: request)
+        if let httpRes = httpResponse as? HTTPURLResponse, !(200...299).contains(httpRes.statusCode) {
+            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: errorStr])
+        }
+
+        let dbUsers = try SupabaseManager.shared.decoder.decode([DBUser].self, from: data)
         return dbUsers.map { db in
             User(
                 id: db.id,

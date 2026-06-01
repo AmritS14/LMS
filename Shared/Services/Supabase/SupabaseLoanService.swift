@@ -4,7 +4,7 @@ import Supabase
 /// Supabase implementation of LoanService
 actor SupabaseLoanService: LoanService {
     private let client: SupabaseClient
-    private let apiBase = "https://arshitsinghal-lms-backend.hf.space"
+    private let apiBase = "http://localhost:3000"
 
     init(client: SupabaseClient) {
         self.client = client
@@ -41,6 +41,7 @@ actor SupabaseLoanService: LoanService {
     private struct DBEnrichedApplication: Decodable {
         struct NestedUser: Decodable { let id: UUID; let email: String?; let full_name: String? }
         struct NestedProduct: Decodable { let id: UUID; let name: String? }
+        struct NestedOfficer: Decodable { let id: UUID; let email: String?; let full_name: String? }
         let id: UUID
         let borrower_id: UUID
         let assigned_officer_id: UUID?
@@ -52,6 +53,7 @@ actor SupabaseLoanService: LoanService {
         let created_at: Date
         let updated_at: Date
         let users: NestedUser?
+        let assigned_officer: NestedOfficer?
         let loan_products: NestedProduct?
     }
 
@@ -158,10 +160,12 @@ actor SupabaseLoanService: LoanService {
 
     private func toDomainEnriched(_ db: DBEnrichedApplication) -> LoanApplication {
         let name = db.users?.full_name.flatMap { $0.isEmpty ? nil : $0 }
+        let officerName = db.assigned_officer?.full_name.flatMap { $0.isEmpty ? nil : $0 }
         return LoanApplication(
             id: db.id,
             borrowerID: db.borrower_id,
             assignedOfficerID: db.assigned_officer_id,
+            assignedOfficerName: officerName,
             loanType: productCache[db.loan_product_id] ?? .personal,
             requestedAmount: db.requested_amount,
             tenureMonths: db.tenure_months,
@@ -287,15 +291,27 @@ actor SupabaseLoanService: LoanService {
     }
 
     func fetchApplications(statuses: [String]) async throws -> [LoanApplication] {
-        try await ensureProductCache()
-        let response = try await client
-            .from("loan_applications")
-            .select("id, borrower_id, assigned_officer_id, loan_product_id, requested_amount, tenure_months, interest_rate, status, created_at, updated_at, users:users!loan_applications_borrower_id_fkey(id, email, full_name), loan_products(id, name)")
-            .in("status", values: statuses)
-            .order("created_at", ascending: false)
-            .execute()
+        guard let session = try? await client.auth.session else {
+            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
+        }
 
-        let dbApps = try SupabaseManager.shared.decoder.decode([DBEnrichedApplication].self, from: response.data)
+        var components = URLComponents(string: "\(apiBase)/applications/manager")!
+        if !statuses.isEmpty {
+            let value = statuses.joined(separator: ",")
+            components.queryItems = [URLQueryItem(name: "statuses", value: value)]
+        }
+        let url = components.url!
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, httpResponse) = try await URLSession.shared.data(for: request)
+        if let httpRes = httpResponse as? HTTPURLResponse, !(200...299).contains(httpRes.statusCode) {
+            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: errorStr])
+        }
+
+        try await ensureProductCache()
+        let dbApps = try SupabaseManager.shared.decoder.decode([DBEnrichedApplication].self, from: data)
         return dbApps.map(toDomainEnriched)
     }
 

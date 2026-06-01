@@ -36,6 +36,8 @@ struct ManagerNavigationStack<Root: View>: View {
             LoanPoliciesView()
         case .riskAlerts:
             RiskAlertsView()
+        case .profile:
+            ManagerProfileView()
         }
     }
 }
