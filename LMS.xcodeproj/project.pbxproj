@@ -101,6 +101,20 @@
 		AA00KYC000000002FF02 /* SupabaseAadhaarKYCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00KYC000000002FF01 /* SupabaseAadhaarKYCService.swift */; };
 		AA00KYC000000002FF03 /* SupabaseAadhaarKYCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00KYC000000002FF01 /* SupabaseAadhaarKYCService.swift */; };
 		AA00KYC000000003FF02 /* AadhaarKYCView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00KYC000000003FF01 /* AadhaarKYCView.swift */; };
+		74AB73E0D51BA0BC3D97D04A /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 2F2A278D8B7228C924F45E5A /* Supabase */; };
+		BD88E8A63210E735B61FF0DB /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = C7836194A7CF255B8DAD9CD4 /* Supabase */; };
+		5B900C06FEC98C16A1BCC79D /* SupabaseAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C310B8B938438DAE6F4F90E0 /* SupabaseAuthService.swift */; };
+		66143A3B9FE6F60EA68A1A8F /* SupabaseAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C310B8B938438DAE6F4F90E0 /* SupabaseAuthService.swift */; };
+		B5736CA276F2155E52E5FF29 /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E0B31BAE1F58E40563D25B /* SupabaseManager.swift */; };
+		9ACB3979801AABEA63E8250F /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E0B31BAE1F58E40563D25B /* SupabaseManager.swift */; };
+		D1A96A5D5B9276150793483D /* SupabaseLoanService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 914A1BB4F51D4F5C31806EFD /* SupabaseLoanService.swift */; };
+		7CF9B0770FFCAFE017674DFC /* SupabaseLoanService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 914A1BB4F51D4F5C31806EFD /* SupabaseLoanService.swift */; };
+		5C1375C47BBBB9A4EE2FC938 /* SupabaseMessagingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9459DAEBCBCB9D3C2250C401 /* SupabaseMessagingService.swift */; };
+		A1AA0000000000000011AA03 /* SupabaseMessagingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9459DAEBCBCB9D3C2250C401 /* SupabaseMessagingService.swift */; };
+		11E257368809C6692698BD2B /* SupabaseDocumentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19A749024376B4E1C30F4B83 /* SupabaseDocumentService.swift */; };
+		A1AA0000000000000010AA03 /* SupabaseDocumentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19A749024376B4E1C30F4B83 /* SupabaseDocumentService.swift */; };
+		E5346A35720FA359BF32D66B /* SupabaseAdminService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3F99DE09F9F0CC21967249D /* SupabaseAdminService.swift */; };
+		897313B6AB4253FB09D4B397 /* SupabaseAdminService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3F99DE09F9F0CC21967249D /* SupabaseAdminService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -167,6 +181,12 @@
 		AA00KYC000000001FF01 /* AadhaarKYCService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AadhaarKYCService.swift; sourceTree = "<group>"; };
 		AA00KYC000000002FF01 /* SupabaseAadhaarKYCService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseAadhaarKYCService.swift; path = Supabase/SupabaseAadhaarKYCService.swift; sourceTree = "<group>"; };
 		AA00KYC000000003FF01 /* AadhaarKYCView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AadhaarKYCView.swift; sourceTree = "<group>"; };
+		98E0B31BAE1F58E40563D25B /* SupabaseManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseManager.swift; path = Supabase/SupabaseManager.swift; sourceTree = "<group>"; };
+		C310B8B938438DAE6F4F90E0 /* SupabaseAuthService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseAuthService.swift; path = Supabase/SupabaseAuthService.swift; sourceTree = "<group>"; };
+		914A1BB4F51D4F5C31806EFD /* SupabaseLoanService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseLoanService.swift; path = Supabase/SupabaseLoanService.swift; sourceTree = "<group>"; };
+		9459DAEBCBCB9D3C2250C401 /* SupabaseMessagingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseMessagingService.swift; path = Supabase/SupabaseMessagingService.swift; sourceTree = "<group>"; };
+		19A749024376B4E1C30F4B83 /* SupabaseDocumentService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseDocumentService.swift; path = Supabase/SupabaseDocumentService.swift; sourceTree = "<group>"; };
+		F3F99DE09F9F0CC21967249D /* SupabaseAdminService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseAdminService.swift; path = Supabase/SupabaseAdminService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -275,6 +295,12 @@
 				3D006F72DB84815CA65BE6A7 /* MessagingService.swift */,
 				780758255E8A8257BB032094 /* NotificationService.swift */,
 				AA00KYC000000001FF01 /* AadhaarKYCService.swift */,
+				98E0B31BAE1F58E40563D25B /* SupabaseManager.swift */,
+				C310B8B938438DAE6F4F90E0 /* SupabaseAuthService.swift */,
+				914A1BB4F51D4F5C31806EFD /* SupabaseLoanService.swift */,
+				9459DAEBCBCB9D3C2250C401 /* SupabaseMessagingService.swift */,
+				19A749024376B4E1C30F4B83 /* SupabaseDocumentService.swift */,
+				F3F99DE09F9F0CC21967249D /* SupabaseAdminService.swift */,
 				AA00KYC000000002FF01 /* SupabaseAadhaarKYCService.swift */,
 				F1F6DD3D2E576E52740D421F /* Mocks */,
 			);
@@ -396,11 +422,15 @@
 			buildConfigurationList = 93BB70BA024A56083E59C594 /* Build configuration list for PBXNativeTarget "StaffApp" */;
 			buildPhases = (
 				F6C87D2B3F8CE0BBDAD10B04 /* Sources */,
+				05B100DB67CAB814A1D393EC /* Frameworks */,
 				2A468C8934A73F881102E635 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+			);
+			packageProductDependencies = (
+				C7836194A7CF255B8DAD9CD4 /* Supabase */,
 			);
 			fileSystemSynchronizedGroups = (
 				F040CAA22FC4292C00A9E2F9 /* Admin */,
@@ -417,11 +447,15 @@
 			buildConfigurationList = 85BF0CFB21ABD51D87AB5DB1 /* Build configuration list for PBXNativeTarget "BorrowerApp" */;
 			buildPhases = (
 				A9BC0E1B55CEE8A6269F4451 /* Sources */,
+				3020B2C125C12A653D88D20B /* Frameworks */,
 				A47F999A3A747B687EC5CE27 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+			);
+			packageProductDependencies = (
+				2F2A278D8B7228C924F45E5A /* Supabase */,
 			);
 			name = BorrowerApp;
 			productName = BorrowerApp;
@@ -450,12 +484,34 @@
 			productRefGroup = 3C83BCA67B2DF25CC483E810 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
+			packageReferences = (
+				B2309659DF6C2938AA38D457 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
 			targets = (
 				51BCE1478721BC5726B818CC /* BorrowerApp */,
 				13D0E7CEC6ADA246BD7CBA41 /* StaffApp */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		05B100DB67CAB814A1D393EC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BD88E8A63210E735B61FF0DB /* Supabase in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3020B2C125C12A653D88D20B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				74AB73E0D51BA0BC3D97D04A /* Supabase in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXResourcesBuildPhase section */
 		2A468C8934A73F881102E635 /* Resources */ = {
@@ -503,6 +559,12 @@
 				AA00KYC000000003FF02 /* AadhaarKYCView.swift in Sources */,
 				AA00KYC000000001FF02 /* AadhaarKYCService.swift in Sources */,
 				AA00KYC000000002FF02 /* SupabaseAadhaarKYCService.swift in Sources */,
+				5B900C06FEC98C16A1BCC79D /* SupabaseAuthService.swift in Sources */,
+				B5736CA276F2155E52E5FF29 /* SupabaseManager.swift in Sources */,
+				D1A96A5D5B9276150793483D /* SupabaseLoanService.swift in Sources */,
+				5C1375C47BBBB9A4EE2FC938 /* SupabaseMessagingService.swift in Sources */,
+				11E257368809C6692698BD2B /* SupabaseDocumentService.swift in Sources */,
+				E5346A35720FA359BF32D66B /* SupabaseAdminService.swift in Sources */,
 				ED138C18F937FC71F291CD50 /* KeychainService.swift in Sources */,
 				AEC46A6B6FC8863AC7B09AEE /* LoanApplicationViewModel.swift in Sources */,
 				E1C6AB0F72DFE85EB39A11AC /* LoanService.swift in Sources */,
@@ -576,6 +638,12 @@
 				14709A63F344F7FD1D8264FF /* MockSupportServices.swift in Sources */,
 				AA00KYC000000001FF03 /* AadhaarKYCService.swift in Sources */,
 				AA00KYC000000002FF03 /* SupabaseAadhaarKYCService.swift in Sources */,
+				66143A3B9FE6F60EA68A1A8F /* SupabaseAuthService.swift in Sources */,
+				9ACB3979801AABEA63E8250F /* SupabaseManager.swift in Sources */,
+				7CF9B0770FFCAFE017674DFC /* SupabaseLoanService.swift in Sources */,
+				A1AA0000000000000011AA03 /* SupabaseMessagingService.swift in Sources */,
+				A1AA0000000000000010AA03 /* SupabaseDocumentService.swift in Sources */,
+				897313B6AB4253FB09D4B397 /* SupabaseAdminService.swift in Sources */,
 				A1AA0000000000000001AA03 /* AvatarView.swift in Sources */,
 				A1AA0000000000000002AA03 /* SectionHeader.swift in Sources */,
 				A1AA0000000000000003AA03 /* DetailRow.swift in Sources */,
@@ -818,6 +886,30 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		B2309659DF6C2938AA38D457 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase-community/supabase-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2F2A278D8B7228C924F45E5A /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B2309659DF6C2938AA38D457 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+		C7836194A7CF255B8DAD9CD4 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B2309659DF6C2938AA38D457 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1BDA123E2A496A75607E73E8 /* Project object */;
 }

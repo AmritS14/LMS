@@ -515,6 +515,7 @@ struct LOLoanApplication: Identifiable, Hashable {
 
     let id = UUID()
     var sourceApplicationID: UUID? = nil
+    var borrowerID: UUID? = nil
 
     var borrowerName: String
     var borrowerInitials: String
@@ -656,6 +657,7 @@ extension ApplicationStatus {
 
 struct LOLoanDocument: Identifiable, Hashable {
     let id = UUID()
+    var sourceDocumentID: UUID? = nil
 
     var name: String
     var type: String
@@ -663,7 +665,7 @@ struct LOLoanDocument: Identifiable, Hashable {
     var uploadDate: Date?
     var ocrVerified: Bool
     var icon: String
-    
+
     var reviewNotes: String? = nil
     var rejectionReason: String? = nil
 }

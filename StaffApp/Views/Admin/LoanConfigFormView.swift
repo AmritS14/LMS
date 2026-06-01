@@ -17,7 +17,7 @@ struct LoanConfigFormView: View {
     
     @State private var showAddLoanSheet = false
     @State private var errorMessage: String? = nil
-    @State private var selectedProduct: LoanProduct? = nil
+    @State private var selectedProduct: AdminLoanProduct? = nil
 
     var body: some View {
         List {

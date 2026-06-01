@@ -98,7 +98,7 @@ enum TenureUnit: String, Codable, Sendable, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-struct LoanProduct: Identifiable, Hashable, Codable, Sendable {
+struct AdminLoanProduct: Identifiable, Hashable, Codable, Sendable {
     var id: UUID = UUID()
     var name: String
     var minAmount: Double
@@ -107,21 +107,21 @@ struct LoanProduct: Identifiable, Hashable, Codable, Sendable {
     var maxTenure: Int
     var tenureUnit: TenureUnit
 
-    static let sampleProducts: [LoanCategory: [LoanProduct]] = [
+    static let sampleProducts: [LoanCategory: [AdminLoanProduct]] = [
         .personal: [
-            LoanProduct(name: "Flexible Personal Loan", minAmount: 50_000, maxAmount: 1_500_000, interestRate: 11.25, maxTenure: 60, tenureUnit: .months)
+            AdminLoanProduct(name: "Flexible Personal Loan", minAmount: 50_000, maxAmount: 1_500_000, interestRate: 11.25, maxTenure: 60, tenureUnit: .months)
         ],
         .home: [
-            LoanProduct(name: "Standard Home Loan", minAmount: 500_000, maxAmount: 15_000_000, interestRate: 8.45, maxTenure: 20, tenureUnit: .years)
+            AdminLoanProduct(name: "Standard Home Loan", minAmount: 500_000, maxAmount: 15_000_000, interestRate: 8.45, maxTenure: 20, tenureUnit: .years)
         ],
         .vehicle: [
-            LoanProduct(name: "New Car Loan", minAmount: 300_000, maxAmount: 3_000_000, interestRate: 9.10, maxTenure: 84, tenureUnit: .months)
+            AdminLoanProduct(name: "New Car Loan", minAmount: 300_000, maxAmount: 3_000_000, interestRate: 9.10, maxTenure: 84, tenureUnit: .months)
         ],
         .education: [
-            LoanProduct(name: "Higher Education Loan", minAmount: 100_000, maxAmount: 2_500_000, interestRate: 10.50, maxTenure: 84, tenureUnit: .months)
+            AdminLoanProduct(name: "Higher Education Loan", minAmount: 100_000, maxAmount: 2_500_000, interestRate: 10.50, maxTenure: 84, tenureUnit: .months)
         ],
         .business: [
-            LoanProduct(name: "SME Expansion Loan", minAmount: 250_000, maxAmount: 10_000_000, interestRate: 12.00, maxTenure: 10, tenureUnit: .years)
+            AdminLoanProduct(name: "SME Expansion Loan", minAmount: 250_000, maxAmount: 10_000_000, interestRate: 12.00, maxTenure: 10, tenureUnit: .years)
         ]
     ]
 }
@@ -369,6 +369,19 @@ final class UserManagementViewModel {
     func getLoanOfficers(for managerID: UUID) -> [User] {
         users.filter { $0.role == .loanOfficer && staffProfiles[$0.id]?.reportsToID == managerID }
     }
+
+    func createStaff(email: String, fullName: String, role: UserRole, employeeID: String, temporaryPassword: String) async throws {
+        let newUser = User(id: UUID(), fullName: fullName, email: email, phone: "", role: role)
+        users.append(newUser)
+        staffProfiles[newUser.id] = StaffProfile(
+            id: newUser.id,
+            employeeID: employeeID,
+            branchID: nil,
+            department: nil,
+            reportsToID: nil,
+            permissions: []
+        )
+    }
 }
 
 @MainActor
@@ -462,14 +475,14 @@ final class TemplateViewModel {
 @MainActor
 @Observable
 final class LoanConfigViewModel {
-    var productsByCategory: [LoanCategory: [LoanProduct]] = LoanProduct.sampleProducts
+    var productsByCategory: [LoanCategory: [AdminLoanProduct]] = AdminLoanProduct.sampleProducts
     var showSaveAlert: Bool = false
 
     var activeCategories: [LoanCategory] {
         LoanCategory.allCases.filter { !(productsByCategory[$0] ?? []).isEmpty }
     }
 
-    func binding(for productID: UUID) -> Binding<LoanProduct>? {
+    func binding(for productID: UUID) -> Binding<AdminLoanProduct>? {
         for category in LoanCategory.allCases {
             guard let index = productsByCategory[category]?.firstIndex(where: { $0.id == productID }) else {
                 continue

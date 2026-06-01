@@ -193,15 +193,18 @@ actor MockLoanService: LoanService {
 
     // MARK: - LoanService Protocol
 
-    func createApplication(_ draft: LoanApplication) async throws -> LoanApplication {
+    func createApplication(productID: UUID, requestedAmount: Decimal, tenureMonths: Int) async throws -> LoanApplication {
         try await Task.sleep(for: .milliseconds(400))
-        var app = draft
-        app.borrowerID = borrowerID
-        app.status = .draft
-        app.createdAt = .now
-        app.updatedAt = .now
-                applications.append(app)
-                return app
+        let app = LoanApplication(
+            borrowerID: borrowerID,
+            loanType: .personal,
+            requestedAmount: requestedAmount,
+            tenureMonths: tenureMonths,
+            interestRate: 10.5,
+            status: .draft
+        )
+        applications.append(app)
+        return app
     }
 
     func submitApplication(id: UUID) async throws -> LoanApplication {
@@ -242,6 +245,28 @@ actor MockLoanService: LoanService {
 
     func fetchEMISchedule(loanID: UUID) async throws -> [EMI] {
         try await Task.sleep(for: .milliseconds(200))
-                        return loans.first(where: { $0.id == loanID })?.emiSchedule ?? []
+        return loans.first(where: { $0.id == loanID })?.emiSchedule ?? []
     }
+
+    func payEMI(emiID: UUID) async throws -> EMI {
+        throw NSError(domain: "Mock", code: 501, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
+    }
+
+    func fetchLoanProducts() async throws -> [LoanProduct] { return [] }
+    func createLoanProduct(_ product: LoanProduct) async throws -> LoanProduct { return product }
+    func fetchApplications(statuses: [String]) async throws -> [LoanApplication] { return applications }
+    func startReview(applicationID: UUID) async throws {}
+    func requestDocuments(applicationID: UUID, documentTypes: [String], remark: String?) async throws {}
+    func documentsUploaded(applicationID: UUID, documentIDs: [UUID]) async throws {}
+    func sendToManager(applicationID: UUID, remark: String?) async throws {}
+    func approveApplication(applicationID: UUID, remark: String?) async throws {}
+    func rejectApplication(applicationID: UUID, remark: String?) async throws {}
+    func disburseLoan(applicationID: UUID) async throws {}
+    func fetchApplicationDetails(applicationID: UUID) async throws -> LoanApplication {
+        guard let app = applications.first(where: { $0.id == applicationID }) else {
+            throw NSError(domain: "Mock", code: 404, userInfo: [NSLocalizedDescriptionKey: "Not found"])
+        }
+        return app
+    }
+    func fetchApplicationEvents(applicationID: UUID) async throws -> [ApplicationEvent] { return [] }
 }

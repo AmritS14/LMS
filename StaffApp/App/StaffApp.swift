@@ -22,15 +22,6 @@ struct StaffApp: App {
     )
 
     private let appEnvironment = AppEnvironment(
-        auth: MockAuthService(),
-        loans: MockLoanService(),
-        documents: MockDocumentService(),
-        notifications: MockNotificationService(),
-        messaging: MockMessagingService(),
-        keychain: MockKeychainService()
-    )
-
-    private let appEnvironment = AppEnvironment(
         auth: SupabaseAuthService(),
         loans: SupabaseLoanService(client: SupabaseManager.shared.client),
         documents: SupabaseDocumentService(client: SupabaseManager.shared.client),

@@ -361,6 +361,7 @@ struct NewLoanApplicationView: View {
                 let success = await viewModel.submit(
                     loanService: env.loans,
                     borrowerID: userID,
+                    productID: UUID(), // TODO: replace with selected product UUID
                     loanType: calcLoanType,
                     interestRate: calcRate
                 )
