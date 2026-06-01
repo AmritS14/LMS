@@ -668,9 +668,20 @@ extension LoanReviewView {
             )
 
             LOPremiumCard {
-                VStack(spacing: 10) {
-                    ForEach(currentApplication.documents) { document in
-                        documentCard(document)
+                if currentApplication.documents.isEmpty {
+                    HStack {
+                        Spacer()
+                        Text("No documents uploaded yet.")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.secondary)
+                            .padding(.vertical, 8)
+                        Spacer()
+                    }
+                } else {
+                    VStack(spacing: 10) {
+                        ForEach(currentApplication.documents) { document in
+                            documentCard(document)
+                        }
                     }
                 }
             }
