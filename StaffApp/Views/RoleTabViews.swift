@@ -51,8 +51,7 @@ struct OfficerNavigationStack<Root: View>: View {
         case .fraudAlerts:
             LoanReviewView()
         case .messages:
-            ChatView(conversation: SampleData.conversations[0])
-                .environment(viewModel)
+            CommunicationsMainView()
         case .notifications:
             NotificationsTabView()
         case .documents:

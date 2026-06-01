@@ -12,19 +12,44 @@ import Combine
     var searchText: String = ""
     var selectedBranch: String = "Mumbai Central"
 
-    // Data
-    var officerProfile = SampleData.officerProfile
-    var kpiData = SampleData.kpiData
-    var quickActions = SampleData.quickActions
-    var recentApplications = SampleData.recentApplications
-    var activityFeed = SampleData.activityFeed
-    var notifications = SampleData.notifications
-    var overdueBorrowers = SampleData.overdueBorrowers
-    //var fieldVisits = SampleData.fieldVisits
-    var conversations = SampleData.conversations
-    var digitalDocuments = SampleData.digitalDocuments
-    var documents = SampleData.sampleDocuments
-    var collateral = SampleData.sampleCollateral
+    // Data — starts empty; populated by refreshFromService() from backend
+    var officerProfile = LoanOfficerProfile(
+        name: "",
+        designation: "",
+        branch: "",
+        employeeId: "",
+        avatarInitials: "",
+        pendingTasks: 0,
+        totalApproved: 0,
+        approvalRate: 0
+    )
+    var kpiData: [KPIData] = [
+        KPIData(title: "Pending\nApplications",  value: 0, trend: 0, trendUp: true,  icon: "doc.text.fill",                               color: .orange, chartData: [0, 0, 0, 0, 0, 0, 0]),
+        KPIData(title: "Approved\nLoans",         value: 0, trend: 0, trendUp: true,  icon: "checkmark.circle.fill",                       color: .green,  chartData: [0, 0, 0, 0, 0, 0, 0]),
+        KPIData(title: "Escalated\nCases",        value: 0, trend: 0, trendUp: false, icon: "arrow.up.circle.fill",                        color: .purple, chartData: [0, 0, 0, 0, 0, 0, 0]),
+        KPIData(title: "Overdue\nBorrowers",      value: 0, trend: 0, trendUp: false, icon: "person.crop.circle.badge.exclamationmark.fill", color: Color(red: 0.8, green: 0.4, blue: 0), chartData: [0, 0, 0, 0, 0, 0, 0])
+    ]
+    var quickActions: [QuickAction] = [
+        QuickAction(title: "Review\nApplications", icon: "doc.text.magnifyingglass",           color: .blue,   gradient: [Color(red: 0.2, green: 0.5, blue: 1.0), Color(red: 0.1, green: 0.3, blue: 0.9)], pendingCount: 0, destination: .loanReview),
+        QuickAction(title: "Recovery\nManagement",  icon: "arrow.uturn.backward.circle.fill",  color: .orange, gradient: [Color(red: 1.0, green: 0.6, blue: 0.2), Color(red: 0.9, green: 0.4, blue: 0.1)], pendingCount: 0, destination: .recovery),
+        QuickAction(title: "Borrower\nMessages",    icon: "bubble.left.and.bubble.right.fill", color: .indigo, gradient: [Color(red: 0.4, green: 0.3, blue: 0.9), Color(red: 0.25, green: 0.2, blue: 0.8)], pendingCount: 0, destination: .messages)
+    ]
+    var recentApplications: [LOLoanApplication] = []
+    var activityFeed: [ActivityItem] = []
+    var notifications: [AppNotification] = []
+    var overdueBorrowers: [OverdueBorrower] = []
+    //var fieldVisits: [FieldVisit] = []
+    var conversations: [BorrowerConversation] = []
+    var digitalDocuments: [DigitalDocument] = []
+    var documents: [LOLoanDocument] = []
+    var collateral = CollateralInfo(
+        propertyType: "",
+        address: "",
+        currentValuation: 0,
+        lastValuationDate: Date(),
+        coverageRatio: 0,
+        revaluationHistory: []
+    )
     var selectedConversation: BorrowerConversation?
 
     private var environment: AppEnvironment?
@@ -115,7 +140,7 @@ import Combine
 
         do {
             let sharedApplications = try await environment.loans.fetchAssignedApplications(
-                officerID: officerID ?? MockOfficerData.officerUserID
+                officerID: officerID ?? MockOfficerData.officerUserID // fallback UUID for offline testing
             )
 
             // Build real officer rows, hydrating each timeline from the events

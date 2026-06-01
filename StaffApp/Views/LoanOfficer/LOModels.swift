@@ -842,6 +842,8 @@ enum AppDestination: Hashable {
 
 // MARK: - Sample Data
 
+// NOTE: SampleData is commented out — app now loads from real backend.
+/*
 struct SampleData {
 
     static let officerProfile = LoanOfficerProfile(
@@ -1165,6 +1167,7 @@ struct SampleData {
         DigitalDocument(title: "Insurance Policy", type: "PDF", icon: "shield.fill", fileSize: "567 KB", generatedDate: Calendar.current.date(byAdding: .day, value: -5, to: Date())!, isSigned: true, borrowerAcknowledged: true)
     ]
 }
+*/
 
 // MARK: - Formatters
 
