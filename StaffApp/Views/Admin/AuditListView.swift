@@ -14,11 +14,7 @@ final class AuditViewModel {
     }
 
     func loadLogs() async {
-        guard let environment else {
-            // For Xcode previews
-            self.entries = AdminSeedData.auditEntries
-            return
-        }
+        guard let environment else { return }
         
         isLoading = true
         error = nil

@@ -286,9 +286,12 @@ struct DBEnrichedApplication: Decodable {
 @MainActor
 @Observable
 final class DashboardViewModel {
-    var snapshot: DashboardSnapshot = AdminSeedData.dashboardSnapshot
+    var snapshot: DashboardSnapshot = DashboardSnapshot(
+        stats: DashboardStats(totalAmount: "—", totalUser: 0, activeLoans: 0, applications: 0),
+        recentApplications: []
+    )
     var isAmountVisible: Bool = false
-    var rawTotalAmount: Decimal = 12_850_000
+    var rawTotalAmount: Decimal = 0
     var isLoading: Bool = false
     var error: String? = nil
 
@@ -313,14 +316,6 @@ final class DashboardViewModel {
     func loadDashboard() async {
         isLoading = true
         error = nil
-
-        if environment == nil {
-            // Preview / Mock fallback
-            self.snapshot = AdminSeedData.dashboardSnapshot
-            self.rawTotalAmount = 12_850_000
-            isLoading = false
-            return
-        }
 
         do {
             try await refreshDashboard()
@@ -449,7 +444,7 @@ final class AdminApplicationDetailViewModel {
         error = nil
 
         guard let env = environment else {
-            loadMockDetails()
+            self.error = "Not connected to backend."
             isLoading = false
             return
         }
@@ -535,6 +530,7 @@ final class AdminApplicationDetailViewModel {
         )
     }
 
+#if DEBUG
     private func loadMockDetails() {
         let mockApps = MockOfficerData.assignedApplications()
         if let mockApp = mockApps.first(where: { $0.id == applicationID }) ?? mockApps.first {
@@ -550,6 +546,7 @@ final class AdminApplicationDetailViewModel {
             ]
         }
     }
+#endif
 
     func subscribeToRealtimeChanges() {
         guard environment != nil else { return }
@@ -588,8 +585,8 @@ final class UserManagementViewModel {
         case role(UserRole)
     }
 
-    var users: [User] = AdminSeedData.users
-    var staffProfiles: [UUID: StaffProfile] = AdminSeedData.staffProfiles
+    var users: [User] = []
+    var staffProfiles: [UUID: StaffProfile] = [:]
     var currentFilter: Filter = .all
     var searchText: String = ""
     var showSuccessAlert: Bool = false
@@ -612,10 +609,13 @@ final class UserManagementViewModel {
         do {
             async let usersReq = environment.admin.listUsers(ids: nil)
             async let profilesReq = environment.admin.listStaffProfiles()
+            async let auditReq = environment.admin.fetchAuditLogs()
             let fetchedUsers = try await usersReq
             let fetchedProfiles = try await profilesReq
+            let fetchedAudit = try await auditReq
             users = fetchedUsers
             staffProfiles = Dictionary(uniqueKeysWithValues: fetchedProfiles.map { ($0.id, $0) })
+            auditEntries = fetchedAudit
         } catch {
             loadError = error.localizedDescription
         }
@@ -640,9 +640,9 @@ final class UserManagementViewModel {
         await load()
     }
 
-    private var loanHistory: [UUID: [Loan]] = AdminSeedData.loanHistory
-    private var borrowerAssignments: [UUID: UUID] = AdminSeedData.borrowerOfficerAssignments
-    let auditEntries: [AuditEntry] = AdminSeedData.auditEntries
+    private var loanHistory: [UUID: [Loan]] = [:]
+    private var borrowerAssignments: [UUID: UUID] = [:]
+    var auditEntries: [AuditEntry] = []
 
     var filteredUsers: [User] {
         users.filter { user in
@@ -765,7 +765,7 @@ final class UserManagementViewModel {
 @MainActor
 @Observable
 final class TemplateViewModel {
-    var templates: [NotificationTemplate] = NotificationTemplate.sampleTemplates
+    var templates: [NotificationTemplate] = []
     var selectedTemplate: NotificationTemplate?
     var searchText: String = ""
     var editingTitle: String = ""
@@ -853,7 +853,7 @@ final class TemplateViewModel {
 @MainActor
 @Observable
 final class LoanConfigViewModel {
-    var productsByCategory: [LoanCategory: [AdminLoanProduct]] = AdminLoanProduct.sampleProducts
+    var productsByCategory: [LoanCategory: [AdminLoanProduct]] = [:]
     var showSaveAlert: Bool = false
     var isSaving: Bool = false
     var isLoading: Bool = false
