@@ -14,7 +14,7 @@ struct BorrowerApp: App {
         documents: SupabaseDocumentService(client: SupabaseManager.shared.client),
         notifications: MockNotificationService(),
         messaging: SupabaseMessagingService(client: SupabaseManager.shared.client),
-        keychain: MockKeychainService(),
+        keychain: SecureKeychainService(),
         aadhaarKYC: SupabaseAadhaarKYCService(client: SupabaseManager.shared.client)
     )
 

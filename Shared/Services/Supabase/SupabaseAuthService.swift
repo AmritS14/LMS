@@ -134,4 +134,133 @@ actor SupabaseAuthService: AuthService {
             .execute()
         return try SupabaseManager.shared.decoder.decode(DBUserProfile.self, from: response.data)
     }
+    
+    // MARK: - Borrower Profile DB Models
+
+    private struct DBBorrowerProfile: Decodable {
+        let id: UUID
+        let date_of_birth: Date?
+        let address_line1: String?
+        let address_line2: String?
+        let city: String?
+        let state: String?
+        let pin_code: Int?
+        let country: String?
+        let pan_number: String?
+        let aadhaar_last4: String?
+        let employment_type: String?
+        let monthly_income: Decimal?
+        let kyc_status: String?
+        let credit_score: Int?
+    }
+
+    private struct DBEncodableBorrowerProfile: Encodable {
+        let id: UUID
+        let date_of_birth: String
+        let address_line1: String?
+        let address_line2: String?
+        let city: String?
+        let state: String?
+        let pin_code: Int?
+        let country: String?
+        let pan_number: String?
+        let aadhaar_last4: String?
+        let employment_type: String?
+        let monthly_income: Decimal?
+        let kyc_status: String
+        let credit_score: Int?
+    }
+
+    private func mapDBBorrowerProfileToLocal(_ db: DBBorrowerProfile) -> BorrowerProfile {
+        var address: PostalAddress? = nil
+        if let line1 = db.address_line1,
+           let city = db.city,
+           let state = db.state,
+           let pin = db.pin_code,
+           let country = db.country {
+            address = PostalAddress(
+                line1: line1,
+                line2: db.address_line2,
+                city: city,
+                state: state,
+                pinCode: pin,
+                country: country
+            )
+        }
+        
+        let kyc: KYCStatus
+        if let kycStr = db.kyc_status {
+            kyc = KYCStatus(rawValue: kycStr.lowercased()) ?? .pending
+        } else {
+            kyc = .pending
+        }
+        
+        let emp: EmploymentType?
+        if let empStr = db.employment_type {
+            emp = EmploymentType(rawValue: empStr) ?? EmploymentType(rawValue: empStr.lowercased())
+        } else {
+            emp = nil
+        }
+        
+        return BorrowerProfile(
+            id: db.id,
+            dateOfBirth: db.date_of_birth ?? Date(),
+            address: address,
+            panNumber: db.pan_number,
+            aadhaarLast4: db.aadhaar_last4,
+            employmentType: emp,
+            monthlyIncome: db.monthly_income,
+            kycStatus: kyc,
+            creditScore: db.credit_score
+        )
+    }
+
+    func fetchBorrowerProfile(userID: UUID) async throws -> BorrowerProfile? {
+        do {
+            let response = try await client
+                .from("borrower_profiles")
+                .select("*")
+                .eq("id", value: userID)
+                .single()
+                .execute()
+            
+            let dbProfile = try SupabaseManager.shared.decoder.decode(DBBorrowerProfile.self, from: response.data)
+            return mapDBBorrowerProfileToLocal(dbProfile)
+        } catch {
+            let nsError = error as NSError
+            let errorMsg = error.localizedDescription.lowercased()
+            if nsError.domain == "PostgREST" || errorMsg.contains("empty") || errorMsg.contains("0 rows") || errorMsg.contains("decoding") || errorMsg.contains("json") || errorMsg.contains("406") {
+                return nil
+            }
+            throw error
+        }
+    }
+
+    func saveBorrowerProfile(_ profile: BorrowerProfile) async throws {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        
+        let encodable = DBEncodableBorrowerProfile(
+            id: profile.id,
+            date_of_birth: formatter.string(from: profile.dateOfBirth),
+            address_line1: profile.address?.line1,
+            address_line2: profile.address?.line2,
+            city: profile.address?.city,
+            state: profile.address?.state,
+            pin_code: profile.address?.pinCode,
+            country: profile.address?.country,
+            pan_number: profile.panNumber,
+            aadhaar_last4: profile.aadhaarLast4,
+            employment_type: profile.employmentType?.rawValue,
+            monthly_income: profile.monthlyIncome,
+            kyc_status: profile.kycStatus.rawValue,
+            credit_score: profile.creditScore
+        )
+        
+        try await client
+            .from("borrower_profiles")
+            .upsert(encodable)
+            .execute()
+    }
 }

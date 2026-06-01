@@ -83,4 +83,14 @@ actor MockAuthService: AuthService {
     func signOut() async throws {
         _currentUser = nil
     }
+    
+    private var mockBorrowerProfile: BorrowerProfile? = seedBorrowerProfile
+
+    func fetchBorrowerProfile(userID: UUID) async throws -> BorrowerProfile? {
+        return mockBorrowerProfile
+    }
+
+    func saveBorrowerProfile(_ profile: BorrowerProfile) async throws {
+        mockBorrowerProfile = profile
+    }
 }

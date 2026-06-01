@@ -290,5 +290,50 @@ actor MockLoanService: LoanService {
         }
         return app
     }
-    func fetchApplicationEvents(applicationID: UUID) async throws -> [ApplicationEvent] { return [] }
+    func fetchApplicationEvents(applicationID: UUID) async throws -> [ApplicationEvent] {
+        try await Task.sleep(for: .milliseconds(200))
+        return []
+    }
+
+    func calculateForeclosure(loanID: UUID) async throws -> ForeclosureDetails {
+        try await Task.sleep(for: .milliseconds(300))
+        guard let loan = loans.first(where: { $0.id == loanID }) else {
+            throw NSError(domain: "Loan", code: 404, userInfo: [NSLocalizedDescriptionKey: "Loan not found"])
+        }
+        
+        let outstanding = loan.outstandingBalance
+        let penaltyRate = 0.02 // 2% early closure fee
+        let penaltyAmount = outstanding * Decimal(penaltyRate)
+        let gstAmount = penaltyAmount * Decimal(0.18) // 18% GST on early closure fee
+        let totalPayoffAmount = outstanding + penaltyAmount + gstAmount
+        
+        return ForeclosureDetails(
+            outstandingBalance: outstanding,
+            penaltyRate: penaltyRate,
+            penaltyAmount: penaltyAmount,
+            gstAmount: gstAmount,
+            totalPayoffAmount: totalPayoffAmount
+        )
+    }
+
+    func forecloseLoan(loanID: UUID, totalPayoff: Decimal) async throws -> Loan {
+        try await Task.sleep(for: .milliseconds(400))
+        guard let idx = loans.firstIndex(where: { $0.id == loanID }) else {
+            throw NSError(domain: "Loan", code: 404, userInfo: [NSLocalizedDescriptionKey: "Loan not found"])
+        }
+        
+        loans[idx].status = .foreclosed
+        loans[idx].outstandingBalance = .zero
+        
+        // Mark all remaining installments as paid/settled
+        for emiIdx in loans[idx].emiSchedule.indices {
+            if loans[idx].emiSchedule[emiIdx].status != .paid {
+                loans[idx].emiSchedule[emiIdx].status = .paid
+                loans[idx].emiSchedule[emiIdx].paidAt = .now
+            }
+        }
+        
+        return loans[idx]
+    }
+>>>>>>> SP2-Borrower
 }

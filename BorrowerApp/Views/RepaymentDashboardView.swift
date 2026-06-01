@@ -6,38 +6,41 @@ struct RepaymentDashboardView: View {
 
     var loan: Loan?
     @State private var viewModel = RepaymentViewModel()
+    @State private var emiToPay: EMI?
+    @State private var showForeclosureSheet = false
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: Spacing.xl) {
-                if viewModel.isLoading {
-                    ProgressView()
-                        .padding(.top, 40)
-                } else if let error = viewModel.errorMessage {
-                    Label(error, systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(Color.lmsDanger)
-                        .padding(.top, 40)
-                } else if let activeLoan = viewModel.activeLoan {
-                    
-                    // Next Payment Card
-                    if activeLoan.status == .active {
+        List {
+            if viewModel.isLoading {
+                HStack { Spacer(); ProgressView(); Spacer() }
+                    .listRowBackground(Color.clear)
+            } else if let error = viewModel.errorMessage {
+                Label(error, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(Color.lmsDanger)
+            } else if let activeLoan = viewModel.activeLoan {
+                
+                // Next Payment Card
+                if activeLoan.status == .active {
+                    Section {
                         nextPaymentCard(for: activeLoan)
                     }
-                    
-                    // Loan Details Card
-                    loanDetailsSection(for: activeLoan)
-                    
-                } else {
-                    ContentUnavailableView(
-                        "No Loan Data",
-                        systemImage: "doc.text",
-                        description: Text("Loan information is not available.")
-                    )
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
                 }
+                
+                // Loan Details Card
+                loanDetailsSection(for: activeLoan)
+                
+            } else {
+                ContentUnavailableView(
+                    "No Loan Data",
+                    systemImage: "doc.text",
+                    description: Text("Loan information is not available.")
+                )
+                .listRowBackground(Color.clear)
             }
-            .padding(.vertical, Spacing.m)
         }
-        .background(Color.lmsBackground.ignoresSafeArea())
+        .listStyle(.insetGrouped)
         .navigationTitle(loan?.status == .settled ? "Loan History" : "Repayments")
         .navigationBarTitleDisplayMode(.large)
         .task {
@@ -51,6 +54,33 @@ struct RepaymentDashboardView: View {
                         await viewModel.loadRepaymentData(loanService: env.loans, loan: first)
                     }
                 } catch {}
+            }
+        }
+        .sheet(item: $emiToPay) { emi in
+            PayEMISheet(emi: emi, loan: viewModel.activeLoan) {
+                await viewModel.payEMI(emi)
+                return viewModel.paymentSuccess
+            }
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showForeclosureSheet) {
+            if let activeLoan = viewModel.activeLoan, let env {
+                ForeclosureSheet(
+                    loan: activeLoan,
+                    loanService: env.loans
+                ) {
+                    Task {
+                        if let userID = session.currentUser?.id {
+                            if let loans = try? await env.loans.fetchActiveLoans(borrowerID: userID),
+                               let first = loans.first(where: { $0.id == activeLoan.id }) {
+                                await viewModel.loadRepaymentData(loanService: env.loans, loan: first)
+                            }
+                        }
+                    }
+                }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
             }
         }
     }
@@ -82,7 +112,7 @@ struct RepaymentDashboardView: View {
             
             Button {
                 if let emi = nextEMI {
-                    Task { await viewModel.payEMI(emi) }
+                    emiToPay = emi
                 }
             } label: {
                 Text("Pay Now")
@@ -99,67 +129,41 @@ struct RepaymentDashboardView: View {
         .frame(maxWidth: .infinity)
         .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .shadow(color: .black.opacity(0.04), radius: 10, y: 4)
-        .padding(.horizontal, Spacing.m)
     }
 
     // MARK: - Loan Details Section
+    @ViewBuilder
     private func loanDetailsSection(for activeLoan: Loan) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.s) {
-            Text("LOAN DETAILS")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, Spacing.m)
+        Section(header: Text("LOAN DETAILS")) {
+            LabeledContent("Principal", value: Formatting.currency(activeLoan.principal))
+            LabeledContent("Outstanding", value: Formatting.currency(activeLoan.outstandingBalance))
+            LabeledContent("Disbursed on", value: Formatting.date(activeLoan.disbursementDate))
+            LabeledContent("Status", value: activeLoan.status.rawValue.capitalized)
             
-            VStack(spacing: 0) {
-                detailRow(title: "Principal", value: Formatting.currency(activeLoan.principal))
-                detailRow(title: "Disbursed on", value: Formatting.date(activeLoan.disbursementDate))
-                detailRow(title: "Status", value: activeLoan.status.rawValue.capitalized)
-                
-                let remaining = viewModel.emiSchedule.filter { $0.status != .paid }.count
-                detailRow(title: "Remaining EMIs", value: "\(remaining)")
-                
-                Divider()
-                    .padding(.vertical, Spacing.m)
-                
-                NavigationLink(destination: FullScheduleView(emiSchedule: viewModel.emiSchedule, viewModel: viewModel)) {
-                    HStack {
-                        Text("View Full Schedule")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.primary)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(PlainButtonStyle())
+            let remaining = viewModel.emiSchedule.filter { $0.status != .paid }.count
+            LabeledContent("Remaining EMIs", value: "\(remaining)")
+            
+            NavigationLink(destination: FullScheduleView(emiSchedule: viewModel.emiSchedule, onPayEMI: { emi in
+                emiToPay = emi
+            })) {
+                Text("View Full Schedule")
             }
-            .padding(Spacing.m)
-            .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .shadow(color: .black.opacity(0.04), radius: 10, y: 4)
-            .padding(.horizontal, Spacing.m)
+            
+            if activeLoan.status == .active {
+                Button(role: .destructive) {
+                    showForeclosureSheet = true
+                } label: {
+                    Label("Foreclose Loan Early", systemImage: "clock.arrow.circlepath")
+                }
+            }
         }
-    }
-    
-    private func detailRow(title: String, value: String) -> some View {
-        HStack {
-            Text(title)
-                .font(.subheadline)
-                .foregroundColor(.primary)
-            Spacer()
-            Text(value)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.bottom, Spacing.m)
     }
 }
 
 // MARK: - Full Schedule View
 struct FullScheduleView: View {
     let emiSchedule: [EMI]
-    let viewModel: RepaymentViewModel
+    let onPayEMI: (EMI) -> Void
     
     var body: some View {
         ScrollView {
@@ -240,9 +244,19 @@ struct FullScheduleView: View {
                     .padding(.vertical, 4)
                     .background(Color.green.opacity(0.15))
                     .clipShape(Capsule())
+            } else if emi.status == .overdue {
+                Button("Pay") {
+                    onPayEMI(emi)
+                }
+                .font(.caption.weight(.semibold))
+                .foregroundColor(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color.lmsDanger)
+                .clipShape(Capsule())
             } else if isFirstUpcoming {
                 Button("Pay") {
-                    Task { await viewModel.payEMI(emi) }
+                    onPayEMI(emi)
                 }
                 .font(.caption.weight(.semibold))
                 .foregroundColor(.white)
@@ -280,5 +294,159 @@ struct FullScheduleView: View {
                 messaging: MockMessagingService(),
                 keychain: MockKeychainService()
             ))
+    }
+}
+
+// MARK: - Foreclosure Sheet View
+struct ForeclosureSheet: View {
+    let loan: Loan
+    let loanService: any LoanService
+    var onComplete: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var details: ForeclosureDetails? = nil
+    @State private var isLoading = false
+    @State private var isProcessing = false
+    @State private var errorMessage: String?
+    @State private var success = false
+
+    var body: some View {
+        NavigationStack {
+            VStack {
+                if isLoading {
+                    ProgressView("Calculating Payoff Amount...")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let error = errorMessage {
+                    ContentUnavailableView("Calculation Failed", systemImage: "exclamationmark.triangle", description: Text(error))
+                } else if success {
+                    successContent
+                } else if let details = details {
+                    payoffDetailsContent(details: details)
+                }
+            }
+            .background(Color.lmsBackground.ignoresSafeArea())
+            .navigationTitle("Prepayment & Foreclose")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(success ? "Done" : "Cancel") {
+                        if success { onComplete() }
+                        dismiss()
+                    }
+                }
+            }
+            .task {
+                await calculatePayoff()
+            }
+        }
+    }
+
+    private var successContent: some View {
+        VStack(spacing: Spacing.l) {
+            Spacer()
+            ZStack {
+                Circle()
+                    .fill(Color.lmsSuccess.opacity(0.15))
+                    .frame(width: 96, height: 96)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 44, weight: .bold))
+                    .foregroundStyle(Color.lmsSuccess)
+            }
+            VStack(spacing: Spacing.xs) {
+                Text("Loan Foreclosed Successfully")
+                    .font(.title2.weight(.semibold))
+                Text("Your Home Loan outstanding balance is now ₹0.00 and status is settled.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, Spacing.l)
+            }
+            Spacer()
+            PrimaryButton("Done") {
+                onComplete()
+                dismiss()
+            }
+            .padding(.horizontal, Spacing.m)
+            .padding(.bottom, Spacing.m)
+        }
+    }
+
+    private func payoffDetailsContent(details: ForeclosureDetails) -> some View {
+        VStack(spacing: Spacing.l) {
+            VStack(spacing: Spacing.xs) {
+                Text("Total Payoff Amount")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text(Formatting.currency(details.totalPayoffAmount))
+                    .font(.system(size: 38, weight: .bold))
+            }
+            .padding(.top, Spacing.l)
+
+            VStack(spacing: 0) {
+                breakdownRow("Current Outstanding Principal", Formatting.currency(details.outstandingBalance))
+                Divider().padding(.leading, Spacing.m)
+                breakdownRow("Early Foreclosure Penalty (2%)", Formatting.currency(details.penaltyAmount))
+                Divider().padding(.leading, Spacing.m)
+                breakdownRow("GST on Penalty (18%)", Formatting.currency(details.gstAmount))
+            }
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+            .padding(.horizontal, Spacing.m)
+
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Label("Important Information", systemImage: "info.circle.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.tint)
+                Text("Foreclosing your loan early will settle your entire outstanding liability and close the contract. Prepayment charges are calculated at 2.0% of the principal outstanding, plus standard GST (18%) on the penalty fee.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(Spacing.m)
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+            .padding(.horizontal, Spacing.m)
+
+            Spacer()
+
+            PrimaryButton("Confirm Foreclosure & Close Loan", isLoading: isProcessing) {
+                Task { await performForeclosure(details: details) }
+            }
+            .padding(.horizontal, Spacing.m)
+            .padding(.bottom, Spacing.m)
+        }
+    }
+
+    private func breakdownRow(_ label: String, _ value: String) -> some View {
+        HStack {
+            Text(label).foregroundStyle(.secondary)
+            Spacer()
+            Text(value).fontWeight(.medium)
+        }
+        .font(.subheadline)
+        .padding(Spacing.m)
+    }
+
+    private func calculatePayoff() async {
+        isLoading = true
+        errorMessage = nil
+        do {
+            details = try await loanService.calculateForeclosure(loanID: loan.id)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isLoading = false
+    }
+
+    private func performForeclosure(details: ForeclosureDetails) async {
+        isProcessing = true
+        errorMessage = nil
+        do {
+            _ = try await loanService.forecloseLoan(loanID: loan.id, totalPayoff: details.totalPayoffAmount)
+            withAnimation {
+                success = true
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isProcessing = false
     }
 }

@@ -613,4 +613,79 @@ actor SupabaseLoanService: LoanService {
             throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: "\(action) failed: \(errorStr)"])
         }
     }
+
+    // MARK: - Foreclosure Calculations & Database Updates
+
+    func calculateForeclosure(loanID: UUID) async throws -> ForeclosureDetails {
+        let response = try await client
+            .from("loans")
+            .select()
+            .eq("id", value: loanID)
+            .single()
+            .execute()
+            
+        let dbLoan = try SupabaseManager.shared.decoder.decode(DBLoan.self, from: response.data)
+        
+        let outstanding = dbLoan.outstanding_balance
+        let penaltyRate = 0.02 // 2% early closure fee
+        let penaltyAmount = outstanding * Decimal(penaltyRate)
+        let gstAmount = penaltyAmount * Decimal(0.18) // 18% GST on penalty
+        let totalPayoffAmount = outstanding + penaltyAmount + gstAmount
+        
+        return ForeclosureDetails(
+            outstandingBalance: outstanding,
+            penaltyRate: penaltyRate,
+            penaltyAmount: penaltyAmount,
+            gstAmount: gstAmount,
+            totalPayoffAmount: totalPayoffAmount
+        )
+    }
+
+    func forecloseLoan(loanID: UUID, totalPayoff: Decimal) async throws -> Loan {
+        // Update loan status to 'closed' in Supabase to satisfy DB constraints
+        let updateData: [String: AnyJSON] = [
+            "status": .string("closed"),
+            "outstanding_balance": .double(0.0)
+        ]
+        
+        _ = try await client
+            .from("loans")
+            .update(updateData)
+            .eq("id", value: loanID)
+            .execute()
+            
+        // Mark all unpaid/overdue EMIs as paid/closed
+        let emiUpdate: [String: AnyJSON] = [
+            "status": .string("paid"),
+            "paid_at": .string(ISO8601DateFormatter().string(from: Date()))
+        ]
+        
+        _ = try await client
+            .from("emis")
+            .update(emiUpdate)
+            .eq("loan_id", value: loanID)
+            .neq("status", value: "paid")
+            .execute()
+            
+        // Record foreclosure in audit entries if authenticated
+        if let user = try? await client.auth.session.user {
+            let auditData: [String: AnyJSON] = [
+                "actor_id": .string(user.id.uuidString),
+                "action": .string("Foreclosed Loan"),
+                "entity_type": .string("Loan"),
+                "entity_id": .string(loanID.uuidString),
+                "metadata": .object(["payoff_amount": .string("\(totalPayoff)")])
+            ]
+            _ = try? await client.from("audit_entries").insert(auditData).execute()
+        }
+        
+        // Return refreshed Loan domain object
+        let loans = try await fetchActiveLoans(borrowerID: client.auth.session.user.id)
+        if var closedLoan = loans.first(where: { $0.id == loanID }) {
+            closedLoan.status = .foreclosed // Set domain status explicitly to foreclosed
+            return closedLoan
+        }
+        
+        throw NSError(domain: "Loan", code: 500, userInfo: [NSLocalizedDescriptionKey: "Failed to reload foreclosed loan"])
+    }
 }

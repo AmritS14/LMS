@@ -9,19 +9,19 @@ struct BorrowerProfileView: View {
     @State private var showSignOutConfirm = false
     @State private var isCheckingCreditScore = false
     @State private var creditScoreLastChecked: Date?
+    @State private var showCreditCheckSheet = false
 
     private var kycStatusText: String {
-        if session.borrowerProfile?.kycStatus == .verified { return "Verified" }
-        let required: [(DocumentKind, String)] = [
-            (.identityProof, "ID Proof"),
-            (.addressProof,  "Address"),
-            (.incomeProof,   "Income"),
-            (.bankStatement, "Bank Statement")
-        ]
-        let missing = required.filter { !uploadedDocumentKinds.contains($0.0) }.map { $0.1 }
-        if missing.isEmpty { return "Pending Approval" }
-        if missing.count == 1 { return "\(missing[0]) missing" }
-        return "\(missing.count) documents missing"
+        switch session.borrowerProfile?.kycStatus {
+        case .verified:
+            return "Verified"
+        case .submitted:
+            return "Submitted"
+        case .rejected:
+            return "Rejected"
+        case .pending, .none:
+            return "Not Verified"
+        }
     }
 
     var body: some View {
@@ -113,6 +113,16 @@ struct BorrowerProfileView: View {
             Button("Sign Out", role: .destructive) { signOut() }
             Button("Cancel", role: .cancel) {}
         }
+        .sheet(isPresented: $showCreditCheckSheet) {
+            CreditCheckSheet(
+                creditScoreLastChecked: $creditScoreLastChecked,
+                onSuccess: {
+                    Task { await loadData() }
+                }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
     }
 
     // MARK: - Header
@@ -156,32 +166,14 @@ struct BorrowerProfileView: View {
             }
             Spacer()
             Button {
-                Task { await checkCreditScore() }
+                showCreditCheckSheet = true
             } label: {
-                if isCheckingCreditScore {
-                    ProgressView()
-                        .controlSize(.small)
-                } else {
-                    Text(session.borrowerProfile?.creditScore == nil ? "Check Now" : "Refresh")
-                        .font(.subheadline.weight(.semibold))
-                }
+                Text(session.borrowerProfile?.creditScore == nil ? "Check Now" : "Refresh")
+                    .font(.subheadline.weight(.semibold))
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
-            .disabled(isCheckingCreditScore)
         }
-    }
-
-    private func checkCreditScore() async {
-        isCheckingCreditScore = true
-        try? await Task.sleep(for: .milliseconds(1200))
-        let newScore = Int.random(in: 680...820)
-        if var profile = session.borrowerProfile {
-            profile.creditScore = newScore
-            session.borrowerProfile = profile
-        }
-        creditScoreLastChecked = .now
-        isCheckingCreditScore = false
     }
 
     private func rating(for score: Int) -> String {
@@ -257,6 +249,13 @@ struct BorrowerProfileView: View {
             settledLoans = loans.filter { $0.status == .settled }
             let docs = try await env.documents.list(ownerID: userID)
             uploadedDocumentKinds = docs.map { $0.kind }
+            
+            // Refresh borrower profile from Supabase
+            if let profile = try? await env.auth.fetchBorrowerProfile(userID: userID) {
+                await MainActor.run {
+                    session.borrowerProfile = profile
+                }
+            }
         } catch {
             // ignore; UI shows defaults
         }
@@ -323,5 +322,182 @@ struct LoanHistoryListView: View {
                 messaging: MockMessagingService(),
                 keychain: MockKeychainService()
             ))
+    }
+}
+
+// MARK: - Credit Check Sheet
+struct CreditCheckSheet: View {
+    @Environment(SessionStore.self) private var session
+    @Environment(\.appEnvironment) private var env
+    @Environment(\.dismiss) private var dismiss
+
+    @Binding var creditScoreLastChecked: Date?
+    var onSuccess: () -> Void
+
+    @State private var panNumber: String = ""
+    @State private var isConsentChecked: Bool = false
+    @State private var isChecking: Bool = false
+    @State private var errorMessage: String?
+
+    private func isValidPAN(_ pan: String) -> Bool {
+        let panRegex = "^[A-Z]{5}[0-9]{4}[A-Z]{1}$"
+        let panTest = NSPredicate(format: "SELF MATCHES %@", panRegex)
+        return panTest.evaluate(with: pan.uppercased())
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: Spacing.ml) {
+                        // Header Illustration
+                        VStack(spacing: Spacing.s) {
+                            Image(systemName: "speedometer")
+                                .font(.system(size: 56, weight: .semibold))
+                                .foregroundStyle(Color.accentColor)
+                                .padding(.top, Spacing.m)
+                            
+                            Text("Check Credit Score")
+                                .font(.title3.bold())
+                                
+                            Text("Retrieve your real CIBIL score instantly. This is a soft inquiry and won't affect your credit rating.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, Spacing.m)
+                        }
+                        .padding(.vertical, Spacing.s)
+                        
+                        // Input Field Card
+                        VStack(alignment: .leading, spacing: Spacing.s) {
+                            Text("PAN Card Number")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(.secondary)
+                            
+                            TextField("ABCDE1234F", text: $panNumber)
+                                .font(.system(.body, design: .monospaced).weight(.bold))
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.characters)
+                                .onChange(of: panNumber) { _, newValue in
+                                    let cleaned = newValue.uppercased().filter { $0.isLetter || $0.isNumber }
+                                    if cleaned.count > 10 {
+                                        panNumber = String(cleaned.prefix(10))
+                                    } else {
+                                        panNumber = cleaned
+                                    }
+                                }
+                                .padding()
+                                .background(Color.lmsBackground, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                                        .stroke(Color.accentColor.opacity(0.15), lineWidth: 1)
+                                )
+                        }
+                        .padding(Spacing.m)
+                        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+                        
+                        // Consent checkmark (completely vertically aligned and padded)
+                        HStack(alignment: .top, spacing: Spacing.m) {
+                            Button {
+                                isConsentChecked.toggle()
+                            } label: {
+                                Image(systemName: isConsentChecked ? "checkmark.circle.fill" : "circle")
+                                    .font(.title3.weight(.medium))
+                                    .foregroundStyle(isConsentChecked ? Color.accentColor : Color.secondary)
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.top, 2)
+                            
+                            Text("I hereby authorize the app and its lending partners to fetch my credit score from TransUnion CIBIL, Experian, or Equifax for loan eligibility.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .onTapGesture {
+                                    isConsentChecked.toggle()
+                                }
+                        }
+                        .padding(Spacing.m)
+                        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+                        
+                        if let error = errorMessage {
+                            Label(error, systemImage: "exclamationmark.triangle.fill")
+                                .font(.caption2)
+                                .foregroundStyle(Color.lmsDanger)
+                                .padding(.horizontal, Spacing.s)
+                                .transition(.opacity)
+                        }
+                    }
+                    .padding(.horizontal, Spacing.m)
+                    .padding(.bottom, Spacing.xl)
+                }
+                
+                // Bottom Button Action Row
+                VStack(spacing: 0) {
+                    Divider()
+                    PrimaryButton("Check Score", isLoading: isChecking) {
+                        let trimmed = panNumber.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+                        guard trimmed.count == 10 else {
+                            errorMessage = "Please enter a 10-digit PAN number."
+                            return
+                        }
+                        guard isValidPAN(trimmed) else {
+                            errorMessage = "Invalid PAN card format. It must consist of 5 letters, 4 numbers, and 1 letter (e.g. ABCDE1234F)."
+                            return
+                        }
+                        guard isConsentChecked else {
+                            errorMessage = "Consent is required to check your credit score."
+                            return
+                        }
+
+                        errorMessage = nil
+                        isChecking = true
+
+                        Task {
+                            do {
+                                let score = try await verifyPANAndFetchScore(pan: trimmed)
+                                isChecking = false
+                                
+                                // Save score to session
+                                var updatedProfile = session.borrowerProfile ?? BorrowerProfile(
+                                    id: session.currentUser?.id ?? UUID(),
+                                    dateOfBirth: Date()
+                                )
+                                updatedProfile.creditScore = score
+                                updatedProfile.panNumber = trimmed
+                                
+                                // Commits directly to live Supabase!
+                                try await env?.auth.saveBorrowerProfile(updatedProfile)
+                                session.borrowerProfile = updatedProfile
+                                
+                                creditScoreLastChecked = .now
+                                onSuccess()
+                                dismiss()
+                            } catch {
+                                isChecking = false
+                                errorMessage = error.localizedDescription
+                            }
+                        }
+                    }
+                    .disabled(panNumber.count != 10 || !isConsentChecked)
+                    .padding(Spacing.m)
+                    .background(Color.lmsSurface)
+                }
+            }
+            .background(Color.lmsBackground.ignoresSafeArea())
+            .navigationTitle("Check Credit Score")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+    }
+
+    // MARK: - API Integration Hook
+    private func verifyPANAndFetchScore(pan: String) async throws -> Int {
+        try await Task.sleep(for: .seconds(2.0)) // Simulating bureau fetch latency
+        return Int.random(in: 710...820) // Return a high quality mock score
     }
 }

@@ -235,7 +235,15 @@ struct EMI: Identifiable, Codable, Sendable, Hashable {
 }
 
 enum LoanStatus: String, Codable, Sendable {
-    case active, settled, defaulted
+    case active, settled, defaulted, foreclosed
+}
+
+struct ForeclosureDetails: Codable, Sendable, Hashable {
+    var outstandingBalance: Decimal
+    var penaltyRate: Double // e.g. 0.02 (2% penalty)
+    var penaltyAmount: Decimal
+    var gstAmount: Decimal // 18% GST on penalty amount
+    var totalPayoffAmount: Decimal
 }
 
 struct Loan: Identifiable, Codable, Sendable, Hashable {

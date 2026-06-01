@@ -23,6 +23,17 @@ struct RootView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: session.isAuthenticated)
+        .task {
+            if let env = env {
+                if let user = await env.auth.currentUser {
+                    let profile = try? await env.auth.fetchBorrowerProfile(userID: user.id)
+                    withAnimation {
+                        session.currentUser = user
+                        session.borrowerProfile = profile
+                    }
+                }
+            }
+        }
     }
 }
 

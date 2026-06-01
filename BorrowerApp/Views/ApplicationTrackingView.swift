@@ -83,39 +83,49 @@ struct PipelineTrackerView: View {
     let status: ApplicationStatus
 
     var body: some View {
-        HStack {
-            stepView(title: "Submitted", isCompleted: true)
-            line(isActive: status != .draft && status != .submitted)
-            stepView(title: "Review", isCompleted: isReviewCompleted)
-            line(isActive: isApprovedOrDisbursed)
-            stepView(title: "Approved", isCompleted: isApprovedOrDisbursed)
+        HStack(spacing: 0) {
+            let order: [ApplicationStatus] = [.draft, .submitted, .underReview, .approved, .disbursed]
+            ForEach(Array(order.enumerated()), id: \.offset) { idx, step in
+                let isDone = isStepDone(current: status, step: step, order: order)
+                let isCurrent = status == step
+
+                VStack(spacing: Spacing.xs) {
+                    ZStack {
+                        Circle()
+                            .fill(isDone || isCurrent ? Color.accentColor : Color.lmsFill)
+                            .frame(width: 26, height: 26)
+                        if isDone {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(.white)
+                        } else if isCurrent {
+                            Circle().fill(.white).frame(width: 9, height: 9)
+                        }
+                    }
+                    Text(step.rawValue.capitalized)
+                        .font(.caption2.weight(isCurrent ? .semibold : .regular))
+                        .foregroundStyle(isCurrent ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .frame(width: 60)
+                }
+
+                if idx < order.count - 1 {
+                    Rectangle()
+                        .fill(isDone ? Color.accentColor : Color.lmsFill)
+                        .frame(height: 2)
+                        .frame(maxWidth: .infinity)
+                        .offset(y: -10)
+                }
+            }
         }
     }
 
-    private var isReviewCompleted: Bool {
-        status == .approved || status == .disbursed || status == .rejected
-    }
-
-    private var isApprovedOrDisbursed: Bool {
-        status == .approved || status == .disbursed
-    }
-
-    private func stepView(title: String, isCompleted: Bool) -> some View {
-        VStack(spacing: Spacing.xs) {
-            Circle()
-                .fill(isCompleted ? Color.lmsSuccess : Color.lmsFill)
-                .frame(width: 12, height: 12)
-            Text(title)
-                .font(.caption2)
-                .foregroundStyle(isCompleted ? .primary : .secondary)
-        }
-    }
-
-    private func line(isActive: Bool) -> some View {
-        Rectangle()
-            .fill(isActive ? Color.lmsSuccess : Color.lmsFill)
-            .frame(height: 2)
-            .padding(.bottom, 14)
+    private func isStepDone(current: ApplicationStatus, step: ApplicationStatus, order: [ApplicationStatus]) -> Bool {
+        guard let ci = order.firstIndex(of: current),
+              let si = order.firstIndex(of: step) else { return false }
+        return si < ci
     }
 }
 

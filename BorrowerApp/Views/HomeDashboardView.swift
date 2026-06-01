@@ -22,7 +22,7 @@ struct HomeDashboardView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink(destination: BorrowerProfileView()) {
+                NavigationLink(destination: BorrowerProfileView().toolbar(.hidden, for: .tabBar)) {
                     Image(systemName: "person.crop.circle")
                         .font(.title3)
                 }
@@ -461,7 +461,10 @@ struct PayEMISheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(didSucceed ? "Done" : "Cancel") { dismiss() }
+//                    Button(didSucceed ? "Done" : "Cancel") { dismiss() }
+                    Button(role: .close) {
+                        dismiss()
+                    }
                 }
             }
         }
