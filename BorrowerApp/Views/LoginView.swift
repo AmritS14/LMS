@@ -114,8 +114,10 @@ struct LoginView: View {
         focusedField = nil
         Task {
             if let user = await viewModel.signIn(authService: auth, password: password) {
+                let profile = try? await auth.fetchBorrowerProfile(userID: user.id)
                 withAnimation(.easeInOut(duration: 0.4)) { 
                     session.currentUser = user 
+                    session.borrowerProfile = profile
                 }
             }
         }
@@ -298,8 +300,12 @@ struct OTPVerificationView: View {
             if let user = await viewModel.verifyEmailOTP(authService: auth) {
                 stopTimer()
                 withAnimation(.easeInOut(duration: 0.3)) { showCheckmark = true }
+                let profile = try? await auth.fetchBorrowerProfile(userID: user.id)
                 try? await Task.sleep(for: .milliseconds(700))
-                withAnimation(.easeInOut(duration: 0.4)) { session.currentUser = user }
+                withAnimation(.easeInOut(duration: 0.4)) { 
+                    session.currentUser = user 
+                    session.borrowerProfile = profile
+                }
             }
         }
     }

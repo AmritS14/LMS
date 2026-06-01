@@ -265,12 +265,16 @@ struct KYCView: View {
                                 isLoading = false
                                 stopTimer()
                                 
-                                // Update session store (this mimics real database update)
-                                if var profile = session.borrowerProfile {
-                                    profile.kycStatus = .verified
-                                    profile.aadhaarLast4 = String(aadhaarNumber.suffix(4))
-                                    session.borrowerProfile = profile
-                                }
+                                // Update session store and persist directly to Supabase
+                                var updatedProfile = session.borrowerProfile ?? BorrowerProfile(
+                                    id: session.currentUser?.id ?? UUID(),
+                                    dateOfBirth: Date()
+                                )
+                                updatedProfile.kycStatus = .verified
+                                updatedProfile.aadhaarLast4 = String(aadhaarNumber.suffix(4))
+                                
+                                try await env?.auth.saveBorrowerProfile(updatedProfile)
+                                session.borrowerProfile = updatedProfile
                                 
                                 withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                                     currentStep = .success(result)

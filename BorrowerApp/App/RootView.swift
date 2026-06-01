@@ -26,8 +26,10 @@ struct RootView: View {
         .task {
             if let env = env {
                 if let user = await env.auth.currentUser {
+                    let profile = try? await env.auth.fetchBorrowerProfile(userID: user.id)
                     withAnimation {
                         session.currentUser = user
+                        session.borrowerProfile = profile
                     }
                 }
             }

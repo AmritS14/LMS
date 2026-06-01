@@ -7,6 +7,7 @@ struct RepaymentDashboardView: View {
     var loan: Loan?
     @State private var viewModel = RepaymentViewModel()
     @State private var emiToPay: EMI?
+    @State private var showForeclosureSheet = false
 
     var body: some View {
         List {
@@ -62,6 +63,25 @@ struct RepaymentDashboardView: View {
             }
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showForeclosureSheet) {
+            if let activeLoan = viewModel.activeLoan, let env {
+                ForeclosureSheet(
+                    loan: activeLoan,
+                    loanService: env.loans
+                ) {
+                    Task {
+                        if let userID = session.currentUser?.id {
+                            if let loans = try? await env.loans.fetchActiveLoans(borrowerID: userID),
+                               let first = loans.first(where: { $0.id == activeLoan.id }) {
+                                await viewModel.loadRepaymentData(loanService: env.loans, loan: first)
+                            }
+                        }
+                    }
+                }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+            }
         }
     }
     
@@ -127,6 +147,14 @@ struct RepaymentDashboardView: View {
                 emiToPay = emi
             })) {
                 Text("View Full Schedule")
+            }
+            
+            if activeLoan.status == .active {
+                Button(role: .destructive) {
+                    showForeclosureSheet = true
+                } label: {
+                    Label("Foreclose Loan Early", systemImage: "clock.arrow.circlepath")
+                }
             }
         }
     }
@@ -266,5 +294,159 @@ struct FullScheduleView: View {
                 messaging: MockMessagingService(),
                 keychain: MockKeychainService()
             ))
+    }
+}
+
+// MARK: - Foreclosure Sheet View
+struct ForeclosureSheet: View {
+    let loan: Loan
+    let loanService: any LoanService
+    var onComplete: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var details: ForeclosureDetails? = nil
+    @State private var isLoading = false
+    @State private var isProcessing = false
+    @State private var errorMessage: String?
+    @State private var success = false
+
+    var body: some View {
+        NavigationStack {
+            VStack {
+                if isLoading {
+                    ProgressView("Calculating Payoff Amount...")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let error = errorMessage {
+                    ContentUnavailableView("Calculation Failed", systemImage: "exclamationmark.triangle", description: Text(error))
+                } else if success {
+                    successContent
+                } else if let details = details {
+                    payoffDetailsContent(details: details)
+                }
+            }
+            .background(Color.lmsBackground.ignoresSafeArea())
+            .navigationTitle("Prepayment & Foreclose")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(success ? "Done" : "Cancel") {
+                        if success { onComplete() }
+                        dismiss()
+                    }
+                }
+            }
+            .task {
+                await calculatePayoff()
+            }
+        }
+    }
+
+    private var successContent: some View {
+        VStack(spacing: Spacing.l) {
+            Spacer()
+            ZStack {
+                Circle()
+                    .fill(Color.lmsSuccess.opacity(0.15))
+                    .frame(width: 96, height: 96)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 44, weight: .bold))
+                    .foregroundStyle(Color.lmsSuccess)
+            }
+            VStack(spacing: Spacing.xs) {
+                Text("Loan Foreclosed Successfully")
+                    .font(.title2.weight(.semibold))
+                Text("Your Home Loan outstanding balance is now ₹0.00 and status is settled.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, Spacing.l)
+            }
+            Spacer()
+            PrimaryButton("Done") {
+                onComplete()
+                dismiss()
+            }
+            .padding(.horizontal, Spacing.m)
+            .padding(.bottom, Spacing.m)
+        }
+    }
+
+    private func payoffDetailsContent(details: ForeclosureDetails) -> some View {
+        VStack(spacing: Spacing.l) {
+            VStack(spacing: Spacing.xs) {
+                Text("Total Payoff Amount")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text(Formatting.currency(details.totalPayoffAmount))
+                    .font(.system(size: 38, weight: .bold))
+            }
+            .padding(.top, Spacing.l)
+
+            VStack(spacing: 0) {
+                breakdownRow("Current Outstanding Principal", Formatting.currency(details.outstandingBalance))
+                Divider().padding(.leading, Spacing.m)
+                breakdownRow("Early Foreclosure Penalty (2%)", Formatting.currency(details.penaltyAmount))
+                Divider().padding(.leading, Spacing.m)
+                breakdownRow("GST on Penalty (18%)", Formatting.currency(details.gstAmount))
+            }
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+            .padding(.horizontal, Spacing.m)
+
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Label("Important Information", systemImage: "info.circle.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.tint)
+                Text("Foreclosing your loan early will settle your entire outstanding liability and close the contract. Prepayment charges are calculated at 2.0% of the principal outstanding, plus standard GST (18%) on the penalty fee.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(Spacing.m)
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+            .padding(.horizontal, Spacing.m)
+
+            Spacer()
+
+            PrimaryButton("Confirm Foreclosure & Close Loan", isLoading: isProcessing) {
+                Task { await performForeclosure(details: details) }
+            }
+            .padding(.horizontal, Spacing.m)
+            .padding(.bottom, Spacing.m)
+        }
+    }
+
+    private func breakdownRow(_ label: String, _ value: String) -> some View {
+        HStack {
+            Text(label).foregroundStyle(.secondary)
+            Spacer()
+            Text(value).fontWeight(.medium)
+        }
+        .font(.subheadline)
+        .padding(Spacing.m)
+    }
+
+    private func calculatePayoff() async {
+        isLoading = true
+        errorMessage = nil
+        do {
+            details = try await loanService.calculateForeclosure(loanID: loan.id)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isLoading = false
+    }
+
+    private func performForeclosure(details: ForeclosureDetails) async {
+        isProcessing = true
+        errorMessage = nil
+        do {
+            _ = try await loanService.forecloseLoan(loanID: loan.id, totalPayoff: details.totalPayoffAmount)
+            withAnimation {
+                success = true
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isProcessing = false
     }
 }

@@ -7,4 +7,7 @@ protocol AuthService: Sendable {
     func signInWithPasskey() async throws -> User
     func signOut() async throws
     var currentUser: User? { get async }
+    
+    func fetchBorrowerProfile(userID: UUID) async throws -> BorrowerProfile?
+    func saveBorrowerProfile(_ profile: BorrowerProfile) async throws
 }

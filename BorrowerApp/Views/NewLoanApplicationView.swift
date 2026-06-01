@@ -20,6 +20,7 @@ struct NewLoanApplicationView: View {
         case complete
     }
     @State private var flowStep: FlowStep = .form
+    @State private var showProductComparison = false
 
     // Amount input
     @State private var amountText: String = ""
@@ -60,7 +61,31 @@ struct NewLoanApplicationView: View {
         .background(Color.lmsBackground.ignoresSafeArea())
         .navigationTitle(flowStep == .form ? "New Application" : flowStep == .uploadDocuments ? "Upload Documents" : "Success")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if flowStep == .form && !viewModel.loanProducts.isEmpty {
+                    Button {
+                        showProductComparison = true
+                    } label: {
+                        Image(systemName: "rectangle.split.2x1")
+                            .font(.title3.weight(.semibold))
+                    }
+                }
+            }
+        }
         .toolbar { keyboardToolbar }
+        .sheet(isPresented: $showProductComparison) {
+            ProductComparisonView(
+                products: viewModel.loanProducts,
+                selectedProductID: selectedProduct?.id
+            ) { selectedProd in
+                viewModel.selectedProduct = selectedProd
+                viewModel.requestedAmount = NSDecimalNumber(decimal: selectedProd.minimumAmount).doubleValue
+                viewModel.tenureMonths = selectedProd.minimumTenureMonths
+                syncAmountText()
+                syncTenureFromViewModel()
+            }
+        }
         .task {
             if let env {
                 await viewModel.loadProducts(loanService: env.loans)
@@ -85,7 +110,15 @@ struct NewLoanApplicationView: View {
                         description: Text(viewModel.errorMessage ?? "Could not load loan products.")
                     )
                 } else {
-                    productPicker
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Text("Select Loan Product")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, Spacing.xs)
+                        
+                        productPicker
+                    }
+                    
                     amountCard
                     tenureCard
                     rateCard

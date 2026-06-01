@@ -27,6 +27,40 @@ struct UploadRequestedDocumentsView: View {
     @State private var showFilePicker = false
     @State private var selectedPhotoItem: PhotosPickerItem?
 
+    private var requestedDocumentKind: DocumentKind {
+        guard let note = requestNote?.lowercased() else { return .other }
+        
+        // Scan for keyword combinations to identify requested document
+        if note.contains("bank statement") || note.contains("bank") || note.contains("statement") || note.contains("passbook") {
+            return .bankStatement
+        }
+        if note.contains("salary") || note.contains("slip") || note.contains("income") || note.contains("pay") || note.contains("payslip") {
+            return .incomeProof
+        }
+        if note.contains("id") || note.contains("identity") || note.contains("pan") || note.contains("aadhaar") || note.contains("aadhar") || note.contains("passport") || note.contains("voter") || note.contains("license") || note.contains("card") {
+            return .identityProof
+        }
+        if note.contains("address") || note.contains("utility") || note.contains("bill") || note.contains("resident") || note.contains("rent") || note.contains("lease") {
+            return .addressProof
+        }
+        if note.contains("collateral") || note.contains("property") || note.contains("asset") || note.contains("house") || note.contains("vehicle") || note.contains("car") || note.contains("land") {
+            return .collateral
+        }
+        
+        return .other
+    }
+
+    private var requestedDocumentTitle: String {
+        switch requestedDocumentKind {
+        case .identityProof: return "ID Proof"
+        case .addressProof: return "Address Proof"
+        case .incomeProof: return "Salary Slip"
+        case .bankStatement: return "Bank Statement"
+        case .collateral: return "Collateral Document"
+        case .other: return "Requested Document"
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -106,7 +140,7 @@ struct UploadRequestedDocumentsView: View {
                 .foregroundStyle(.tint)
             Text("\(application.loanType.rawValue.capitalized) Loan")
                 .font(.title3.weight(.semibold))
-            Text("Your loan officer has requested additional documents. Upload them below to continue your application.")
+            Text("Your loan officer has requested your \(requestedDocumentTitle.lowercased()). Please upload it below to continue your application.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -134,15 +168,20 @@ struct UploadRequestedDocumentsView: View {
 
     private var documentRows: some View {
         VStack(spacing: 0) {
-            docRow(kind: .identityProof, title: "ID Proof", icon: "person.text.rectangle.fill", iconColor: .blue)
-            Divider().padding(.leading, 56)
-            docRow(kind: .addressProof, title: "Address Proof", icon: "house.fill", iconColor: .teal)
-            Divider().padding(.leading, 56)
-            docRow(kind: .incomeProof, title: "Salary Slips", icon: "doc.text.fill", iconColor: .orange)
-            Divider().padding(.leading, 56)
-            docRow(kind: .bankStatement, title: "Bank Statement", icon: "building.columns.fill", iconColor: .indigo)
-            Divider().padding(.leading, 56)
-            docRow(kind: .other, title: "Other Document", icon: "doc.fill", iconColor: .gray)
+            switch requestedDocumentKind {
+            case .identityProof:
+                docRow(kind: .identityProof, title: "ID Proof", icon: "person.text.rectangle.fill", iconColor: .blue)
+            case .addressProof:
+                docRow(kind: .addressProof, title: "Address Proof", icon: "house.fill", iconColor: .teal)
+            case .incomeProof:
+                docRow(kind: .incomeProof, title: "Salary Slips", icon: "doc.text.fill", iconColor: .orange)
+            case .bankStatement:
+                docRow(kind: .bankStatement, title: "Bank Statement", icon: "building.columns.fill", iconColor: .indigo)
+            case .collateral:
+                docRow(kind: .collateral, title: "Collateral Document", icon: "shield.fill", iconColor: .green)
+            case .other:
+                docRow(kind: .other, title: "Requested Document", icon: "doc.fill", iconColor: .gray)
+            }
         }
         .padding(Spacing.m)
         .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))

@@ -24,4 +24,8 @@ protocol LoanService: Sendable {
     func disburseLoan(applicationID: UUID) async throws
     func fetchApplicationDetails(applicationID: UUID) async throws -> LoanApplication
     func fetchApplicationEvents(applicationID: UUID) async throws -> [ApplicationEvent]
+    
+    // Foreclosure actions
+    func calculateForeclosure(loanID: UUID) async throws -> ForeclosureDetails
+    func forecloseLoan(loanID: UUID, totalPayoff: Decimal) async throws -> Loan
 }
