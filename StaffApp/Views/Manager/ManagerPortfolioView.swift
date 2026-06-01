@@ -11,32 +11,16 @@ struct ManagerPortfolioView: View {
             VStack(spacing: Spacing.l) {
                 greetingSection
                 summaryCardsSection
-                portfolioHealthSection
                 loanCategoriesSection
                 officerPerformanceSection
-                branchPerformanceSection
                 collectionSection
-                npaSection
             }
             .padding(.vertical, Spacing.m)
         }
         .background(Color.lmsBackground)
         .navigationTitle("Dashboard")
         .toolbarTitleDisplayMode(.large)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showFilters = true
-                    } label: {
-                        Image(systemName: "line.3.horizontal.decrease.circle")
-                            .font(.title3)
-                    }
-                    .accessibilityLabel("Filters")
-            }
-        }
-        .sheet(isPresented: $showFilters) {
-            portfolioFilterSheet
-        }
+
         .refreshable { await store.refreshAll() }
     }
 
@@ -52,6 +36,7 @@ struct ManagerPortfolioView: View {
                     subtitle: "\(store.portfolioSummary.activeLoans) active",
                     accent: .lmsAccent
                 )
+                
                 summaryCard(
                     icon: "indianrupeesign.circle",
                     title: "Disbursed",
@@ -68,6 +53,7 @@ struct ManagerPortfolioView: View {
                     subtitle: "Efficiency rate",
                     accent: .lmsInfo
                 )
+                
                 summaryCard(
                     icon: "exclamationmark.triangle",
                     title: "NPA Ratio",
@@ -107,87 +93,48 @@ struct ManagerPortfolioView: View {
         .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
     }
 
-    // MARK: Portfolio Health
-
-    private var portfolioHealthSection: some View {
-        SectionCard(title: "Portfolio Health") {
-            let healthy = 1.0 - store.portfolioSummary.npaRatio - 0.08 // 8% at-risk
-            let atRisk = 0.08
-            let npa = store.portfolioSummary.npaRatio
-
-            VStack(alignment: .leading, spacing: Spacing.s) {
-                GeometryReader { geo in
-                    HStack(spacing: 2) {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.lmsSuccess)
-                            .frame(width: geo.size.width * healthy)
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.lmsWarning)
-                            .frame(width: geo.size.width * atRisk)
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.lmsDanger)
-                            .frame(width: geo.size.width * npa)
-                    }
-                }
-                .frame(height: 12)
-
-                HStack(spacing: Spacing.l) {
-                    healthLegend(color: .lmsSuccess, label: "Healthy", value: Formatting.percent(healthy, fractionDigits: 0))
-                    healthLegend(color: .lmsWarning, label: "At Risk", value: Formatting.percent(atRisk, fractionDigits: 0))
-                    healthLegend(color: .lmsDanger, label: "NPA", value: Formatting.percent(npa, fractionDigits: 1))
-                }
-            }
-        }
-        .padding(.horizontal, Spacing.m)
-    }
-
-    private func healthLegend(color: Color, label: String, value: String) -> some View {
-        HStack(spacing: Spacing.xs) {
-            Circle().fill(color).frame(width: 8, height: 8)
-            Text(label).font(.caption).foregroundStyle(.secondary)
-            Text(value).font(.caption.weight(.semibold)).foregroundStyle(.primary)
-        }
-    }
 
     // MARK: Loan Categories
 
     private var loanCategoriesSection: some View {
         SectionCard(title: "Loan Categories") {
             ForEach(store.loanCategories) { category in
-                HStack(spacing: Spacing.sm) {
-                    Image(systemName: loanTypeIcon(category.loanType))
-                        .font(.body.weight(.medium))
-                        .foregroundStyle(loanTypeColor(category.loanType))
-                        .frame(width: 28, height: 28)
-                        .background(loanTypeColor(category.loanType).opacity(0.12),
-                                     in: RoundedRectangle(cornerRadius: CornerRadius.small))
+                VStack(spacing: Spacing.sm) {
+                    HStack(spacing: Spacing.sm) {
+                        Image(systemName: loanTypeIcon(category.loanType))
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(loanTypeColor(category.loanType))
+                            .frame(width: 28, height: 28)
+                            .background(loanTypeColor(category.loanType).opacity(0.12),
+                                         in: RoundedRectangle(cornerRadius: CornerRadius.small))
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(category.loanType.rawValue.capitalized)
-                            .font(.subheadline.weight(.medium))
-                        Text("\(category.count) loans • \(category.amountText)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(category.loanType.rawValue.capitalized)
+                                .font(.subheadline.weight(.medium))
+                            Text("\(category.count) loans • \(category.amountText)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        Text(Formatting.percent(category.percentage, fractionDigits: 0))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
                     }
 
-                    Spacer()
-
-                    Text(Formatting.percent(category.percentage, fractionDigits: 0))
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
+                    // Progress bar
+                    GeometryReader { geo in
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(Color.lmsGray5)
+                            .overlay(alignment: .leading) {
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(loanTypeColor(category.loanType))
+                                    .frame(width: geo.size.width * category.percentage)
+                            }
+                    }
+                    .frame(height: 6)
                 }
-
-                // Progress bar
-                GeometryReader { geo in
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.lmsGray5)
-                        .overlay(alignment: .leading) {
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(loanTypeColor(category.loanType))
-                                .frame(width: geo.size.width * category.percentage)
-                        }
-                }
-                .frame(height: 6)
             }
         }
         .padding(.horizontal, Spacing.m)
@@ -196,112 +143,43 @@ struct ManagerPortfolioView: View {
     // MARK: Collection Efficiency
 
     private var collectionSection: some View {
-        SectionCard(title: "Collection Health") {
-            HStack(spacing: Spacing.l) {
-                VStack(spacing: Spacing.s) {
-                    CircularProgress(progress: store.portfolioSummary.recoveryRate, color: .lmsSuccess, lineWidth: 7, size: 72)
-                    Text("Recovery Rate")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-
-                VStack(spacing: Spacing.s) {
-                    CircularProgress(progress: store.portfolioSummary.paidEMIPercent, color: .lmsAccent, lineWidth: 7, size: 72)
-                    Text("Paid EMI %")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-
-                VStack(spacing: Spacing.s) {
-                    Text("\(store.portfolioSummary.overdueLoans)")
-                        .font(.system(.title2, design: .rounded).weight(.bold))
-                        .foregroundStyle(Color.lmsDanger)
-                    Text("Overdue\nLoans")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-            }
-        }
-        .padding(.horizontal, Spacing.m)
-    }
-
-    // MARK: NPA Monitoring
-
-    private var npaSection: some View {
-        SectionCard(title: "NPA Monitoring") {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("NPA Ratio")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(Formatting.percent(store.portfolioSummary.npaRatio, fractionDigits: 2))
-                        .font(.system(.title2, design: .rounded).weight(.bold))
-                        .foregroundStyle(Color.lmsDanger)
-                }
-                Spacer()
-                NavigationLink(value: ManagerRoute.riskAlerts) {
-                    Label("View Alerts", systemImage: "exclamationmark.shield")
-                        .font(.subheadline.weight(.semibold))
-                }
-                .buttonStyle(.bordered)
-                .tint(.lmsDanger)
-                .controlSize(.small)
-            }
-
-            if store.unreadRiskAlertCount > 0 {
-                HStack(spacing: Spacing.sm) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(Color.lmsWarning)
-                    Text("\(store.unreadRiskAlertCount) unread risk alerts require attention")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                }
-                .padding(Spacing.sm)
-                .background(Color.lmsWarning.opacity(0.08), in: RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous))
-            }
-        }
-        .padding(.horizontal, Spacing.m)
-    }
-
-    // MARK: Branch Performance
-
-    private var branchPerformanceSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.s) {
-            SectionHeader(title: "Branch Performance",
-                          actionTitle: "Officers") {
-                // navigation handled via route
-            }
-            .padding(.horizontal, Spacing.m)
-
-            ForEach(store.branchPerformanceItems) { branch in
-                HStack(spacing: Spacing.sm) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(branch.branchName)
-                            .font(.subheadline.weight(.medium))
-                        Text("\(branch.totalApplications) applications")
+        NavigationLink(value: ManagerRoute.applicationsFiltered(.all)) {
+            SectionCard(title: "Collection Health") {
+                HStack(spacing: Spacing.l) {
+                    VStack(spacing: Spacing.s) {
+                        CircularProgress(progress: store.portfolioSummary.recoveryRate, color: .lmsSuccess, lineWidth: 7, size: 72)
+                        Text("Recovery Rate")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text(Formatting.percent(branch.approvalRate, fractionDigits: 0))
-                            .font(.subheadline.weight(.semibold))
-                        Text(branch.avgDecisionTime)
+                    .frame(maxWidth: .infinity)
+
+                    VStack(spacing: Spacing.s) {
+                        CircularProgress(progress: store.portfolioSummary.paidEMIPercent, color: .lmsAccent, lineWidth: 7, size: 72)
+                        Text("Paid EMI %")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
+                    .frame(maxWidth: .infinity)
+
+                    VStack(spacing: Spacing.s) {
+                        Text("\(store.portfolioSummary.overdueLoans)")
+                            .font(.system(.title2, design: .rounded).weight(.bold))
+                            .foregroundStyle(Color.lmsDanger)
+                        Text("Overdue\nLoans")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
-                .padding(Spacing.m)
-                .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
-                .padding(.horizontal, Spacing.m)
             }
         }
+        .buttonStyle(.plain)
+        .padding(.horizontal, Spacing.m)
     }
+
+
 
     // MARK: Greeting
 
@@ -324,9 +202,16 @@ struct ManagerPortfolioView: View {
 
     private var officerPerformanceSection: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
-            SectionHeader(title: "Officer Performance",
-                          actionTitle: "See All") {
-                // "See All" navigates to the full list
+            HStack {
+                Text("Officer Performance")
+                    .font(.lmsHeadline)
+                    .foregroundStyle(.primary)
+                Spacer()
+                NavigationLink(value: ManagerRoute.officerPerformance) {
+                    Text("See All")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.lmsAccent)
+                }
             }
             .padding(.horizontal, Spacing.m)
 
