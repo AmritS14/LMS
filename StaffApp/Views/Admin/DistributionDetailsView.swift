@@ -21,6 +21,7 @@ struct DistributionDetailsView: View {
                 .padding(.bottom, Spacing.m)
 
             loanDistributionSection
+            reportsSection
             applicationStatusSection
         }
         .listStyle(.insetGrouped)
@@ -113,6 +114,16 @@ struct DistributionDetailsView: View {
     }
 
 
+
+    private var psSection: some View {
+        Section {
+            NavigationLink(destination: ReportsDashboardView()) {
+                statRow(title: "Institutional Reports", count: 7, systemImage: "doc.text.magnifyingglass") // 7 is just matching the mock data count
+            }
+        } header: {
+            Text("Reports").font(.title3).fontWeight(.bold).foregroundStyle(.primary).textCase(nil)
+        }
+    }
 
     private var applicationStatusSection: some View {
         Section {

@@ -207,6 +207,15 @@ actor MockLoanService: LoanService {
         return product
     }
 
+    func updateLoanProduct(_ product: LoanProduct) async throws -> LoanProduct {
+        try await Task.sleep(for: .milliseconds(200))
+        return product
+    }
+    
+    func deleteLoanProduct(id: UUID) async throws {
+        try await Task.sleep(for: .milliseconds(200))
+    }
+
     func createApplication(productID: UUID, requestedAmount: Decimal, tenureMonths: Int) async throws -> LoanApplication {
         try await Task.sleep(for: .milliseconds(400))
         let app = LoanApplication(

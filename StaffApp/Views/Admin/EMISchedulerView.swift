@@ -42,47 +42,66 @@ struct EMISchedulerView: View {
     @State private var schedules = ReminderSchedule.sampleSchedules
     @State private var selectedScheduleForEdit: ReminderSchedule? = nil
     @State private var showCreateSheet = false
-    
-    // HUD State
-    @State private var hudMessage: String? = nil
-    @State private var showHUD = false
 
     var body: some View {
-        ZStack {
-            Color(uiColor: .systemGroupedBackground)
-                .ignoresSafeArea()
-            
-            List {
-                Section {
-                    ForEach(schedules) { schedule in
-                        reminderCard(schedule: schedule)
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+        List {
+            Section {
+                ForEach($schedules) { $schedule in
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        HStack {
+                            Text(schedule.name)
+                                .font(.lmsHeadline)
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Toggle("", isOn: $schedule.isActive)
+                                .labelsHidden()
+                        }
+                        
+                        Text(schedule.timing)
+                            .font(.lmsSubheadline)
+                            .foregroundStyle(.secondary)
+                            
+                        HStack(spacing: 12) {
+                            if schedule.channels.contains(.email) {
+                                Label("Email", systemImage: "envelope.fill")
+                            }
+                            if schedule.channels.contains(.sms) {
+                                Label("SMS", systemImage: "message.fill")
+                            }
+                            if schedule.channels.contains(.inApp) {
+                                Label("In-App", systemImage: "bell.fill")
+                            }
+                        }
+                        .font(.lmsCaption)
+                        .foregroundStyle(schedule.isActive ? Color.lmsInfo : .secondary)
+                        .padding(.top, 4)
                     }
-                } header: {
-                    Text("Configured Reminder Triggers")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    .padding(.vertical, Spacing.xxs)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            deleteSchedule(schedule)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        
+                        Button {
+                            duplicateSchedule(schedule)
+                        } label: {
+                            Label("Duplicate", systemImage: "plus.square.on.square")
+                        }
+                        .tint(.blue)
+                        
+                        Button {
+                            selectedScheduleForEdit = schedule
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                        .tint(.orange)
+                    }
                 }
-            }
-            .listStyle(.plain)
-            
-            // HUD Banner Overlay
-            if showHUD, let msg = hudMessage {
-                VStack {
-                    Spacer()
-                    Text(msg)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 12)
-                        .background(Color.black.opacity(0.85), in: Capsule())
-                        .shadow(radius: 8)
-                        .padding(.bottom, 36)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
+            } header: {
+                Text("Configured Reminder Triggers")
+                    .textCase(nil)
             }
         }
         .navigationTitle("EMI Reminders")
@@ -99,104 +118,15 @@ struct EMISchedulerView: View {
         .sheet(isPresented: $showCreateSheet) {
             AddReminderScheduleSheet(onSave: { newSchedule in
                 schedules.append(newSchedule)
-                triggerHUD("Reminder Created")
             })
         }
         .sheet(item: $selectedScheduleForEdit) { schedule in
             AddReminderScheduleSheet(editingSchedule: schedule, onSave: { updated in
                 if let idx = schedules.firstIndex(where: { $0.id == updated.id }) {
                     schedules[idx] = updated
-                    triggerHUD("Reminder Updated")
                 }
             })
         }
-    }
-    
-    // MARK: - Subviews
-    
-    private func reminderCard(schedule: ReminderSchedule) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(schedule.name)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                    
-                    HStack(spacing: 6) {
-                        Image(systemName: "clock.fill")
-                            .font(.caption2)
-                            .foregroundStyle(.blue)
-                        Text(schedule.timing)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                
-                Spacer()
-                
-                // Toggle switch
-                Toggle("", isOn: Binding(
-                    get: { schedule.isActive },
-                    set: { val in
-                        if let idx = schedules.firstIndex(where: { $0.id == schedule.id }) {
-                            schedules[idx].isActive = val
-                            triggerHUD(val ? "Schedule Activated" : "Schedule Deactivated")
-                        }
-                    }
-                ))
-                .labelsHidden()
-                .tint(.blue)
-            }
-            
-            Divider()
-            
-            HStack {
-                // Channels active indicator
-                HStack(spacing: 8) {
-                    channelIcon(isOn: schedule.channels.contains(.email), image: "envelope.fill", label: "Email")
-                    channelIcon(isOn: schedule.channels.contains(.sms), image: "message.fill", label: "SMS")
-                    channelIcon(isOn: schedule.channels.contains(.inApp), image: "bell.fill", label: "In-App")
-                }
-                
-                Spacer()
-                
-                // Card actions menu
-                Menu {
-                    Button(action: { selectedScheduleForEdit = schedule }) {
-                        Label("Edit", systemImage: "pencil")
-                    }
-                    
-                    Button(action: { duplicateSchedule(schedule) }) {
-                        Label("Duplicate", systemImage: "plus.square.on.square")
-                    }
-                    
-                    Button(role: .destructive, action: { deleteSchedule(schedule) }) {
-                        Label("Delete", systemImage: "trash")
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "ellipsis.circle.fill")
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-        }
-        .padding()
-        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
-    }
-    
-    private func channelIcon(isOn: Bool, image: String, label: String) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: image)
-                .font(.system(size: 10))
-            Text(label)
-                .font(.system(size: 10, weight: .semibold))
-        }
-        .foregroundStyle(isOn ? Color.blue : Color.secondary)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(isOn ? Color.blue.opacity(0.12) : Color.primary.opacity(0.04), in: Capsule())
     }
     
     // MARK: - Actions
@@ -205,27 +135,14 @@ struct EMISchedulerView: View {
         var copy = schedule
         copy.id = UUID()
         copy.name += " Copy"
-        schedules.append(copy)
-        triggerHUD("Reminder Duplicated")
+        withAnimation {
+            schedules.append(copy)
+        }
     }
     
     private func deleteSchedule(_ schedule: ReminderSchedule) {
         withAnimation {
             schedules.removeAll { $0.id == schedule.id }
-        }
-        triggerHUD("Reminder Deleted")
-    }
-    
-    private func triggerHUD(_ message: String) {
-        hudMessage = message
-        withAnimation(.easeOut(duration: 0.25)) {
-            showHUD = true
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            withAnimation(.easeIn(duration: 0.25)) {
-                showHUD = false
-            }
         }
     }
 }

@@ -14,6 +14,12 @@ protocol AdminService: Sendable {
         employeeID: String,
         temporaryPassword: String
     ) async throws -> UUID
+
+    func updateUserRole(userID: UUID, role: UserRole) async throws
+    func updateUserStatus(userID: UUID, isActive: Bool) async throws
+    func archiveLoan(id: UUID) async throws
+    func restoreLoan(id: UUID) async throws
+    func fetchAuditLogs() async throws -> [AuditEntry]
 }
 
 protocol ReportingService: Sendable {

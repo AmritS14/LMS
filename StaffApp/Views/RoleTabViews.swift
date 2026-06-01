@@ -106,22 +106,13 @@ struct AdminTabView: View {
                     UserListView(viewModel: userManagementViewModel)
                 }
             }
-            Tab("Reports", systemImage: "doc.text.magnifyingglass") {
-                NavigationStack {
-                    ReportsDashboardView()
-                }
-            }
+
             Tab("Configure", systemImage: "command.circle") {
                 NavigationStack {
                     SystemSettingsView(
                         templateViewModel: templateViewModel,
                         loanConfigViewModel: loanConfigViewModel
                     )
-                }
-            }
-            Tab("Audit", systemImage: "list.clipboard") {
-                NavigationStack {
-                    AuditTrailView()
                 }
             }
         }

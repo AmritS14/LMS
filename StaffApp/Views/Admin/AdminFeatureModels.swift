@@ -672,28 +672,53 @@ final class UserManagementViewModel {
 
     func updateRole(for userID: UUID, to role: UserRole) async {
         guard let index = users.firstIndex(where: { $0.id == userID }) else { return }
-        users[index].role = role
-        if role == .admin || role == .manager || role == .loanOfficer {
-            if staffProfiles[userID] == nil {
-                staffProfiles[userID] = StaffProfile(
-                    id: userID,
-                    employeeID: "ST-\(userID.uuidString.prefix(6).uppercased())",
-                    branchID: nil,
-                    department: nil,
-                    reportsToID: nil,
-                    permissions: []
-                )
+        
+        do {
+            if let env = environment {
+                try await env.admin.updateUserRole(userID: userID, role: role)
+                await load() // Reload to ensure sync
+            } else {
+                // Fallback for previews if environment is not set
+                users[index].role = role
+                if role == .admin || role == .manager || role == .loanOfficer {
+                    if staffProfiles[userID] == nil {
+                        staffProfiles[userID] = StaffProfile(
+                            id: userID,
+                            employeeID: "ST-\(userID.uuidString.prefix(6).uppercased())",
+                            branchID: nil,
+                            department: nil,
+                            reportsToID: nil,
+                            permissions: []
+                        )
+                    }
+                }
             }
+            
+            showSuccessAlert = true
+            successMessage = "Role updated for \(users[index].fullName)."
+        } catch {
+            loadError = "Failed to update role: \(error.localizedDescription)"
         }
-        showSuccessAlert = true
-        successMessage = "Role updated for \(users[index].fullName)."
     }
 
     func toggleUserStatus(for userID: UUID) async {
         guard let index = users.firstIndex(where: { $0.id == userID }) else { return }
-        users[index].isActive.toggle()
-        showSuccessAlert = true
-        successMessage = users[index].isActive ? "User reactivated." : "User deactivated."
+        
+        // Optimistic UI update
+        let newStatus = !users[index].isActive
+        users[index].isActive = newStatus
+        
+        do {
+            if let env = environment {
+                try await env.admin.updateUserStatus(userID: userID, isActive: newStatus)
+            }
+            successMessage = newStatus ? "User reactivated." : "User deactivated."
+            showSuccessAlert = true
+        } catch {
+            // Revert UI on failure
+            users[index].isActive = !newStatus
+            print("Failed to update user status: \(error)")
+        }
     }
 
     func deleteUser(for userID: UUID) async {
@@ -926,11 +951,50 @@ final class LoanConfigViewModel {
     }
 
     func deleteLoans(category: LoanCategory, at offsets: IndexSet) {
-        productsByCategory[category]?.remove(atOffsets: offsets)
-        markDirty()
+        guard let environment, let products = productsByCategory[category] else { return }
+        
+        Task {
+            for index in offsets {
+                let product = products[index]
+                do {
+                    try await environment.loans.deleteLoanProduct(id: product.id)
+                } catch {
+                    print("Failed to delete loan product: \(error)")
+                }
+            }
+            await MainActor.run {
+                productsByCategory[category]?.remove(atOffsets: offsets)
+                showSaveAlert = true
+            }
+        }
+    }
+
+    func updateProduct(_ product: AdminLoanProduct, category: LoanCategory) async throws {
+        let maxMonths = product.tenureUnit == .years ? product.maxTenure * 12 : product.maxTenure
+        let minMonths = min(maxMonths, product.tenureUnit == .years ? 12 : 6)
+
+        let domain = LoanProduct(
+            id: product.id,
+            name: product.name,
+            description: category.rawValue,
+            minimumAmount: Decimal(product.minAmount),
+            maximumAmount: Decimal(product.maxAmount),
+            minimumTenureMonths: minMonths,
+            maximumTenureMonths: maxMonths,
+            minimumInterestRate: product.interestRate,
+            maximumInterestRate: product.interestRate,
+            isActive: true
+        )
+        
+        if let environment {
+            isSaving = true
+            defer { isSaving = false }
+            _ = try await environment.loans.updateLoanProduct(domain)
+            showSaveAlert = true
+        }
     }
 
     func markDirty() {
-        showSaveAlert = true
+        // Not used as we now save immediately
     }
 }

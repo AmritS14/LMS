@@ -49,6 +49,16 @@ struct LoanConfigFormView: View {
                 LoanProductEditorSheet(
                     product: binding,
                     onSave: {
+                        // Find the category for this product
+                        if let category = LoanCategory.allCases.first(where: { viewModel.productsByCategory[$0]?.contains(where: { $0.id == product.id }) == true }) {
+                            Task {
+                                do {
+                                    try await viewModel.updateProduct(binding.wrappedValue, category: category)
+                                } catch {
+                                    errorMessage = "Failed to update loan product: \(error.localizedDescription)"
+                                }
+                            }
+                        }
                         selectedProduct = nil
                     },
                     onCancel: {

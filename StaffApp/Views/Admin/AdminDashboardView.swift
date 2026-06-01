@@ -15,6 +15,7 @@ struct AdminDashboardView: View {
     @Environment(\.appEnvironment) private var env
     @State private var showDetails: Bool = false
 
+
     var body: some View {
         List {
             if let error = viewModel.error {
@@ -45,6 +46,8 @@ struct AdminDashboardView: View {
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets())
                 .padding(.bottom, Spacing.m)
+
+
 
             // Recent Applications List
             recentApplicationsList
@@ -124,7 +127,7 @@ struct AdminDashboardView: View {
         }
         .padding(20)
         .background(
-            Color.blue.gradient,
+            AdminColor.accentGradient,
             in: RoundedRectangle(cornerRadius: 24, style: .continuous)
         )
     }
@@ -141,6 +144,7 @@ struct AdminDashboardView: View {
         }
         .frame(maxWidth: .infinity)
     }
+
 
     /// List of separate Recent Application cards
     private var recentApplicationsList: some View {
