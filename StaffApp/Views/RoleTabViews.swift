@@ -84,6 +84,8 @@ struct ManagerTabView: View {
 }
 
 struct AdminTabView: View {
+    @Environment(\.appEnvironment) private var env
+
     @State private var userManagementViewModel = UserManagementViewModel()
     @State private var templateViewModel = TemplateViewModel()
     @State private var loanConfigViewModel = LoanConfigViewModel()
@@ -110,6 +112,12 @@ struct AdminTabView: View {
                     )
                 }
             }
+        }
+        .task {
+            userManagementViewModel.configure(environment: env)
+            await userManagementViewModel.load()
+            loanConfigViewModel.configure(environment: env)
+            await loanConfigViewModel.load()
         }
     }
 }

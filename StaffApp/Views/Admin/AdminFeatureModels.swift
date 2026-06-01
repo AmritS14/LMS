@@ -618,6 +618,7 @@ final class UserManagementViewModel {
             auditEntries = fetchedAudit
         } catch {
             loadError = error.localizedDescription
+            print("[UserManagementViewModel] load error: \(error)")
         }
         isLoading = false
     }

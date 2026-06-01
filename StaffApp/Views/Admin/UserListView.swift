@@ -25,7 +25,22 @@ struct UserListView: View {
                 .padding(.bottom, Spacing.m)
 
             // User list section
-            if viewModel.filteredUsers.isEmpty {
+            if viewModel.isLoading {
+                ProgressView()
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 40)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            } else if let error = viewModel.loadError {
+                EmptyStateView(
+                    title: "Failed to Load",
+                    subtitle: error,
+                    systemImage: "exclamationmark.triangle"
+                )
+                .padding(.top, 40)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+            } else if viewModel.filteredUsers.isEmpty {
                 EmptyStateView(
                     title: "No Users Found",
                     subtitle: "No users match your criteria.",
@@ -56,6 +71,9 @@ struct UserListView: View {
         }
         .listStyle(.plain)
         .background(AdminColor.background)
+        .refreshable {
+            await viewModel.load()
+        }
         .searchable(
             text: $viewModel.searchText,
             placement: .navigationBarDrawer(displayMode: .always),
