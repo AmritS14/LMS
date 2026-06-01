@@ -214,7 +214,49 @@ actor SupabaseLoanService: LoanService {
         let created = toDomainProduct(dbProduct)
         // Refresh the product→type cache so new products map correctly.
         productCache[created.id] = created.loanType
+        
+        await SupabaseManager.shared.logAuditEvent(action: "Created Loan Product", entityType: "loan_product", entityID: created.id, metadata: ["name": .string(created.name)])
         return created
+    }
+    
+    func updateLoanProduct(_ product: LoanProduct) async throws -> LoanProduct {
+        let updateData: [String: AnyJSON] = [
+            "name": .string(product.name),
+            "description": product.description.map { AnyJSON.string($0) } ?? .null,
+            "minimum_amount": .double(NSDecimalNumber(decimal: product.minimumAmount).doubleValue),
+            "maximum_amount": .double(NSDecimalNumber(decimal: product.maximumAmount).doubleValue),
+            "minimum_tenure_months": .integer(product.minimumTenureMonths),
+            "maximum_tenure_months": .integer(product.maximumTenureMonths),
+            "minimum_interest_rate": .double(product.minimumInterestRate),
+            "maximum_interest_rate": .double(product.maximumInterestRate),
+            "is_active": .bool(product.isActive)
+        ]
+
+        let response = try await client
+            .from("loan_products")
+            .update(updateData)
+            .eq("id", value: product.id)
+            .select()
+            .single()
+            .execute()
+
+        let dbProduct = try SupabaseManager.shared.decoder.decode(DBLoanProduct.self, from: response.data)
+        let updated = toDomainProduct(dbProduct)
+        productCache[updated.id] = updated.loanType
+        
+        await SupabaseManager.shared.logAuditEvent(action: "Updated Loan Product", entityType: "loan_product", entityID: updated.id, metadata: ["name": .string(updated.name)])
+        return updated
+    }
+    
+    func deleteLoanProduct(id: UUID) async throws {
+        _ = try await client
+            .from("loan_products")
+            .delete()
+            .eq("id", value: id)
+            .execute()
+            
+        productCache.removeValue(forKey: id)
+        await SupabaseManager.shared.logAuditEvent(action: "Deleted Loan Product", entityType: "loan_product", entityID: id, metadata: [:])
     }
 
     func createApplication(productID: UUID, requestedAmount: Decimal, tenureMonths: Int) async throws -> LoanApplication {

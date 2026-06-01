@@ -12,7 +12,6 @@ struct DistributionDetailsView: View {
     @Bindable var viewModel: DashboardViewModel
     @Bindable var userVM: UserManagementViewModel
     @Environment(\.dismiss) private var dismiss
-    @State private var isAmountVisible: Bool = true
 
     var body: some View {
         List {
@@ -22,6 +21,7 @@ struct DistributionDetailsView: View {
                 .padding(.bottom, Spacing.m)
 
             loanDistributionSection
+            reportsSection
             applicationStatusSection
         }
         .listStyle(.insetGrouped)
@@ -38,7 +38,7 @@ struct DistributionDetailsView: View {
                     .font(.lmsSubheadline)
                     .foregroundStyle(.white.opacity(0.8))
                 
-                Text(isAmountVisible ? viewModel.snapshot.stats.totalAmount : "••••••••")
+                Text(viewModel.isAmountVisible ? Formatting.compactIndianRupee(viewModel.rawTotalAmount) : "₹••••••")
                     .font(.system(size: 34, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
             }
@@ -46,11 +46,11 @@ struct DistributionDetailsView: View {
             Spacer()
             
             Button {
-                withAnimation {
-                    isAmountVisible.toggle()
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                    viewModel.isAmountVisible.toggle()
                 }
             } label: {
-                Image(systemName: isAmountVisible ? "eye" : "eye.slash")
+                Image(systemName: viewModel.isAmountVisible ? "eye" : "eye.slash")
                     .font(.title2)
                     .foregroundStyle(.white)
             }
@@ -114,6 +114,16 @@ struct DistributionDetailsView: View {
     }
 
 
+
+    private var psSection: some View {
+        Section {
+            NavigationLink(destination: ReportsDashboardView()) {
+                statRow(title: "Institutional Reports", count: 7, systemImage: "doc.text.magnifyingglass") // 7 is just matching the mock data count
+            }
+        } header: {
+            Text("Reports").font(.title3).fontWeight(.bold).foregroundStyle(.primary).textCase(nil)
+        }
+    }
 
     private var applicationStatusSection: some View {
         Section {

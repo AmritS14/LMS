@@ -44,7 +44,11 @@ struct UserListView: View {
                         }
                         .opacity(0)
                         
-                        UserRowView(user: user, profile: viewModel.staffProfiles[user.id])
+                        UserRowView(
+                            user: user,
+                            profile: viewModel.staffProfiles[user.id],
+                            isResetPending: viewModel.usersPendingReset.contains(user.id)
+                        )
                     }
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
@@ -81,7 +85,7 @@ struct UserListView: View {
                 .presentationDragIndicator(.visible)
         }
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showAddStaff = true
                 } label: {
@@ -89,12 +93,6 @@ struct UserListView: View {
                         .font(.title3)
                 }
                 .accessibilityLabel("Add staff user")
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink(destination: ProfileView()) {
-                    Image(systemName: "person.crop.circle")
-                        .font(.title3)
-                }
             }
         }
     }
