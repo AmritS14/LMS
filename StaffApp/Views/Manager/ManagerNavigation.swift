@@ -18,9 +18,24 @@ struct ManagerNavigationStack<Root: View>: View {
     @ViewBuilder
     private func destination(for route: ManagerRoute) -> some View {
         switch route {
-        case .applications: ManagerApplicationsView()
-        case .review(let id): ApplicationReviewView(applicationID: id)
-        case .notifications: ManagerNotificationsView()
+        case .applications:
+            ManagerApplicationsView()
+        case .applicationsFiltered(let filter):
+            ManagerApplicationsView(initialFilter: filter)
+        case .review(let id):
+            ApplicationReviewView(applicationID: id)
+        case .notifications:
+            ManagerNotificationsView()
+        case .officerPerformance:
+            OfficerPerformanceView()
+        case .officerDetail(let name):
+            OfficerDetailView(officerName: name)
+        case .auditLogs:
+            AuditLogsView()
+        case .loanPolicies:
+            LoanPoliciesView()
+        case .riskAlerts:
+            RiskAlertsView()
         }
     }
 }

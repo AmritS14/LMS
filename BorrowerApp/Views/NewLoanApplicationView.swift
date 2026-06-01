@@ -1,375 +1,143 @@
 import SwiftUI
-import PhotosUI
-import UniformTypeIdentifiers
 
 struct NewLoanApplicationView: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.appEnvironment) private var env
     @Environment(\.dismiss) private var dismiss
 
-    /// Called when the user completes (or skips) the application flow.
-    /// When embedded in a tab, this switches back to the Home tab.
-    var onComplete: (() -> Void)? = nil
-
     @State private var viewModel = LoanApplicationViewModel()
-
-    // Flow state: form → submitted → upload docs → done
-    enum FlowStep {
-        case form
-        case uploadDocuments
-        case complete
-    }
-    @State private var flowStep: FlowStep = .form
-
-    // Amount input
-    @State private var amountText: String = ""
+    @State private var showDocSheet = false
+    @State private var showConfirm = false
     @FocusState private var amountFocused: Bool
 
-    // Tenure input
-    enum TenureUnit: String, CaseIterable {
-        case months = "Months"
-        case years = "Years"
-    }
-    @State private var tenureUnit: TenureUnit = .months
-    @State private var tenureDisplayValue: Double = 12
-    @State private var tenureText: String = "12"
-    @FocusState private var tenureFocused: Bool
+    @State private var calcRate: Double = 8.50
+    @State private var calcLoanType: LoanType = .home
+    @State private var amountText: String = "2500000"
 
-    // Document upload state
-    @State private var isUploadingDoc = false
-    @State private var uploadMessage: String?
-    @State private var uploadDidFail = false
-    @State private var activeDocumentKind: DocumentKind?
-    @State private var showSourcePicker = false
-    @State private var showPhotoPicker = false
-    @State private var showFilePicker = false
-    @State private var selectedPhotoItem: PhotosPickerItem?
-    @State private var uploadedKinds: Set<DocumentKind> = []
+    private let products: [(type: LoanType, name: String, rate: Double, icon: String)] = [
+        (.home,      "Home",      8.50, "house.fill"),
+        (.personal,  "Personal", 10.50, "person.fill"),
+        (.vehicle,   "Auto",      9.25, "car.fill"),
+        (.business,  "Business", 11.00, "briefcase.fill"),
+        (.education, "Education", 7.80, "book.closed.fill")
+    ]
+
+    private var amountPresets: [Double] {
+        switch calcLoanType {
+        case .home:      return [1_500_000, 2_500_000, 5_000_000, 7_500_000]
+        case .personal:  return [100_000, 300_000, 500_000, 1_000_000]
+        case .vehicle:   return [400_000, 600_000, 1_000_000, 1_500_000]
+        case .business:  return [500_000, 1_000_000, 2_500_000, 5_000_000]
+        case .education: return [200_000, 500_000, 1_000_000, 2_000_000]
+        }
+    }
+
+    private var tenurePresets: [Int] {
+        switch calcLoanType {
+        case .home:      return [120, 180, 240, 300]
+        case .personal:  return [12, 24, 36, 60]
+        case .vehicle:   return [24, 36, 48, 60]
+        case .business:  return [24, 48, 60, 84]
+        case .education: return [36, 60, 84, 120]
+        }
+    }
+
+    private var amountBounds: ClosedRange<Double> {
+        switch calcLoanType {
+        case .home:      return 500_000...20_000_000
+        case .personal:  return 50_000...2_500_000
+        case .vehicle:   return 100_000...5_000_000
+        case .business:  return 100_000...10_000_000
+        case .education: return 100_000...5_000_000
+        }
+    }
 
     var body: some View {
-        Group {
-            switch flowStep {
-            case .form:
-                formView
-            case .uploadDocuments:
-                documentUploadView
-            case .complete:
-                completionView
-            }
-        }
-        .background(Color.lmsBackground.ignoresSafeArea())
-        .navigationTitle(flowStep == .form ? "New Application" : flowStep == .uploadDocuments ? "Upload Documents" : "Success")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbar { keyboardToolbar }
-        .task {
-            if let env {
-                await viewModel.loadProducts(loanService: env.loans)
-                syncAmountText()
-                syncTenureFromViewModel()
-            }
-        }
-    }
-
-    // MARK: - Form View
-
-    private var formView: some View {
         ScrollView {
             VStack(spacing: Spacing.ml) {
-                if viewModel.isLoadingProducts {
-                    ProgressView("Loading loan products…")
-                        .padding(.top, Spacing.xl)
-                } else if viewModel.loanProducts.isEmpty {
-                    ContentUnavailableView(
-                        "No Products Available",
-                        systemImage: "exclamationmark.triangle",
-                        description: Text(viewModel.errorMessage ?? "Could not load loan products.")
-                    )
-                } else {
-                    productPicker
-                    amountCard
-                    tenureCard
-                    rateCard
-                    resultCard
-
-                    if let errorMsg = viewModel.errorMessage {
-                        Text(errorMsg)
-                            .font(.caption)
-                            .foregroundStyle(.red)
-                            .padding(.horizontal, Spacing.m)
-                    }
-
-                    submitButton
-                }
+                productPicker
+                amountCard
+                tenureCard
+                rateCard
+                resultCard
+                documentsCard
+                submitButton
             }
             .padding(.horizontal, Spacing.m)
             .padding(.bottom, Spacing.xl)
         }
         .scrollIndicators(.hidden)
         .scrollDismissesKeyboard(.interactively)
-    }
-
-    // MARK: - Document Upload View (post-submission)
-
-    private var documentUploadView: some View {
-        ScrollView {
-            VStack(spacing: Spacing.l) {
-                // Status header
-                VStack(spacing: Spacing.xs) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 48))
-                        .foregroundStyle(Color.lmsSuccess)
-                    Text("Application Submitted!")
-                        .font(.title3.weight(.semibold))
-                    Text("Now upload your KYC documents to speed up processing.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.top, Spacing.l)
-                .padding(.horizontal, Spacing.m)
-
-                // Document rows
-                VStack(spacing: 0) {
-                    docUploadRow(kind: .identityProof, title: "ID Proof", icon: "person.text.rectangle.fill", iconColor: .blue)
-                    Divider().padding(.leading, 56)
-                    docUploadRow(kind: .addressProof, title: "Address Proof", icon: "house.fill", iconColor: .teal)
-                    Divider().padding(.leading, 56)
-                    docUploadRow(kind: .incomeProof, title: "Salary Slips", icon: "doc.text.fill", iconColor: .orange)
-                    Divider().padding(.leading, 56)
-                    docUploadRow(kind: .bankStatement, title: "Bank Statement", icon: "building.columns.fill", iconColor: .indigo)
-                }
-                .padding(Spacing.m)
-                .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
-                .padding(.horizontal, Spacing.m)
-
-                if !viewModel.uploadedDocumentIDs.isEmpty {
-                    Text("\(viewModel.uploadedDocumentIDs.count) document\(viewModel.uploadedDocumentIDs.count > 1 ? "s" : "") uploaded")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                if let errorMsg = viewModel.errorMessage {
-                    Label(errorMsg, systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption)
-                        .foregroundStyle(Color.lmsDanger)
-                        .padding(.horizontal, Spacing.m)
-                }
-
-                VStack(spacing: Spacing.sm) {
-                    // Finish with documents
-                    if !viewModel.uploadedDocumentIDs.isEmpty {
-                        PrimaryButton(
-                            "Submit Documents & Finish",
-                            isLoading: viewModel.isLinkingDocuments
-                        ) {
-                            Task {
-                                guard let env else { return }
-                                let success = await viewModel.linkDocuments(loanService: env.loans)
-                                if success {
-                                    withAnimation { flowStep = .complete }
-                                }
-                            }
-                        }
-                        .padding(.horizontal, Spacing.m)
-                    }
-
-                    // Skip for now
-                    Button {
-                        withAnimation { flowStep = .complete }
-                    } label: {
-                        Text(viewModel.uploadedDocumentIDs.isEmpty ? "Skip for Now" : "Skip Remaining")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding(.bottom, Spacing.l)
-            }
-        }
-        .scrollIndicators(.hidden)
-        .disabled(isUploadingDoc)
-        .overlay {
-            if isUploadingDoc {
-                VStack(spacing: Spacing.s) {
-                    ProgressView()
-                    Text("Uploading…").font(.subheadline)
-                }
-                .padding(Spacing.l)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
-            }
-        }
-        .overlay(alignment: .bottom) {
-            if let msg = uploadMessage {
-                Label(msg, systemImage: uploadDidFail ? "xmark.circle.fill" : "checkmark.circle.fill")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, Spacing.m)
-                    .padding(.vertical, Spacing.sm)
-                    .background(uploadDidFail ? Color.lmsDanger : Color.lmsSuccess, in: Capsule())
-                    .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
-                    .padding(.bottom, Spacing.xl)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: uploadMessage)
-        .confirmationDialog("Choose File Source", isPresented: $showSourcePicker, titleVisibility: .visible) {
-            Button { showPhotoPicker = true } label: {
-                Label("Photo Library", systemImage: "photo.on.rectangle")
-            }
-            Button { showFilePicker = true } label: {
-                Label("Browse Files", systemImage: "folder")
-            }
-            Button("Cancel", role: .cancel) { activeDocumentKind = nil }
-        }
-        .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhotoItem, matching: .images)
-        .onChange(of: selectedPhotoItem) { _, newItem in
-            guard let newItem, let kind = activeDocumentKind else { return }
-            selectedPhotoItem = nil
-            Task {
-                await handlePhotoPickerResult(item: newItem, kind: kind)
-                activeDocumentKind = nil
-            }
-        }
-        .fileImporter(isPresented: $showFilePicker, allowedContentTypes: [.pdf, .jpeg, .png], allowsMultipleSelection: false) { result in
-            guard let kind = activeDocumentKind else { return }
-            switch result {
-            case .success(let urls):
-                if let url = urls.first {
-                    Task {
-                        await handleFileImporterResult(url: url, kind: kind)
-                        activeDocumentKind = nil
-                    }
-                }
-            case .failure(let error):
-                uploadDidFail = true
-                uploadMessage = error.localizedDescription
-                activeDocumentKind = nil
-            }
+        .background(Color.lmsBackground.ignoresSafeArea())
+        .navigationTitle("New Application")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar { keyboardToolbar }
+        .sheet(isPresented: $showDocSheet) { documentsSheet }
+        .alert("Application Submitted", isPresented: $showConfirm, actions: {
+            Button("OK") { dismiss() }
+        }, message: {
+            Text("Your \(calcLoanType.rawValue.capitalized) Loan for \(Formatting.currency(Decimal(viewModel.requestedAmount))) is under review.")
+        })
+        .onAppear(perform: applyDefaults)
+        .onChange(of: calcLoanType) { _, _ in
+            clampAmountToBounds()
+            clampTenureToPresets()
         }
     }
-
-    // MARK: - Completion View
-
-    private var completionView: some View {
-        VStack(spacing: Spacing.l) {
-            Spacer()
-            ZStack {
-                Circle()
-                    .fill(Color.lmsSuccess.opacity(0.15))
-                    .frame(width: 96, height: 96)
-                Image(systemName: "checkmark")
-                    .font(.system(size: 44, weight: .bold))
-                    .foregroundStyle(Color.lmsSuccess)
-            }
-            VStack(spacing: Spacing.xs) {
-                Text("Application Complete")
-                    .font(.title2.weight(.semibold))
-                Text("Your loan application for \(Formatting.currency(Decimal(viewModel.requestedAmount))) has been submitted and is under review.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, Spacing.l)
-                if !viewModel.uploadedDocumentIDs.isEmpty {
-                    Text("\(viewModel.uploadedDocumentIDs.count) document\(viewModel.uploadedDocumentIDs.count > 1 ? "s" : "") attached")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            Spacer()
-            PrimaryButton("Done") {
-                if let onComplete {
-                    // Embedded in TabView — reset form, switch to Home tab
-                    viewModel = LoanApplicationViewModel()
-                    uploadedKinds = []
-                    flowStep = .form
-                    onComplete()
-                } else {
-                    dismiss()
-                }
-            }
-            .padding(.horizontal, Spacing.m)
-            .padding(.bottom, Spacing.m)
-        }
-    }
-
-    // MARK: - Computed
-
-    private var selectedProduct: LoanProduct? { viewModel.selectedProduct }
-
-    private var amountBounds: ClosedRange<Double> {
-        guard let p = selectedProduct else { return 10_000...1_000_000 }
-        return NSDecimalNumber(decimal: p.minimumAmount).doubleValue...NSDecimalNumber(decimal: p.maximumAmount).doubleValue
-    }
-
-    private var displayRate: Double {
-        selectedProduct?.displayRate ?? 10.0
-    }
-
-    private var stepSize: Double {
-        let range = amountBounds.upperBound - amountBounds.lowerBound
-        if range > 5_000_000 { return 100_000 }
-        if range > 1_000_000 { return 50_000 }
-        if range > 100_000 { return 10_000 }
-        return 5_000
-    }
-
-    private var tenureMonthsBounds: ClosedRange<Int> {
-        guard let p = selectedProduct else { return 6...360 }
-        return p.minimumTenureMonths...p.maximumTenureMonths
-    }
-
-    private var tenureDisplayBounds: ClosedRange<Double> {
-        let minM = Double(tenureMonthsBounds.lowerBound)
-        let maxM = Double(tenureMonthsBounds.upperBound)
-        switch tenureUnit {
-        case .months: return minM...maxM
-        case .years: return (minM / 12.0)...(maxM / 12.0)
-        }
-    }
-
-    private var tenureSliderStep: Double {
-        tenureUnit == .months ? 1 : 0.5
-    }
-
-    // MARK: - Toolbar
 
     @ToolbarContentBuilder
     private var keyboardToolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .keyboard) {
             Spacer()
-            Button("Done") {
-                amountFocused = false
-                tenureFocused = false
-                clampAmountToBounds()
-                clampTenureToBounds()
-            }
+            Button("Done") { amountFocused = false }
         }
     }
 
-    // MARK: - Product Picker
+    private var documentsSheet: some View {
+        NavigationStack {
+            KYCView()
+                .navigationTitle("Upload Documents")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Done") { showDocSheet = false }
+                    }
+                }
+        }
+        .presentationDetents([.large])
+    }
 
+    private func applyDefaults() {
+        if viewModel.requestedAmount < amountBounds.lowerBound {
+            viewModel.requestedAmount = 2_500_000
+        }
+        if !tenurePresets.contains(viewModel.tenureMonths) {
+            viewModel.tenureMonths = 240
+        }
+        syncAmountText()
+    }
+
+    // MARK: - Product Picker
     private var productPicker: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Spacing.sm) {
-                ForEach(viewModel.loanProducts) { product in
+                ForEach(products, id: \.type) { p in
                     Button {
-                        viewModel.selectedProduct = product
-                        viewModel.requestedAmount = NSDecimalNumber(decimal: product.minimumAmount).doubleValue
-                        viewModel.tenureMonths = product.minimumTenureMonths
-                        syncAmountText()
-                        syncTenureFromViewModel()
+                        calcLoanType = p.type
+                        calcRate = p.rate
                     } label: {
                         VStack(spacing: Spacing.s) {
                             ZStack {
                                 Circle()
-                                    .fill(selectedProduct?.id == product.id ? Color.accentColor : Color.lmsFill)
+                                    .fill(calcLoanType == p.type ? Color.accentColor : Color.lmsFill)
                                     .frame(width: 52, height: 52)
-                                Image(systemName: product.icon)
-                                    .foregroundStyle(selectedProduct?.id == product.id ? .white : .secondary)
+                                Image(systemName: p.icon)
+                                    .foregroundStyle(calcLoanType == p.type ? .white : .secondary)
                                     .font(.title3)
                             }
-                            Text(product.name.replacingOccurrences(of: " Loan", with: ""))
+                            Text(p.name)
                                 .font(.caption.weight(.medium))
-                                .foregroundStyle(selectedProduct?.id == product.id ? .primary : .secondary)
+                                .foregroundStyle(calcLoanType == p.type ? .primary : .secondary)
                         }
                         .frame(width: 72)
                     }
@@ -382,21 +150,20 @@ struct NewLoanApplicationView: View {
     }
 
     // MARK: - Amount Card
-
     private var amountCard: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             Text("Loan Amount")
-                .font(.subheadline.weight(.medium))
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
 
             HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
                 Text("₹")
-                    .font(.title2.weight(.semibold))
+                    .font(.title.weight(.semibold))
                     .foregroundStyle(.secondary)
                 TextField("0", text: $amountText)
                     .keyboardType(.numberPad)
                     .focused($amountFocused)
-                    .font(.system(.title, design: .rounded).weight(.bold))
+                    .font(.system(.largeTitle, design: .rounded).weight(.bold))
                     .onChange(of: amountText) { _, newValue in
                         let digits = newValue.filter(\.isNumber)
                         if digits != newValue { amountText = digits }
@@ -409,105 +176,104 @@ struct NewLoanApplicationView: View {
                     .onSubmit { clampAmountToBounds() }
             }
 
-            Slider(
-                value: Binding(
+            HStack {
+                Text(Formatting.currency(Decimal(viewModel.requestedAmount)))
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                Spacer()
+                Stepper("", value: Binding(
                     get: { viewModel.requestedAmount },
                     set: { newVal in
-                        viewModel.requestedAmount = newVal
+                        viewModel.requestedAmount = min(max(newVal, amountBounds.lowerBound), amountBounds.upperBound)
                         syncAmountText()
                     }
-                ),
-                in: amountBounds,
-                step: stepSize
-            )
-            .tint(.accentColor)
-
-            HStack {
-                Text(shortAmount(amountBounds.lowerBound))
-                    .font(.caption2).foregroundStyle(.tertiary)
-                Spacer()
-                Text(shortAmount(amountBounds.upperBound))
-                    .font(.caption2).foregroundStyle(.tertiary)
+                ), in: amountBounds, step: stepSize)
+                .labelsHidden()
             }
-            .padding(.top, -Spacing.s)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Spacing.s) {
+                    ForEach(amountPresets, id: \.self) { preset in
+                        chip(
+                            title: shortAmount(preset),
+                            isSelected: viewModel.requestedAmount == preset
+                        ) {
+                            viewModel.requestedAmount = preset
+                            syncAmountText()
+                            amountFocused = false
+                        }
+                    }
+                }
+                .padding(.vertical, 2)
+            }
         }
         .padding(Spacing.m)
         .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+    }
+
+    private var stepSize: Double {
+        switch calcLoanType {
+        case .home, .business: return 100_000
+        case .vehicle: return 50_000
+        case .personal, .education: return 25_000
+        }
     }
 
     // MARK: - Tenure Card
-
     private var tenureCard: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("Tenure")
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.secondary)
-
-            Picker("Unit", selection: $tenureUnit) {
-                ForEach(TenureUnit.allCases, id: \.self) { unit in
-                    Text(unit.rawValue).tag(unit)
-                }
-            }
-            .pickerStyle(.segmented)
-            .onChange(of: tenureUnit) { _, _ in syncTenureFromViewModel() }
-
-            HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
-                TextField("0", text: $tenureText)
-                    .keyboardType(tenureUnit == .years ? .decimalPad : .numberPad)
-                    .focused($tenureFocused)
-                    .font(.system(.title, design: .rounded).weight(.bold))
-                    .frame(maxWidth: 80)
-                    .onChange(of: tenureText) { _, newValue in applyTenureText(newValue) }
-                    .onSubmit { clampTenureToBounds() }
-                Text(tenureUnit.rawValue.lowercased())
-                    .font(.body.weight(.medium))
+            HStack {
+                Text("Tenure")
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()
-                if tenureUnit == .years {
-                    Text("= \(viewModel.tenureMonths) mo")
-                        .font(.caption)
-                        .padding(.horizontal, Spacing.s)
-                        .padding(.vertical, Spacing.xs)
-                        .background(Color.lmsFill, in: Capsule())
-                        .foregroundStyle(.secondary)
+                Picker(selection: $viewModel.tenureMonths) {
+                    ForEach(allTenureOptions, id: \.self) { months in
+                        Text(tenureLabel(months)).tag(months)
+                    }
+                } label: {
+                    Text(tenureLabel(viewModel.tenureMonths))
                 }
+                .pickerStyle(.menu)
+                .tint(.primary)
             }
 
-            Slider(value: $tenureDisplayValue, in: tenureDisplayBounds, step: tenureSliderStep)
-                .tint(.accentColor)
-                .onChange(of: tenureDisplayValue) { _, newVal in
-                    syncViewModelFromTenureDisplay(newVal)
-                    tenureText = formatTenureDisplay(newVal)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Spacing.s) {
+                    ForEach(tenurePresets, id: \.self) { months in
+                        chip(
+                            title: tenureShort(months),
+                            isSelected: viewModel.tenureMonths == months
+                        ) {
+                            viewModel.tenureMonths = months
+                        }
+                    }
                 }
-
-            HStack {
-                Text(tenureRangeLabel(tenureDisplayBounds.lowerBound))
-                    .font(.caption2).foregroundStyle(.tertiary)
-                Spacer()
-                Text(tenureRangeLabel(tenureDisplayBounds.upperBound))
-                    .font(.caption2).foregroundStyle(.tertiary)
+                .padding(.vertical, 2)
             }
-            .padding(.top, -Spacing.s)
         }
         .padding(Spacing.m)
         .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
     }
 
-    // MARK: - Rate Card
+    private var allTenureOptions: [Int] {
+        let maxMonths = calcLoanType == .home ? 360 : (calcLoanType == .business ? 120 : 84)
+        return Array(stride(from: 6, through: maxMonths, by: 6))
+    }
 
+    // MARK: - Rate Card
     private var rateCard: some View {
         HStack {
             VStack(alignment: .leading, spacing: Spacing.xxs) {
                 Text("Interest Rate")
-                    .font(.subheadline.weight(.medium))
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
-                if let p = selectedProduct {
-                    Text("\(String(format: "%.1f", p.minimumInterestRate))% – \(String(format: "%.1f", p.maximumInterestRate))%")
-                        .font(.caption).foregroundStyle(.tertiary)
-                }
+                Text("Fixed rate for \(calcLoanType.rawValue.capitalized) loans")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
             }
             Spacer()
-            Text(String(format: "%.2f%%", displayRate))
+            Text(String(format: "%.2f%%", calcRate))
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(.tint)
         }
@@ -516,11 +282,10 @@ struct NewLoanApplicationView: View {
     }
 
     // MARK: - Result Card
-
     private var resultCard: some View {
         let emiResult = EMICalculator.calculate(
             principal: Decimal(viewModel.requestedAmount),
-            annualInterestRate: displayRate,
+            annualInterestRate: calcRate,
             tenureMonths: viewModel.tenureMonths,
             startDate: .now
         )
@@ -560,149 +325,81 @@ struct NewLoanApplicationView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Submit Button
+    // MARK: - Documents Card
+    private var documentsCard: some View {
+        Button {
+            showDocSheet = true
+        } label: {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "arrow.up.doc.fill")
+                    .font(.title3)
+                    .foregroundStyle(.tint)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Upload Documents")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text("KYC & collateral papers")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(Spacing.m)
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
 
+    // MARK: - Submit Button
     private var submitButton: some View {
         PrimaryButton("Submit Application", isLoading: viewModel.isSubmitting) {
             Task {
                 guard let env, let userID = session.currentUser?.id else { return }
                 let success = await viewModel.submit(
                     loanService: env.loans,
-                    borrowerID: userID
+                    borrowerID: userID,
+                    loanType: calcLoanType,
+                    interestRate: calcRate
                 )
-                if success {
-                    withAnimation { flowStep = .uploadDocuments }
-                }
+                if success { showConfirm = true }
             }
         }
     }
 
-    // MARK: - Document Upload Row
-
-    @ViewBuilder
-    private func docUploadRow(kind: DocumentKind, title: String, icon: String, iconColor: Color) -> some View {
-        let isUploaded = uploadedKinds.contains(kind)
-        Button {
-            activeDocumentKind = kind
-            showSourcePicker = true
-        } label: {
-            HStack(spacing: Spacing.sm) {
-                Image(systemName: icon)
-                    .font(.system(size: 16))
-                    .foregroundStyle(iconColor)
-                    .frame(width: 30, height: 30)
-                    .background(iconColor.opacity(0.15), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-
-                Text(title)
-                    .foregroundStyle(.primary)
-
-                Spacer()
-
-                if isUploaded {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Color.lmsSuccess)
-                } else {
-                    Text("Upload")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.tint)
-                }
-            }
-            .padding(.vertical, Spacing.sm)
+    // MARK: - Chip
+    private func chip(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .padding(.horizontal, Spacing.sm)
+                .padding(.vertical, Spacing.s)
+                .background(
+                    isSelected ? Color.accentColor : Color.lmsFill,
+                    in: Capsule()
+                )
+                .foregroundStyle(isSelected ? Color.white : Color.primary)
         }
         .buttonStyle(.plain)
     }
 
-    // MARK: - Photo Picker Handler
-
-    private func handlePhotoPickerResult(item: PhotosPickerItem, kind: DocumentKind) async {
-        guard let env, let userID = session.currentUser?.id else { return }
-        isUploadingDoc = true
-        uploadMessage = nil
-
-        do {
-            guard let imageData = try await item.loadTransferable(type: Data.self) else {
-                throw NSError(domain: "KYC", code: 0, userInfo: [NSLocalizedDescriptionKey: "Could not load selected photo"])
-            }
-
-            let mimeType: String
-            let ext: String
-            if imageData.prefix(4) == Data([0x89, 0x50, 0x4E, 0x47]) {
-                mimeType = "image/png"; ext = "png"
-            } else {
-                mimeType = "image/jpeg"; ext = "jpg"
-            }
-
-            let fileName = "\(kind.rawValue)_\(UUID().uuidString.prefix(8)).\(ext)"
-            let doc = try await env.documents.upload(imageData, fileName: fileName, mimeType: mimeType, kind: kind, ownerID: userID)
-            viewModel.addUploadedDocumentID(doc.id)
-            uploadedKinds.insert(kind)
-            uploadDidFail = false
-            uploadMessage = "\(displayName(for: kind)) uploaded"
-        } catch {
-            uploadDidFail = true
-            uploadMessage = error.localizedDescription
-        }
-        isUploadingDoc = false
-        try? await Task.sleep(for: .seconds(3))
-        if !isUploadingDoc { uploadMessage = nil }
-    }
-
-    // MARK: - File Importer Handler
-
-    private func handleFileImporterResult(url: URL, kind: DocumentKind) async {
-        guard let env, let userID = session.currentUser?.id else { return }
-        isUploadingDoc = true
-        uploadMessage = nil
-
-        let accessing = url.startAccessingSecurityScopedResource()
-        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
-
-        do {
-            let fileData = try Data(contentsOf: url)
-            let fileName = url.lastPathComponent
-            let ext = url.pathExtension.lowercased()
-            let mimeType: String
-            switch ext {
-            case "pdf": mimeType = "application/pdf"
-            case "png": mimeType = "image/png"
-            case "jpg", "jpeg": mimeType = "image/jpeg"
-            default: mimeType = "application/octet-stream"
-            }
-
-            let doc = try await env.documents.upload(fileData, fileName: fileName, mimeType: mimeType, kind: kind, ownerID: userID)
-            viewModel.addUploadedDocumentID(doc.id)
-            uploadedKinds.insert(kind)
-            uploadDidFail = false
-            uploadMessage = "\(displayName(for: kind)) uploaded"
-        } catch {
-            uploadDidFail = true
-            uploadMessage = error.localizedDescription
-        }
-        isUploadingDoc = false
-        try? await Task.sleep(for: .seconds(3))
-        if !isUploadingDoc { uploadMessage = nil }
-    }
-
-    private func displayName(for kind: DocumentKind) -> String {
-        switch kind {
-        case .identityProof: return "ID Proof"
-        case .addressProof: return "Address Proof"
-        case .incomeProof: return "Salary Slip"
-        case .bankStatement: return "Bank Statement"
-        case .collateral: return "Collateral"
-        case .other: return "Document"
-        }
-    }
-
-    // MARK: - Amount Helpers
-
+    // MARK: - Helpers
     private func syncAmountText() {
-        amountText = String(Int(viewModel.requestedAmount))
+        let intVal = Int(viewModel.requestedAmount)
+        amountText = String(intVal)
     }
 
     private func clampAmountToBounds() {
         viewModel.requestedAmount = min(max(viewModel.requestedAmount, amountBounds.lowerBound), amountBounds.upperBound)
         syncAmountText()
+    }
+
+    private func clampTenureToPresets() {
+        if !tenurePresets.contains(viewModel.tenureMonths) {
+            viewModel.tenureMonths = tenurePresets[tenurePresets.count / 2]
+        }
     }
 
     private func shortAmount(_ value: Double) -> String {
@@ -719,63 +416,17 @@ struct NewLoanApplicationView: View {
         return "₹\(Int(value))"
     }
 
-    // MARK: - Tenure Helpers
-
-    private func syncTenureFromViewModel() {
-        let months = Double(viewModel.tenureMonths)
-        switch tenureUnit {
-        case .months:
-            tenureDisplayValue = months
-            tenureText = "\(viewModel.tenureMonths)"
-        case .years:
-            let years = months / 12.0
-            tenureDisplayValue = years
-            tenureText = formatTenureDisplay(years)
-        }
+    private func tenureShort(_ months: Int) -> String {
+        if months % 12 == 0 { return "\(months / 12)y" }
+        return "\(months)m"
     }
 
-    private func syncViewModelFromTenureDisplay(_ displayVal: Double) {
-        switch tenureUnit {
-        case .months:
-            viewModel.tenureMonths = max(Int(displayVal.rounded()), tenureMonthsBounds.lowerBound)
-        case .years:
-            let months = Int((displayVal * 12).rounded())
-            viewModel.tenureMonths = min(max(months, tenureMonthsBounds.lowerBound), tenureMonthsBounds.upperBound)
+    private func tenureLabel(_ months: Int) -> String {
+        if months % 12 == 0 {
+            let years = months / 12
+            return "\(years) year\(years == 1 ? "" : "s")"
         }
-    }
-
-    private func applyTenureText(_ text: String) {
-        let cleaned = text.filter { $0.isNumber || $0 == "." }
-        guard let value = Double(cleaned) else { return }
-        switch tenureUnit {
-        case .months:
-            let months = Int(value.rounded())
-            viewModel.tenureMonths = min(max(months, tenureMonthsBounds.lowerBound), tenureMonthsBounds.upperBound)
-            tenureDisplayValue = Double(viewModel.tenureMonths)
-        case .years:
-            let months = Int((value * 12).rounded())
-            viewModel.tenureMonths = min(max(months, tenureMonthsBounds.lowerBound), tenureMonthsBounds.upperBound)
-            tenureDisplayValue = value
-        }
-    }
-
-    private func clampTenureToBounds() {
-        viewModel.tenureMonths = min(max(viewModel.tenureMonths, tenureMonthsBounds.lowerBound), tenureMonthsBounds.upperBound)
-        syncTenureFromViewModel()
-    }
-
-    private func formatTenureDisplay(_ value: Double) -> String {
-        if tenureUnit == .years {
-            return value == value.rounded() ? "\(Int(value))" : String(format: "%.1f", value)
-        }
-        return "\(Int(value))"
-    }
-
-    private func tenureRangeLabel(_ value: Double) -> String {
-        if tenureUnit == .years {
-            return value == value.rounded() ? "\(Int(value)) yr" : String(format: "%.1f yr", value)
-        }
-        return "\(Int(value)) mo"
+        return "\(months) months"
     }
 }
 

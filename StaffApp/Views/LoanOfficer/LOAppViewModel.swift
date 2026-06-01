@@ -28,7 +28,6 @@ import Combine
     var selectedConversation: BorrowerConversation?
 
     private var environment: AppEnvironment?
-    private var officerID: UUID?
 
     // Dynamic KPI counters tracking base numbers
     private var pendingCount = 47
@@ -67,47 +66,9 @@ import Combine
         }
     }
 
-    func configure(environment: AppEnvironment, officerID: UUID? = nil) {
+    func configure(environment: AppEnvironment) {
         self.environment = environment
-        self.officerID = officerID
         Task { await refreshFromService() }
-    }
-
-    func refresh() {
-        Task { await refreshFromService() }
-    }
-
-    /// Ensures a borrower⇄officer conversation exists for this application the
-    /// first time the officer opens it for review. Idempotent.
-    func ensureThread(for application: LOLoanApplication) {
-        guard let environment,
-              let appID = application.sourceApplicationID,
-              let borrowerID = application.borrowerID,
-              let officerID else { return }
-        Task {
-            _ = try? await environment.messaging.ensureThread(
-                applicationID: appID,
-                participantIDs: [officerID, borrowerID]
-            )
-        }
-    }
-
-    /// Posts a message into the application's conversation as the officer.
-    func postOfficerMessage(for application: LOLoanApplication, body: String) {
-        let text = body.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty,
-              let environment,
-              let appID = application.sourceApplicationID,
-              let borrowerID = application.borrowerID,
-              let officerID else { return }
-        Task {
-            guard let thread = try? await environment.messaging.ensureThread(
-                applicationID: appID,
-                participantIDs: [officerID, borrowerID]
-            ) else { return }
-            let message = ChatMessage(threadID: thread.id, senderID: officerID, body: text)
-            _ = try? await environment.messaging.send(message)
-        }
     }
 
     private func refreshFromService() async {
@@ -115,152 +76,22 @@ import Combine
 
         do {
             let sharedApplications = try await environment.loans.fetchAssignedApplications(
-                officerID: officerID ?? MockOfficerData.officerUserID
+                officerID: MockOfficerData.officerUserID
             )
 
-            // Build real officer rows, hydrating each timeline from the events
-            // feed and the document vault from the application's linked uploads.
-            var rows: [LOLoanApplication] = []
-            for app in sharedApplications {
-                let events = (try? await environment.loans.fetchApplicationEvents(applicationID: app.id)) ?? []
-                let docs = (try? await environment.documents.documents(forApplication: app.id)) ?? []
-                rows.append(Self.makeOfficerApplication(from: app, events: events, documents: docs))
+            guard !sharedApplications.isEmpty else {
+                return
             }
 
-            recentApplications = rows
-            if let selectedID = selectedApplication?.sourceApplicationID {
-                selectedApplication = rows.first { $0.sourceApplicationID == selectedID }
+            let updateCount = min(sharedApplications.count, recentApplications.count)
+            for index in 0..<updateCount {
+                recentApplications[index].sourceApplicationID = sharedApplications[index].id
+                recentApplications[index].status = sharedApplications[index].status.officerStatus
             }
+
             recalculateKPIs()
         } catch {
-            // Keep the seeded sample data if the backend is unavailable.
-        }
-    }
-
-    private static func makeOfficerApplication(
-        from app: LoanApplication,
-        events: [ApplicationEvent],
-        documents: [LoanDocument] = []
-    ) -> LOLoanApplication {
-        let name = app.borrowerName ?? "Borrower"
-        let initials = name
-            .split(separator: " ")
-            .compactMap { $0.first.map(String.init) }
-            .prefix(2)
-            .joined()
-            .uppercased()
-        let amount = NSDecimalNumber(decimal: app.requestedAmount).doubleValue
-        let officerStatus = app.status.officerStatus
-
-        let loDocuments = documents.map(Self.makeOfficerDocument)
-        // Derive KYC status from the real document vault.
-        let kyc: LOKYCStatus
-        if loDocuments.isEmpty {
-            kyc = .pending
-        } else if loDocuments.allSatisfy({ $0.status == .verified }) {
-            kyc = .verified
-        } else if loDocuments.contains(where: { $0.status == .rejected }) {
-            kyc = .partial
-        } else {
-            kyc = .pending
-        }
-
-        let timeline: [TimelineEvent] = events
-            .sorted { $0.createdAt > $1.createdAt }
-            .map { event in
-                TimelineEvent(
-                    title: Self.eventTitle(event.eventType),
-                    description: event.remark ?? Self.eventTitle(event.eventType),
-                    timestamp: event.createdAt,
-                    status: officerStatus,
-                    officerName: ""
-                )
-            }
-
-        return LOLoanApplication(
-            sourceApplicationID: app.id,
-            borrowerID: app.borrowerID,
-            borrowerName: name,
-            borrowerInitials: initials.isEmpty ? "?" : initials,
-            creditScore: 720,
-            loanAmount: amount,
-            riskLevel: .low,
-            kycStatus: kyc,
-            fraudFlag: false,
-            status: officerStatus,
-            applicationDate: app.createdAt,
-            loanType: app.productName ?? (app.loanType.rawValue.capitalized + " Loan"),
-            tenure: app.tenureMonths,
-            interestRate: app.interestRate,
-            employmentType: "Not specified",
-            employer: "—",
-            monthlyIncome: 0,
-            existingLiabilities: 0,
-            eligibilityScore: 0,
-            emiAmount: amount / Double(max(app.tenureMonths, 1)),
-            phoneNumber: "—",
-            email: app.borrowerEmail ?? "—",
-            address: "—",
-            purpose: "—",
-            documents: loDocuments,
-            timeline: timeline
-        )
-    }
-
-    /// Maps a backend document to the officer's rich document model.
-    private static func makeOfficerDocument(_ doc: LoanDocument) -> LOLoanDocument {
-        let status: DocumentStatus
-        switch doc.status {
-        case .verified: status = .verified
-        case .rejected: status = .rejected
-        case .pending:  status = .needsReview
-        }
-        let (type, icon): (String, String)
-        switch doc.kind {
-        case .identityProof: (type, icon) = ("Identity Proof", "person.text.rectangle.fill")
-        case .addressProof:  (type, icon) = ("Address Proof", "house.fill")
-        case .incomeProof:   (type, icon) = ("Income Proof", "doc.text.fill")
-        case .bankStatement: (type, icon) = ("Bank Statement", "building.columns.fill")
-        case .collateral:    (type, icon) = ("Collateral", "shield.fill")
-        case .other:         (type, icon) = ("Document", "doc.fill")
-        }
-        return LOLoanDocument(
-            sourceDocumentID: doc.id,
-            name: doc.fileName,
-            type: type,
-            status: status,
-            uploadDate: doc.uploadedAt,
-            ocrVerified: doc.status == .verified,
-            icon: icon
-        )
-    }
-
-    // Maps a free-form requested document name to the backend's documentType enum.
-    private static func backendDocumentType(_ name: String) -> String {
-        let n = name.lowercased()
-        if n.contains("pan") { return "pan_card" }
-        if n.contains("aadhaar") || n.contains("aadhar") { return "aadhaar_card" }
-        if n.contains("salary") { return "salary_slip" }
-        if n.contains("bank") { return "bank_statement" }
-        if n.contains("itr") || n.contains("tax") { return "itr" }
-        if n.contains("photo") || n.contains("passport") { return "passport_photo" }
-        if n.contains("employment") || n.contains("employer") { return "employment_certificate" }
-        if n.contains("address") { return "address_proof" }
-        return "other"
-    }
-
-    private static func eventTitle(_ rawType: String) -> String {
-        switch rawType {
-        case "submitted": return "Application Submitted"
-        case "auto_assigned", "assigned": return "Assigned to Officer"
-        case "review_started": return "Review Started"
-        case "documents_requested": return "Documents Requested"
-        case "documents_uploaded": return "Documents Uploaded"
-        case "sent_to_manager": return "Sent to Manager"
-        case "approved": return "Approved"
-        case "rejected": return "Rejected"
-        case "loan_disbursed": return "Loan Disbursed"
-        default: return rawType.replacingOccurrences(of: "_", with: " ").capitalized
+            // Keep the seeded sample data if the shared service is unavailable.
         }
     }
 
@@ -271,37 +102,19 @@ import Combine
         updateKPIs()
     }
 
-    enum OfficerWorkflowAction {
-        case sendToManager
-        case reject
-        case requestDocuments(documentTypes: [String])
-    }
-
-    private func performWorkflow(
+    private func syncStatus(
         for application: LOLoanApplication,
-        action: OfficerWorkflowAction,
+        to status: ApplicationStatus,
         note: String?
     ) {
         guard let environment, let sourceApplicationID = application.sourceApplicationID else { return }
 
         Task {
-            do {
-                switch action {
-                case .sendToManager:
-                    // send-to-manager requires under_review; move there first if still assigned.
-                    try? await environment.loans.startReview(applicationID: sourceApplicationID)
-                    try await environment.loans.sendToManager(applicationID: sourceApplicationID, remark: note)
-                case .reject:
-                    try await environment.loans.rejectApplication(applicationID: sourceApplicationID, remark: note)
-                case .requestDocuments(let types):
-                    try? await environment.loans.startReview(applicationID: sourceApplicationID)
-                    try await environment.loans.requestDocuments(applicationID: sourceApplicationID, documentTypes: types, remark: note)
-                }
-                // Reconcile local rows with the authoritative backend status.
-                await refreshFromService()
-            } catch {
-                // UI already reflects the optimistic update; backend failures are non-fatal here.
-            }
+            try? await environment.loans.updateStatus(
+                applicationID: sourceApplicationID,
+                to: status,
+                note: note
+            )
         }
     }
 
@@ -344,8 +157,7 @@ import Combine
                 }
                 approvedCount += 1
                 updateKPIs()
-                // Officer "approve" recommends the application to a manager.
-                performWorkflow(for: recentApplications[index], action: .sendToManager, note: remarks)
+                syncStatus(for: recentApplications[index], to: .recommended, note: remarks)
                 
                 // Prepend to activity feed
                 let activity = ActivityItem(
@@ -387,7 +199,7 @@ import Combine
                     escalatedCount = max(0, escalatedCount - 1)
                 }
                 updateKPIs()
-                performWorkflow(for: recentApplications[index], action: .reject, note: remarks)
+                syncStatus(for: recentApplications[index], to: .rejected, note: remarks)
             }
         }
     }
@@ -419,8 +231,8 @@ import Combine
                     escalatedCount += 1
                 }
                 updateKPIs()
-                performWorkflow(for: recentApplications[index], action: .sendToManager, note: remarks)
-
+                syncStatus(for: recentApplications[index], to: .escalated, note: remarks)
+                
                 // Add escalation warning to activity feed
                 let activity = ActivityItem(
                     title: "Escalation raised",
@@ -493,19 +305,6 @@ import Combine
                 if selectedApplication?.id == app.id {
                     selectedApplication = recentApplications[index]
                 }
-
-                performWorkflow(
-                    for: recentApplications[index],
-                    action: .requestDocuments(documentTypes: [Self.backendDocumentType(docName)]),
-                    note: note.isEmpty ? nil : note
-                )
-
-                // Mirror the request into the real conversation so the borrower
-                // sees it in their Messages tab and can reply.
-                let messageBody = note.isEmpty
-                    ? "Please upload the following document: \(docName)."
-                    : "Please upload \(docName). \(note)"
-                postOfficerMessage(for: recentApplications[index], body: messageBody)
             }
         }
     }
@@ -676,21 +475,6 @@ import Combine
                     // Sync selected application
                     if selectedApplication?.id == app.id {
                         selectedApplication = recentApplications[appIdx]
-                    }
-                }
-
-                // Persist the decision to the backend (audited verify/reject).
-                if let sourceDocID = recentApplications[appIdx].documents[docIdx].sourceDocumentID,
-                   let environment {
-                    Task {
-                        switch status {
-                        case .verified:
-                            try? await environment.documents.verifyDocument(documentID: sourceDocID, remark: reviewNotes)
-                        case .rejected, .tampered, .missing:
-                            try? await environment.documents.rejectDocument(documentID: sourceDocID, reason: rejectionReason ?? reviewNotes ?? "Document rejected")
-                        default:
-                            break
-                        }
                     }
                 }
             }

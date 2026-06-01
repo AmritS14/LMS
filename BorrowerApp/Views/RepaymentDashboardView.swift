@@ -6,7 +6,6 @@ struct RepaymentDashboardView: View {
 
     var loan: Loan?
     @State private var viewModel = RepaymentViewModel()
-    @State private var emiToPay: EMI?
 
     var body: some View {
         ScrollView {
@@ -54,14 +53,6 @@ struct RepaymentDashboardView: View {
                 } catch {}
             }
         }
-        .sheet(item: $emiToPay) { emi in
-            PayEMISheet(emi: emi, loan: viewModel.activeLoan) {
-                await viewModel.payEMI(emi)
-                return viewModel.paymentSuccess
-            }
-            .presentationDetents([.medium])
-            .presentationDragIndicator(.visible)
-        }
     }
     
     private var nextEMI: EMI? {
@@ -91,7 +82,7 @@ struct RepaymentDashboardView: View {
             
             Button {
                 if let emi = nextEMI {
-                    emiToPay = emi
+                    Task { await viewModel.payEMI(emi) }
                 }
             } label: {
                 Text("Pay Now")
@@ -121,7 +112,6 @@ struct RepaymentDashboardView: View {
             
             VStack(spacing: 0) {
                 detailRow(title: "Principal", value: Formatting.currency(activeLoan.principal))
-                detailRow(title: "Outstanding", value: Formatting.currency(activeLoan.outstandingBalance))
                 detailRow(title: "Disbursed on", value: Formatting.date(activeLoan.disbursementDate))
                 detailRow(title: "Status", value: activeLoan.status.rawValue.capitalized)
                 
@@ -131,9 +121,7 @@ struct RepaymentDashboardView: View {
                 Divider()
                     .padding(.vertical, Spacing.m)
                 
-                NavigationLink(destination: FullScheduleView(emiSchedule: viewModel.emiSchedule, onPayEMI: { emi in
-                    emiToPay = emi
-                })) {
+                NavigationLink(destination: FullScheduleView(emiSchedule: viewModel.emiSchedule, viewModel: viewModel)) {
                     HStack {
                         Text("View Full Schedule")
                             .font(.subheadline.weight(.semibold))
@@ -171,7 +159,7 @@ struct RepaymentDashboardView: View {
 // MARK: - Full Schedule View
 struct FullScheduleView: View {
     let emiSchedule: [EMI]
-    let onPayEMI: (EMI) -> Void
+    let viewModel: RepaymentViewModel
     
     var body: some View {
         ScrollView {
@@ -252,19 +240,9 @@ struct FullScheduleView: View {
                     .padding(.vertical, 4)
                     .background(Color.green.opacity(0.15))
                     .clipShape(Capsule())
-            } else if emi.status == .overdue {
-                Button("Pay") {
-                    onPayEMI(emi)
-                }
-                .font(.caption.weight(.semibold))
-                .foregroundColor(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Color.lmsDanger)
-                .clipShape(Capsule())
             } else if isFirstUpcoming {
                 Button("Pay") {
-                    onPayEMI(emi)
+                    Task { await viewModel.payEMI(emi) }
                 }
                 .font(.caption.weight(.semibold))
                 .foregroundColor(.white)

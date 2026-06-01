@@ -52,13 +52,9 @@ struct RecoveryVerificationView: View {
         .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showCallLogSheet) {
             callLogSheetContent
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showFollowUpSheet) {
             followUpSheetContent
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
         }
     }
 }

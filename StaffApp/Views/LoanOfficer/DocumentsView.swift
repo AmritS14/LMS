@@ -64,8 +64,6 @@ struct DocumentsView: View {
         .navigationBarTitleDisplayMode(.large)
         .sheet(item: $selectedDocument) { document in
             DocumentDetailSheet(document: document)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
         }
     }
 

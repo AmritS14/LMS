@@ -193,32 +193,15 @@ actor MockLoanService: LoanService {
 
     // MARK: - LoanService Protocol
 
-    func fetchLoanProducts() async throws -> [LoanProduct] {
-        try await Task.sleep(for: .milliseconds(200))
-        return [
-            LoanProduct(name: "Home Loan", minimumAmount: 500_000, maximumAmount: 50_000_000, minimumTenureMonths: 60, maximumTenureMonths: 360, minimumInterestRate: 6, maximumInterestRate: 12),
-            LoanProduct(name: "Personal Loan", minimumAmount: 10_000, maximumAmount: 1_000_000, minimumTenureMonths: 6, maximumTenureMonths: 60, minimumInterestRate: 10, maximumInterestRate: 24),
-            LoanProduct(name: "Vehicle Loan", minimumAmount: 50_000, maximumAmount: 5_000_000, minimumTenureMonths: 12, maximumTenureMonths: 84, minimumInterestRate: 7, maximumInterestRate: 15)
-        ]
-    }
-
-    func createLoanProduct(_ product: LoanProduct) async throws -> LoanProduct {
-        try await Task.sleep(for: .milliseconds(200))
-        return product
-    }
-
-    func createApplication(productID: UUID, requestedAmount: Decimal, tenureMonths: Int) async throws -> LoanApplication {
+    func createApplication(_ draft: LoanApplication) async throws -> LoanApplication {
         try await Task.sleep(for: .milliseconds(400))
-        let app = LoanApplication(
-            borrowerID: borrowerID,
-            loanType: .personal,
-            requestedAmount: requestedAmount,
-            tenureMonths: tenureMonths,
-            interestRate: 10.5,
-            status: .submitted
-        )
-        applications.append(app)
-        return app
+        var app = draft
+        app.borrowerID = borrowerID
+        app.status = .draft
+        app.createdAt = .now
+        app.updatedAt = .now
+                applications.append(app)
+                return app
     }
 
     func submitApplication(id: UUID) async throws -> LoanApplication {
@@ -245,21 +228,6 @@ actor MockLoanService: LoanService {
             .sorted { $0.createdAt > $1.createdAt }
     }
 
-    func fetchApplications(statuses: [String]) async throws -> [LoanApplication] {
-        try await Task.sleep(for: .milliseconds(200))
-        let wanted = Set(statuses)
-        return applications.filter { app in
-            switch app.status {
-            case .escalated: return wanted.contains("manager_review")
-            case .underReview: return wanted.contains("under_review")
-            case .approved: return wanted.contains("approved")
-            case .rejected: return wanted.contains("rejected")
-            case .disbursed: return wanted.contains("disbursed")
-            default: return false
-            }
-        }
-    }
-
     func updateStatus(applicationID: UUID, to status: ApplicationStatus, note: String?) async throws {
         try await Task.sleep(for: .milliseconds(200))
                         guard let idx = applications.firstIndex(where: { $0.id == applicationID }) else { return }
@@ -275,79 +243,5 @@ actor MockLoanService: LoanService {
     func fetchEMISchedule(loanID: UUID) async throws -> [EMI] {
         try await Task.sleep(for: .milliseconds(200))
                         return loans.first(where: { $0.id == loanID })?.emiSchedule ?? []
-    }
-
-    func payEMI(emiID: UUID) async throws -> EMI {
-        try await Task.sleep(for: .milliseconds(400))
-        for loanIdx in loans.indices {
-            if let emiIdx = loans[loanIdx].emiSchedule.firstIndex(where: { $0.id == emiID }) {
-                loans[loanIdx].emiSchedule[emiIdx].status = .paid
-                loans[loanIdx].emiSchedule[emiIdx].paidAt = .now
-                return loans[loanIdx].emiSchedule[emiIdx]
-            }
-        }
-        throw NSError(domain: "Loan", code: 404, userInfo: [NSLocalizedDescriptionKey: "EMI not found"])
-    }
-
-    func startReview(applicationID: UUID) async throws {
-        try await Task.sleep(for: .milliseconds(200))
-        guard let idx = applications.firstIndex(where: { $0.id == applicationID }) else { return }
-        applications[idx].status = .underReview
-        applications[idx].updatedAt = .now
-    }
-
-    func requestDocuments(applicationID: UUID, documentTypes: [String], remark: String?) async throws {
-        try await Task.sleep(for: .milliseconds(200))
-        guard let idx = applications.firstIndex(where: { $0.id == applicationID }) else { return }
-        applications[idx].status = .additionalInfoRequired
-        applications[idx].updatedAt = .now
-    }
-
-    func documentsUploaded(applicationID: UUID, documentIDs: [UUID]) async throws {
-        try await Task.sleep(for: .milliseconds(200))
-        guard let idx = applications.firstIndex(where: { $0.id == applicationID }) else { return }
-        applications[idx].status = .underReview
-        applications[idx].updatedAt = .now
-    }
-
-    func sendToManager(applicationID: UUID, remark: String?) async throws {
-        try await Task.sleep(for: .milliseconds(200))
-        guard let idx = applications.firstIndex(where: { $0.id == applicationID }) else { return }
-        applications[idx].status = .escalated
-        applications[idx].updatedAt = .now
-    }
-
-    func approveApplication(applicationID: UUID, remark: String?) async throws {
-        try await Task.sleep(for: .milliseconds(200))
-        guard let idx = applications.firstIndex(where: { $0.id == applicationID }) else { return }
-        applications[idx].status = .approved
-        applications[idx].updatedAt = .now
-    }
-
-    func rejectApplication(applicationID: UUID, remark: String?) async throws {
-        try await Task.sleep(for: .milliseconds(200))
-        guard let idx = applications.firstIndex(where: { $0.id == applicationID }) else { return }
-        applications[idx].status = .rejected
-        applications[idx].updatedAt = .now
-    }
-
-    func disburseLoan(applicationID: UUID) async throws {
-        try await Task.sleep(for: .milliseconds(200))
-        guard let idx = applications.firstIndex(where: { $0.id == applicationID }) else { return }
-        applications[idx].status = .disbursed
-        applications[idx].updatedAt = .now
-    }
-
-    func fetchApplicationDetails(applicationID: UUID) async throws -> LoanApplication {
-        try await Task.sleep(for: .milliseconds(200))
-        guard let app = applications.first(where: { $0.id == applicationID }) else {
-            throw NSError(domain: "Loan", code: 404, userInfo: [NSLocalizedDescriptionKey: "Application not found"])
-        }
-        return app
-    }
-
-    func fetchApplicationEvents(applicationID: UUID) async throws -> [ApplicationEvent] {
-        try await Task.sleep(for: .milliseconds(200))
-        return []
     }
 }

@@ -98,7 +98,7 @@ enum TenureUnit: String, Codable, Sendable, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-struct AdminLoanProduct: Identifiable, Hashable, Codable, Sendable {
+struct LoanProduct: Identifiable, Hashable, Codable, Sendable {
     var id: UUID = UUID()
     var name: String
     var minAmount: Double
@@ -107,21 +107,21 @@ struct AdminLoanProduct: Identifiable, Hashable, Codable, Sendable {
     var maxTenure: Int
     var tenureUnit: TenureUnit
 
-    static let sampleProducts: [LoanCategory: [AdminLoanProduct]] = [
+    static let sampleProducts: [LoanCategory: [LoanProduct]] = [
         .personal: [
-            AdminLoanProduct(name: "Flexible Personal Loan", minAmount: 50_000, maxAmount: 1_500_000, interestRate: 11.25, maxTenure: 60, tenureUnit: .months)
+            LoanProduct(name: "Flexible Personal Loan", minAmount: 50_000, maxAmount: 1_500_000, interestRate: 11.25, maxTenure: 60, tenureUnit: .months)
         ],
         .home: [
-            AdminLoanProduct(name: "Standard Home Loan", minAmount: 500_000, maxAmount: 15_000_000, interestRate: 8.45, maxTenure: 20, tenureUnit: .years)
+            LoanProduct(name: "Standard Home Loan", minAmount: 500_000, maxAmount: 15_000_000, interestRate: 8.45, maxTenure: 20, tenureUnit: .years)
         ],
         .vehicle: [
-            AdminLoanProduct(name: "New Car Loan", minAmount: 300_000, maxAmount: 3_000_000, interestRate: 9.10, maxTenure: 84, tenureUnit: .months)
+            LoanProduct(name: "New Car Loan", minAmount: 300_000, maxAmount: 3_000_000, interestRate: 9.10, maxTenure: 84, tenureUnit: .months)
         ],
         .education: [
-            AdminLoanProduct(name: "Higher Education Loan", minAmount: 100_000, maxAmount: 2_500_000, interestRate: 10.50, maxTenure: 84, tenureUnit: .months)
+            LoanProduct(name: "Higher Education Loan", minAmount: 100_000, maxAmount: 2_500_000, interestRate: 10.50, maxTenure: 84, tenureUnit: .months)
         ],
         .business: [
-            AdminLoanProduct(name: "SME Expansion Loan", minAmount: 250_000, maxAmount: 10_000_000, interestRate: 12.00, maxTenure: 10, tenureUnit: .years)
+            LoanProduct(name: "SME Expansion Loan", minAmount: 250_000, maxAmount: 10_000_000, interestRate: 12.00, maxTenure: 10, tenureUnit: .years)
         ]
     ]
 }
@@ -274,47 +274,6 @@ final class UserManagementViewModel {
     var searchText: String = ""
     var showSuccessAlert: Bool = false
     var successMessage: String = ""
-    var isLoading: Bool = false
-    var loadError: String?
-
-    private var environment: AppEnvironment?
-
-    func configure(environment: AppEnvironment?) {
-        self.environment = environment
-    }
-
-    /// Replaces the seeded mock users with the real directory from the backend.
-    func load() async {
-        guard let environment else { return }
-        isLoading = true
-        loadError = nil
-        do {
-            async let usersReq = environment.admin.listUsers()
-            async let profilesReq = environment.admin.listStaffProfiles()
-            let fetchedUsers = try await usersReq
-            let fetchedProfiles = try await profilesReq
-            users = fetchedUsers
-            staffProfiles = Dictionary(uniqueKeysWithValues: fetchedProfiles.map { ($0.id, $0) })
-        } catch {
-            loadError = error.localizedDescription
-        }
-        isLoading = false
-    }
-
-    /// Creates a new staff user via the backend, then reloads the directory.
-    func createStaff(email: String, fullName: String, role: UserRole, employeeID: String, temporaryPassword: String) async throws {
-        guard let environment else {
-            throw NSError(domain: "Admin", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not connected to backend."])
-        }
-        _ = try await environment.admin.createStaff(
-            email: email,
-            fullName: fullName,
-            role: role,
-            employeeID: employeeID,
-            temporaryPassword: temporaryPassword
-        )
-        await load()
-    }
 
     private var loanHistory: [UUID: [Loan]] = AdminSeedData.loanHistory
     private var borrowerAssignments: [UUID: UUID] = AdminSeedData.borrowerOfficerAssignments
@@ -503,87 +462,14 @@ final class TemplateViewModel {
 @MainActor
 @Observable
 final class LoanConfigViewModel {
-    var productsByCategory: [LoanCategory: [AdminLoanProduct]] = AdminLoanProduct.sampleProducts
+    var productsByCategory: [LoanCategory: [LoanProduct]] = LoanProduct.sampleProducts
     var showSaveAlert: Bool = false
-    var isSaving: Bool = false
-
-    private var environment: AppEnvironment?
-    var isLoading: Bool = false
-
-    func configure(environment: AppEnvironment?) {
-        self.environment = environment
-    }
-
-    /// Loads the live loan products from the backend, grouped by category.
-    func load() async {
-        guard let environment else { return }
-        isLoading = true
-        defer { isLoading = false }
-        guard let products = try? await environment.loans.fetchLoanProducts() else { return }
-
-        var grouped: [LoanCategory: [AdminLoanProduct]] = [:]
-        for p in products {
-            let admin = AdminLoanProduct(
-                id: p.id,
-                name: p.name,
-                minAmount: NSDecimalNumber(decimal: p.minimumAmount).doubleValue,
-                maxAmount: NSDecimalNumber(decimal: p.maximumAmount).doubleValue,
-                interestRate: p.displayRate,
-                maxTenure: p.maximumTenureMonths,
-                tenureUnit: .months
-            )
-            grouped[Self.category(for: p.loanType), default: []].append(admin)
-        }
-        productsByCategory = grouped
-    }
-
-    private static func category(for type: LoanType) -> LoanCategory {
-        switch type {
-        case .personal: return .personal
-        case .home: return .home
-        case .vehicle: return .vehicle
-        case .education: return .education
-        case .business: return .business
-        }
-    }
 
     var activeCategories: [LoanCategory] {
         LoanCategory.allCases.filter { !(productsByCategory[$0] ?? []).isEmpty }
     }
 
-    /// Persists a new loan product to the backend (admin-only), then reflects it
-    /// locally. Throws on failure so the sheet can surface an error.
-    func createProduct(_ product: AdminLoanProduct, category: LoanCategory) async throws {
-        let maxMonths = product.tenureUnit == .years ? product.maxTenure * 12 : product.maxTenure
-        let minMonths = min(maxMonths, product.tenureUnit == .years ? 12 : 6)
-
-        let domain = LoanProduct(
-            name: product.name,
-            description: category.rawValue,
-            minimumAmount: Decimal(product.minAmount),
-            maximumAmount: Decimal(product.maxAmount),
-            minimumTenureMonths: minMonths,
-            maximumTenureMonths: maxMonths,
-            minimumInterestRate: product.interestRate,
-            maximumInterestRate: product.interestRate,
-            isActive: true
-        )
-
-        if let environment {
-            isSaving = true
-            defer { isSaving = false }
-            let created = try await environment.loans.createLoanProduct(domain)
-            // Reuse the backend ID locally so edits map back correctly.
-            var stored = product
-            stored.id = created.id
-            productsByCategory[category, default: []].append(stored)
-        } else {
-            // No backend (previews) — keep it local only.
-            productsByCategory[category, default: []].append(product)
-        }
-    }
-
-    func binding(for productID: UUID) -> Binding<AdminLoanProduct>? {
+    func binding(for productID: UUID) -> Binding<LoanProduct>? {
         for category in LoanCategory.allCases {
             guard let index = productsByCategory[category]?.firstIndex(where: { $0.id == productID }) else {
                 continue

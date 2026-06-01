@@ -2,53 +2,46 @@ import SwiftUI
 
 struct LoanOfficerProfileView: View {
     @Environment(AppViewModel.self) var viewModel
-    @Environment(SessionStore.self) private var session
-    @Environment(\.appEnvironment) private var env
-
+    
     // Settings state
     @State private var enableNotifications = true
     @State private var enableBiometrics = false
     @State private var syncOnCellular = true
-
+    
     // Collapsible branch section state
     @State private var isBranchExpanded = false
-
+    
     // Interactive Signature Pad state
     @State private var currentLine = [CGPoint]()
     @State private var lines = [[CGPoint]]()
     @State private var isSignatureSaved = false
-
-    @State private var showSignOutConfirmation = false
-    @State private var isSigningOut = false
-
+    
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 24) {
                 // Header Profile Info
                 ProfileHeaderView()
-
+                
                 // KPI Performance Grid
                 PerformanceGridView()
-
+                
                 // Collapsible Branch details
                 BranchDetailsSection(isExpanded: $isBranchExpanded)
-
+                
                 // App settings & Preferences
                 SettingsSection(
                     enableNotifications: $enableNotifications,
                     enableBiometrics: $enableBiometrics,
                     syncOnCellular: $syncOnCellular
                 )
-
+                
                 // Premium Interactive Digital Signature Pad
                 SignaturePadSection(
                     currentLine: $currentLine,
                     lines: $lines,
                     isSignatureSaved: $isSignatureSaved
                 )
-
-                signOutButton
-
+                
                 Spacer(minLength: 40)
             }
             .padding(.bottom, 20)
@@ -56,67 +49,17 @@ struct LoanOfficerProfileView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Officer Profile")
         .navigationBarTitleDisplayMode(.inline)
-        .confirmationDialog("Sign out of the LMS Staff Portal?", isPresented: $showSignOutConfirmation, titleVisibility: .visible) {
-            Button("Sign Out", role: .destructive) { signOut() }
-            Button("Cancel", role: .cancel) {}
-        }
-    }
-
-    private var signOutButton: some View {
-        Button(role: .destructive) {
-            showSignOutConfirmation = true
-        } label: {
-            HStack {
-                Spacer()
-                if isSigningOut {
-                    ProgressView().tint(.red)
-                } else {
-                    Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
-                        .font(.system(size: 16, weight: .semibold))
-                }
-                Spacer()
-            }
-            .padding(.vertical, 14)
-            .background(Color.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
-            .foregroundStyle(.red)
-        }
-        .buttonStyle(.plain)
-        .disabled(isSigningOut)
-        .padding(.horizontal, 20)
-    }
-
-    private func signOut() {
-        isSigningOut = true
-        Task {
-            try? await env?.auth.signOut()
-            await MainActor.run {
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    session.currentUser = nil
-                }
-            }
-        }
     }
 }
 
 // MARK: - Profile Header View
 struct ProfileHeaderView: View {
-    @Environment(SessionStore.self) private var session
-
-    private var fullName: String {
-        let name = session.currentUser?.fullName ?? ""
-        return name.isEmpty ? "Loan Officer" : name
-    }
-
-    private var initials: String {
-        let parts = fullName.split(separator: " ").compactMap { $0.first.map(String.init) }
-        let joined = parts.prefix(2).joined().uppercased()
-        return joined.isEmpty ? "LO" : joined
-    }
-
+    @Environment(AppViewModel.self) var viewModel
+    
     var body: some View {
         VStack(spacing: 16) {
             LOAvatarView(
-                initials: initials,
+                initials: viewModel.officerProfile.avatarInitials,
                 size: 96,
                 colors: [
                     Color(red: 0.1, green: 0.4, blue: 0.9),
@@ -124,20 +67,21 @@ struct ProfileHeaderView: View {
                 ]
             )
             .shadow(color: Color.blue.opacity(0.2), radius: 10, x: 0, y: 5)
-
+            
             VStack(spacing: 4) {
-                Text(fullName)
+                Text(viewModel.officerProfile.name)
                     .font(.system(size: 24, weight: .bold))
                     .foregroundStyle(.primary)
-
-                Text((session.role?.rawValue ?? "loan_officer").replacingOccurrences(of: "_", with: " ").capitalized)
+                
+                Text(viewModel.officerProfile.designation)
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(.secondary)
-
-                if let email = session.currentUser?.email, !email.isEmpty {
-                    LOStatusBadge(text: email, color: .blue, size: .small)
-                        .padding(.top, 4)
+                
+                HStack(spacing: 8) {
+                    LOStatusBadge(text: viewModel.officerProfile.employeeId, color: .blue, size: .small)
+                    LOStatusBadge(text: viewModel.selectedBranch, color: .green, size: .small)
                 }
+                .padding(.top, 4)
             }
         }
         .frame(maxWidth: .infinity)

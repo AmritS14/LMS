@@ -131,28 +131,26 @@ struct AddLoanProductSheet: View {
     }
 
     private func handleCreateProduct() {
-        let isDuplicate = viewModel.productsByCategory.values.flatMap { $0 }.contains { $0.name.lowercased() == name.lowercased() }
-        guard !isDuplicate else {
-            errorMessage = "A loan product with this name already exists."
-            return
-        }
-
-        let newProduct = AdminLoanProduct(
-            name: name,
-            minAmount: minAmount,
-            maxAmount: maxAmount,
-            interestRate: interestRate,
-            maxTenure: maxTenure,
-            tenureUnit: tenureUnit
-        )
-
-        Task {
-            do {
-                try await viewModel.createProduct(newProduct, category: selectedCategory)
-                onDismiss()
-            } catch {
-                errorMessage = error.localizedDescription
+        do {
+            let isDuplicate = viewModel.productsByCategory.values.flatMap { $0 }.contains { $0.name.lowercased() == name.lowercased() }
+            guard !isDuplicate else {
+                throw NSError(domain: "DuplicateError", code: 1, userInfo: [NSLocalizedDescriptionKey: "A loan product with this name already exists."])
             }
+
+            let newProduct = LoanProduct(
+                name: name,
+                minAmount: minAmount,
+                maxAmount: maxAmount,
+                interestRate: interestRate,
+                maxTenure: maxTenure,
+                tenureUnit: tenureUnit
+            )
+            
+            viewModel.productsByCategory[selectedCategory, default: []].append(newProduct)
+            viewModel.markDirty()
+            onDismiss()
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 }

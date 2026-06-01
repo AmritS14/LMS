@@ -9,7 +9,7 @@ import SwiftUI
 @MainActor
 @Observable
 final class ManagerStore {
-    // MARK: State
+    // MARK: State — Applications
 
     var managerProfile: OfficerProfileSummary = MockManagerData.managerProfile
     var branchName: String = MockManagerData.branchName
@@ -17,13 +17,45 @@ final class ManagerStore {
     var recentActions: [ManagerRecentAction] = []
     var notifications: [OfficerNotification] = []
 
-    // Headline metrics derived from the real application set in refreshAll().
-    var approvedToday: Int = 0
-    var rejectedToday: Int = 0
-    var approvalRate: Double = 0
-    var avgDecisionTime: String = "—"
+    // Seeded headline metrics; decisions bump these so the dashboard reacts.
+    var approvedToday: Int = 13
+    var rejectedToday: Int = 2
+    var approvalRate: Double = 0.84
+    var avgDecisionTime: String = "4.1h"
 
     var selectedApplicationID: UUID?
+
+    // MARK: State — Portfolio
+
+    var portfolioSummary: PortfolioSummaryData = MockManagerData.portfolioSummary()
+    var loanCategories: [LoanCategoryBreakdown] = MockManagerData.loanCategories()
+    var branchPerformanceItems: [BranchPerformanceItem] = MockManagerData.branchPerformance()
+
+    // Portfolio filters
+    var selectedBranch: String? = nil
+    var selectedRegion: String? = nil
+    var selectedLoanTypeFilter: LoanType? = nil
+    var selectedRiskFilter: String? = nil
+
+    // MARK: State — Officers
+
+    var officerPerformance: [OfficerPerformanceData] = []
+
+    // MARK: State — Audit
+
+    var auditLogs: [ManagerAuditLogEntry] = []
+
+    // MARK: State — Reports
+
+    var reportHistory: [ReportItem] = []
+
+    // MARK: State — Risk Alerts
+
+    var riskAlerts: [RiskAlert] = []
+
+    // MARK: State — Loan Policies
+
+    var loanPolicies: [LoanPolicyConfig] = []
 
     private var environment: AppEnvironment?
 
@@ -31,78 +63,65 @@ final class ManagerStore {
 
     func configure(environment: AppEnvironment) {
         self.environment = environment
-        // Applications come from the live queue in refreshAll(); don't seed
-        // mock ones. Notifications/recent actions have no backend source yet,
-        // so they stay empty rather than showing fabricated entries.
+        if applications.isEmpty {
+            applications = MockManagerData.applications()
+        }
+        if recentActions.isEmpty {
+            recentActions = MockManagerData.recentActions()
+        }
+        if notifications.isEmpty {
+            notifications = MockManagerData.notifications()
+        }
+        if officerPerformance.isEmpty {
+            officerPerformance = MockManagerData.officerPerformance()
+        }
+        if auditLogs.isEmpty {
+            auditLogs = MockManagerData.auditLogs()
+        }
+        if reportHistory.isEmpty {
+            reportHistory = MockManagerData.reportHistory()
+        }
+        if riskAlerts.isEmpty {
+            riskAlerts = MockManagerData.riskAlerts()
+        }
+        if loanPolicies.isEmpty {
+            loanPolicies = MockManagerData.loanPolicies()
+        }
     }
 
     func refreshAll() async {
         guard let environment else { return }
         do {
-            // Managers review escalated applications. RLS scopes this to the
-            // manager's own team, so a direct query is safe.
-            let server = try await environment.loans.fetchApplications(
-                statuses: ["manager_review", "approved", "disbursed", "rejected"]
+            // Reconcile statuses against the shared service while keeping the
+            // manager-only context (officer, recommendation, note) intact.
+            let server = try await environment.loans.fetchAssignedApplications(
+                officerID: MockOfficerData.officerUserID
             )
-            applications = server.map(Self.makeManagerApplication)
-            recomputeMetrics(from: server)
+            let serverByID = Dictionary(server.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            applications = applications.map { existing in
+                guard let updated = serverByID[existing.id] else { return existing }
+                let rebased = OfficerApplication(
+                    application: updated,
+                    borrower: existing.base.borrower,
+                    profile: existing.base.profile,
+                    employer: existing.base.employer,
+                    existingLiabilities: existing.base.existingLiabilities,
+                    purpose: existing.base.purpose,
+                    fraudFlag: existing.base.fraudFlag
+                )
+                return ManagerApplication(
+                    base: rebased,
+                    officerName: existing.officerName,
+                    recommendation: existing.recommendation,
+                    evaluationNote: existing.evaluationNote
+                )
+            }
         } catch {
             // Seed data already populates the UI; ignore transient failures.
         }
     }
 
-    /// Derives the dashboard headline metrics from the real application set
-    /// instead of the seeded mock numbers.
-    private func recomputeMetrics(from apps: [LoanApplication]) {
-        let cal = Calendar.current
-        let approvedOrDisbursed = apps.filter { $0.status == .approved || $0.status == .disbursed }
-        let rejected = apps.filter { $0.status == .rejected }
-
-        approvedToday = approvedOrDisbursed.filter { cal.isDateInToday($0.updatedAt) }.count
-        rejectedToday = rejected.filter { cal.isDateInToday($0.updatedAt) }.count
-
-        let decided = approvedOrDisbursed.count + rejected.count
-        approvalRate = decided > 0 ? Double(approvedOrDisbursed.count) / Double(decided) : 0
-    }
-
-    private static func makeManagerApplication(from app: LoanApplication) -> ManagerApplication {
-        let name = app.borrowerName ?? "Borrower"
-        let borrower = User(
-            id: app.borrowerID,
-            fullName: name,
-            email: app.borrowerEmail ?? "",
-            phone: "",
-            role: .borrower
-        )
-        let profile = BorrowerProfile(
-            id: app.borrowerID,
-            dateOfBirth: Calendar.current.date(byAdding: .year, value: -30, to: .now) ?? .now,
-            address: nil,
-            panNumber: nil,
-            aadhaarLast4: nil,
-            employmentType: nil,
-            monthlyIncome: nil,
-            kycStatus: .pending,
-            creditScore: nil
-        )
-        let base = OfficerApplication(
-            application: app,
-            borrower: borrower,
-            profile: profile,
-            employer: "—",
-            existingLiabilities: 0,
-            purpose: "—",
-            fraudFlag: false
-        )
-        return ManagerApplication(
-            base: base,
-            officerName: "",
-            recommendation: OfficerRecommendation.from(risk: base.riskLevel),
-            evaluationNote: ""
-        )
-    }
-
-    // MARK: Derived
+    // MARK: Derived — Applications
 
     func application(id: UUID) -> ManagerApplication? {
         applications.first { $0.id == id }
@@ -138,7 +157,46 @@ final class ManagerStore {
         "Today, " + Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide))
     }
 
-    // MARK: Mutations
+    // MARK: Derived — Risk Alerts
+
+    var unreadRiskAlertCount: Int {
+        riskAlerts.filter { !$0.isRead }.count
+    }
+
+    // MARK: Derived — Reports
+
+    var reportsStorageSizeString: String {
+        var totalBytes: Double = 0
+        for report in reportHistory {
+            guard report.status == .completed else { continue }
+            let parts = report.size.split(separator: " ")
+            if parts.count == 2, let val = Double(parts[0]) {
+                let unit = parts[1].uppercased()
+                if unit == "MB" {
+                    totalBytes += val * 1024 * 1024
+                } else if unit == "KB" {
+                    totalBytes += val * 1024
+                } else if unit == "GB" {
+                    totalBytes += val * 1024 * 1024 * 1024
+                } else {
+                    totalBytes += val
+                }
+            }
+        }
+        if totalBytes == 0 {
+            return "0 KB"
+        }
+        if totalBytes >= 1024 * 1024 * 1024 {
+            return String(format: "%.1f GB", totalBytes / (1024 * 1024 * 1024))
+        } else if totalBytes >= 1024 * 1024 {
+            return String(format: "%.1f MB", totalBytes / (1024 * 1024))
+        } else {
+            return String(format: "%.0f KB", totalBytes / 1024)
+        }
+    }
+
+    // MARK: Mutations — Decisions
+
 
     func decide(_ action: ApplicationActionType, on application: ManagerApplication, remarks: String?) {
         guard let idx = applications.firstIndex(where: { $0.id == application.id }) else { return }
@@ -166,7 +224,8 @@ final class ManagerStore {
         // Reflect on the dashboard.
         recentActions.insert(
             ManagerRecentAction(kind: action, name: existing.borrowerName,
-                                amount: existing.amountText, date: .now),
+                                amount: existing.amountText, date: .now,
+                                applicationID: existing.id),
             at: 0
         )
         switch action {
@@ -175,46 +234,30 @@ final class ManagerStore {
         case .sendBack: break
         }
 
+        // Append to audit log
+        auditLogs.insert(
+            ManagerAuditLogEntry(
+                loanReferenceCode: existing.referenceCode,
+                action: action.verb,
+                managerName: managerProfile.name,
+                timestamp: .now,
+                status: .completed
+            ),
+            at: 0
+        )
+
         if let environment {
-            let appID = updatedApp.id
-            switch action {
-            case .approve:
-                Task { try? await environment.loans.approveApplication(applicationID: appID, remark: remarks) }
-            case .reject:
-                Task { try? await environment.loans.rejectApplication(applicationID: appID, remark: remarks) }
-            case .sendBack:
-                // No manager-facing "send back" endpoint exists; this stays a local-only decision.
-                break
+            Task {
+                try? await environment.loans.updateStatus(
+                    applicationID: updatedApp.id,
+                    to: action.resultStatus,
+                    note: remarks
+                )
             }
         }
     }
 
-    // Disburse an approved application: creates the loan + EMI schedule on the backend.
-    func disburse(_ application: ManagerApplication) async throws {
-        guard let environment else { return }
-        try await environment.loans.disburseLoan(applicationID: application.id)
-        if let idx = applications.firstIndex(where: { $0.id == application.id }) {
-            let existing = applications[idx]
-            var updatedApp = existing.base.application
-            updatedApp.status = .disbursed
-            updatedApp.updatedAt = .now
-            let rebased = OfficerApplication(
-                application: updatedApp,
-                borrower: existing.base.borrower,
-                profile: existing.base.profile,
-                employer: existing.base.employer,
-                existingLiabilities: existing.base.existingLiabilities,
-                purpose: existing.base.purpose,
-                fraudFlag: existing.base.fraudFlag
-            )
-            applications[idx] = ManagerApplication(
-                base: rebased,
-                officerName: existing.officerName,
-                recommendation: existing.recommendation,
-                evaluationNote: existing.evaluationNote
-            )
-        }
-    }
+    // MARK: Mutations — Notifications
 
     func markAllNotificationsRead() {
         for i in notifications.indices { notifications[i].isRead = true }
@@ -229,6 +272,79 @@ final class ManagerStore {
         notifications.removeAll { $0.id == notification.id }
     }
 
+    // MARK: Mutations — Reports
+
+    func generateReport(type: ReportKind, format: ReportFormat) {
+        let name: String
+        switch type {
+        case .daily: name = "Daily Report — \(Date.now.formatted(.dateTime.month().day()))"
+        case .weekly: name = "Weekly Report — W\(Calendar.current.component(.weekOfYear, from: .now))"
+        case .monthly: name = "Monthly Report — \(Date.now.formatted(.dateTime.month(.wide)))"
+        case .npa: name = "NPA Analysis — \(Date.now.formatted(.dateTime.month(.abbreviated).year()))"
+        case .collectionEfficiency: name = "Collection Report — \(Date.now.formatted(.dateTime.month(.abbreviated)))"
+        }
+
+        let report = ReportItem(
+            name: name, type: type, format: format,
+            size: "—", generatedAt: .now, status: .generating
+        )
+        reportHistory.insert(report, at: 0)
+
+        // Simulate generation completing after a delay
+        let reportID = report.id
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            if let idx = reportHistory.firstIndex(where: { $0.id == reportID }) {
+                reportHistory[idx] = ReportItem(
+                    name: name, type: type, format: format,
+                    size: format == .pdf ? "1.4 MB" : "280 KB",
+                    generatedAt: .now, status: .completed
+                )
+            }
+        }
+    }
+
+    func deleteReport(_ report: ReportItem) {
+        reportHistory.removeAll { $0.id == report.id }
+    }
+
+    func clearOldReports() {
+        // Clear reports older than 24 hours to simulate removing old history.
+        reportHistory.removeAll { report in
+            report.generatedAt < Date.now.addingTimeInterval(-60 * 60 * 24)
+        }
+    }
+
+    // MARK: Mutations — Risk Alerts
+
+    func markRiskAlertRead(_ alert: RiskAlert) {
+        guard let idx = riskAlerts.firstIndex(where: { $0.id == alert.id }) else { return }
+        riskAlerts[idx].isRead = true
+    }
+
+    func dismissRiskAlert(_ alert: RiskAlert) {
+        riskAlerts.removeAll { $0.id == alert.id }
+    }
+
+    // MARK: Mutations — Loan Policies
+
+    func updatePolicy(_ policy: LoanPolicyConfig) {
+        guard let idx = loanPolicies.firstIndex(where: { $0.id == policy.id }) else { return }
+        loanPolicies[idx] = policy
+
+        // Audit the change
+        auditLogs.insert(
+            ManagerAuditLogEntry(
+                loanReferenceCode: "POLICY-\(policy.loanType.rawValue.uppercased())",
+                action: "Policy Updated",
+                managerName: managerProfile.name,
+                timestamp: .now,
+                status: .completed
+            ),
+            at: 0
+        )
+    }
+
 #if DEBUG
     // Hydrated from mock data so SwiftUI previews show content without an
     // AppEnvironment. refreshAll()/decide() service calls no-op when the
@@ -238,6 +354,11 @@ final class ManagerStore {
         store.applications = MockManagerData.applications()
         store.recentActions = MockManagerData.recentActions()
         store.notifications = MockManagerData.notifications()
+        store.officerPerformance = MockManagerData.officerPerformance()
+        store.auditLogs = MockManagerData.auditLogs()
+        store.reportHistory = MockManagerData.reportHistory()
+        store.riskAlerts = MockManagerData.riskAlerts()
+        store.loanPolicies = MockManagerData.loanPolicies()
         return store
     }
 #endif

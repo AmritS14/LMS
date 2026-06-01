@@ -23,34 +23,19 @@ struct RootView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: session.isAuthenticated)
-        .task {
-            if let env = env {
-                if let user = await env.auth.currentUser {
-                    withAnimation {
-                        session.currentUser = user
-                    }
-                }
-            }
-        }
     }
 }
 
 struct BorrowerTabView: View {
-    @State private var selectedTab: Int = 0
-
     var body: some View {
-        TabView(selection: $selectedTab) {
-            Tab("Home", systemImage: "house.fill", value: 0) {
+        TabView {
+            Tab("Home", systemImage: "house.fill") {
                 NavigationStack { HomeDashboardView() }
             }
-            Tab("Apply", systemImage: "plus.circle.fill", value: 1) {
-                NavigationStack {
-                    NewLoanApplicationView(onComplete: {
-                        withAnimation { selectedTab = 0 }
-                    })
-                }
+            Tab("Apply", systemImage: "plus.circle.fill") {
+                NavigationStack { NewLoanApplicationView() }
             }
-            Tab("Messages", systemImage: "bubble.left.and.bubble.right.fill", value: 2) {
+            Tab("Messages", systemImage: "bubble.left.and.bubble.right.fill") {
                 NavigationStack { BorrowerMessagingView() }
             }
         }

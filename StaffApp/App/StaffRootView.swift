@@ -15,7 +15,7 @@ struct StaffRootView: View {
                     .environment(officerStore)
                     .task {
                         if let appEnvironment {
-                            officerStore.configure(environment: appEnvironment, officerID: session.currentUser?.id)
+                            officerStore.configure(environment: appEnvironment)
                         }
                     }
             case .manager:
@@ -31,15 +31,6 @@ struct StaffRootView: View {
             }
         } else {
             StaffLoginView()
-                .task {
-                    if let appEnvironment {
-                        if let user = await appEnvironment.auth.currentUser {
-                            withAnimation {
-                                session.currentUser = user
-                            }
-                        }
-                    }
-                }
         }
     }
 }

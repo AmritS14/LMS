@@ -2,23 +2,19 @@ import SwiftUI
 
 struct OfficerTabView: View {
     var body: some View {
-//        TabView {
-//            Tab("Dashboard", systemImage: "rectangle.grid.2x2.fill") {
-//                OfficerNavigationStack { DashboardView() }
-//            }
-//            Tab("Queue", systemImage: "tray.full") {
-//                OfficerNavigationStack { AllApplicationsView() }
-//            }
-//            Tab("Documents", systemImage: "doc.richtext") {
-//                OfficerNavigationStack { DocumentsView() }
-//            }
-//            Tab("Messages", systemImage: "bubble.left.and.bubble.right") {
-//                OfficerNavigationStack { CommunicationsMainView() }
-//            }
-//        }
-        
-        OfficerNavigationStack {
-            DashboardView()
+        TabView {
+            Tab("Dashboard", systemImage: "rectangle.grid.2x2.fill") {
+                OfficerNavigationStack { DashboardView() }
+            }
+            Tab("Queue", systemImage: "tray.full") {
+                OfficerNavigationStack { AllApplicationsView() }
+            }
+            Tab("Documents", systemImage: "doc.richtext") {
+                OfficerNavigationStack { DocumentsView() }
+            }
+            Tab("Messages", systemImage: "bubble.left.and.bubble.right") {
+                OfficerNavigationStack { CommunicationsMainView() }
+            }
         }
     }
 }
@@ -75,14 +71,16 @@ struct ManagerTabView: View {
     var body: some View {
         TabView {
             Tab("Dashboard", systemImage: "rectangle.grid.2x2.fill") {
-                ManagerNavigationStack { ManagerDashboardView() }
+                ManagerNavigationStack { ManagerPortfolioView() }
             }
-//            Tab("Applications", systemImage: "tray.full") {
-//                ManagerNavigationStack { ManagerApplicationsView() }
-//            }
-            Tab("Reports", systemImage: "doc.text.magnifyingglass") { ReportsView() }
+            Tab("Applications", systemImage: "doc.text") {
+                ManagerNavigationStack { ManagerApplicationsView() }
+            }
+            Tab("Reports", systemImage: "doc.text.magnifyingglass") {
+                ManagerNavigationStack { ManagerReportsView() }
+            }
             Tab("Profile", systemImage: "person.crop.circle") {
-                NavigationStack { StaffProfileView() }
+                ManagerNavigationStack { ManagerProfileView() }
             }
         }
     }

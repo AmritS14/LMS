@@ -103,8 +103,13 @@ struct BorrowerProfileView: View {
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Profile")
+        .navigationBarTitleDisplayMode(.large)
         .task { await loadData() }
-        .alert("Sign out of your account?", isPresented: $showSignOutConfirm) {
+        .confirmationDialog(
+            "Sign out of your account?",
+            isPresented: $showSignOutConfirm,
+            titleVisibility: .visible
+        ) {
             Button("Sign Out", role: .destructive) { signOut() }
             Button("Cancel", role: .cancel) {}
         }
@@ -260,12 +265,8 @@ struct BorrowerProfileView: View {
     private func signOut() {
         Task {
             try? await env?.auth.signOut()
-            await MainActor.run {
-                withAnimation {
-                    session.currentUser = nil
-                    session.borrowerProfile = nil
-                }
-            }
+            session.currentUser = nil
+            session.borrowerProfile = nil
         }
     }
 }

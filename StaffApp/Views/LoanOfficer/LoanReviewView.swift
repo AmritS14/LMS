@@ -41,7 +41,6 @@ struct LoanReviewView: View {
     @State private var showBlockerAlert = false
     @State private var highlightRemarks = false
     @State private var selectedReviewDocument: LOLoanDocument? = nil
-    @State private var showConversation = false
 
     /// The application under review — uses selectedApplication or falls back to the first recent one.
     private var application: LOLoanApplication {
@@ -111,13 +110,9 @@ struct LoanReviewView: View {
         
         .sheet(isPresented: $bindableViewModel.showEscalateSheet) {
             escalateSheetContent
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $bindableViewModel.showDocumentRequest) {
             requestDocumentSheetContent
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
         }
         .sheet(item: $selectedReviewDocument) { doc in
             DocumentReviewSheet(
@@ -125,13 +120,6 @@ struct LoanReviewView: View {
                 application: application,
                 document: doc
             )
-            .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $showConversation) {
-            LOConversationView(application: application)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
         }
         .alert("Send Back for Revision", isPresented: $showSendBackAlert) {
             Button("Send Back") {
@@ -152,8 +140,6 @@ struct LoanReviewView: View {
             withAnimation() {
                 animateIn = true
             }
-            // Open (or reuse) the borrower⇄officer conversation for this app.
-            viewModel.ensureThread(for: application)
         }
         .onDisappear {
             viewModel.highlightMessageButton = false
@@ -419,13 +405,12 @@ extension LoanReviewView {
 
     private var messageBorrowerButton: some View {
         Button {
-            withAnimation { viewModel.highlightMessageButton = false }
-            // Real backend application → open the live borrower⇄officer thread.
-            if application.sourceApplicationID != nil, application.borrowerID != nil {
-                showConversation = true
-            } else if let conversation = viewModel.conversations.first(where: {
+            if let conversation = viewModel.conversations.first(where: {
                 $0.borrowerName == application.borrowerName
             }) {
+                withAnimation {
+                    viewModel.highlightMessageButton = false
+                }
                 viewModel.navigationPath.append(AppDestination.chat(conversation))
             }
         } label: {
