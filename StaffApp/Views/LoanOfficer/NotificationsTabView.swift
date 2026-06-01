@@ -14,18 +14,22 @@ struct NotificationsTabView: View {
     
     @State private var selectedFilter: String = "All"
 
-    private let filters = ["All", "Fraud", "Approvals", "Assignments", "Overdue", "Escalations"]
+    private let filters = ["All", "Alerts", "Activity"]
 
     private var filteredNotifications: [AppNotification] {
         if selectedFilter == "All" { return viewModel.notifications }
         return viewModel.notifications.filter { notification in
             switch selectedFilter {
-            case "Fraud": return notification.type == .fraudAlert
-            case "Approvals": return notification.type == .pendingApproval
-            case "Assignments": return notification.type == .assignedApplication
-            case "Overdue": return notification.type == .overdueReminder
-            case "Escalations": return notification.type == .escalation
-            default: return true
+            case "Alerts":
+                return notification.type == .fraudAlert ||
+                       notification.type == .overdueReminder ||
+                       notification.type == .escalation
+            case "Activity":
+                return notification.type != .fraudAlert &&
+                       notification.type != .overdueReminder &&
+                       notification.type != .escalation
+            default:
+                return true
             }
         }
     }

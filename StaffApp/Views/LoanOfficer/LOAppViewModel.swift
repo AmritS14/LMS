@@ -12,22 +12,48 @@ import Combine
     var searchText: String = ""
     var selectedBranch: String = "Mumbai Central"
 
-    // Data
-    var officerProfile = SampleData.officerProfile
-    var kpiData = SampleData.kpiData
-    var quickActions = SampleData.quickActions
-    var recentApplications = SampleData.recentApplications
-    var activityFeed = SampleData.activityFeed
-    var notifications = SampleData.notifications
-    var overdueBorrowers = SampleData.overdueBorrowers
-    //var fieldVisits = SampleData.fieldVisits
-    var conversations = SampleData.conversations
-    var digitalDocuments = SampleData.digitalDocuments
-    var documents = SampleData.sampleDocuments
-    var collateral = SampleData.sampleCollateral
+    // Data — starts empty; populated by refreshFromService() from backend
+    var officerProfile = LoanOfficerProfile(
+        name: "",
+        designation: "",
+        branch: "",
+        employeeId: "",
+        avatarInitials: "",
+        pendingTasks: 0,
+        totalApproved: 0,
+        approvalRate: 0
+    )
+    var kpiData: [KPIData] = [
+        KPIData(title: "Pending\nApplications",  value: 0, trend: 0, trendUp: true,  icon: "doc.text.fill",                               color: .orange, chartData: [0, 0, 0, 0, 0, 0, 0]),
+        KPIData(title: "Approved\nLoans",         value: 0, trend: 0, trendUp: true,  icon: "checkmark.circle.fill",                       color: .green,  chartData: [0, 0, 0, 0, 0, 0, 0]),
+        KPIData(title: "Escalated\nCases",        value: 0, trend: 0, trendUp: false, icon: "arrow.up.circle.fill",                        color: .purple, chartData: [0, 0, 0, 0, 0, 0, 0]),
+        KPIData(title: "Overdue\nBorrowers",      value: 0, trend: 0, trendUp: false, icon: "person.crop.circle.badge.exclamationmark.fill", color: Color(red: 0.8, green: 0.4, blue: 0), chartData: [0, 0, 0, 0, 0, 0, 0])
+    ]
+    var quickActions: [QuickAction] = [
+        QuickAction(title: "Review\nApplications", icon: "doc.text.magnifyingglass",           color: .blue,   gradient: [Color(red: 0.2, green: 0.5, blue: 1.0), Color(red: 0.1, green: 0.3, blue: 0.9)], pendingCount: 0, destination: .loanReview),
+        QuickAction(title: "Recovery\nManagement",  icon: "arrow.uturn.backward.circle.fill",  color: .orange, gradient: [Color(red: 1.0, green: 0.6, blue: 0.2), Color(red: 0.9, green: 0.4, blue: 0.1)], pendingCount: 0, destination: .recovery),
+        QuickAction(title: "Borrower\nMessages",    icon: "bubble.left.and.bubble.right.fill", color: .indigo, gradient: [Color(red: 0.4, green: 0.3, blue: 0.9), Color(red: 0.25, green: 0.2, blue: 0.8)], pendingCount: 0, destination: .messages)
+    ]
+    var recentApplications: [LOLoanApplication] = []
+    var activityFeed: [ActivityItem] = []
+    var notifications: [AppNotification] = []
+    var overdueBorrowers: [OverdueBorrower] = []
+    //var fieldVisits: [FieldVisit] = []
+    var conversations: [BorrowerConversation] = []
+    var digitalDocuments: [DigitalDocument] = []
+    var documents: [LOLoanDocument] = []
+    var collateral = CollateralInfo(
+        propertyType: "",
+        address: "",
+        currentValuation: 0,
+        lastValuationDate: Date(),
+        coverageRatio: 0,
+        revaluationHistory: []
+    )
     var selectedConversation: BorrowerConversation?
 
     private var environment: AppEnvironment?
+    private var officerID: UUID?
 
     // Dynamic KPI counters tracking base numbers
     private var pendingCount = 47
@@ -71,16 +97,37 @@ import Combine
         Task { await refreshFromService() }
     }
 
+    func ensureThread(for application: LOLoanApplication) {
+        guard let environment,
+              let appID = application.sourceApplicationID,
+              let borrowerID = application.borrowerID,
+              let officerID else { return }
+        Task {
+            _ = try? await environment.messaging.ensureThread(
+                applicationID: appID,
+                participantIDs: [officerID, borrowerID]
+            )
+        }
+    }
+
     private func refreshFromService() async {
         guard let environment else { return }
 
+        if officerID == nil {
+            officerID = (await environment.auth.currentUser)?.id
+        }
+
         do {
             let sharedApplications = try await environment.loans.fetchAssignedApplications(
-                officerID: MockOfficerData.officerUserID
+                officerID: officerID ?? MockOfficerData.officerUserID // fallback UUID for offline testing
             )
 
-            guard !sharedApplications.isEmpty else {
-                return
+            // Build real officer rows
+            var rows: [LOLoanApplication] = []
+            for app in sharedApplications {
+                let events = (try? await environment.loans.fetchApplicationEvents(applicationID: app.id)) ?? []
+                let docs = (try? await environment.documents.documents(forApplication: app.id)) ?? []
+                rows.append(Self.makeOfficerApplication(from: app, events: events, documents: docs))
             }
 
             let updateCount = min(sharedApplications.count, recentApplications.count)
@@ -88,10 +135,247 @@ import Combine
                 recentApplications[index].sourceApplicationID = sharedApplications[index].id
                 recentApplications[index].status = sharedApplications[index].status.officerStatus
             }
+            
+            // Build Activity Feed
+            var feed: [ActivityItem] = []
+            for app in rows {
+                for event in app.timeline {
+                    let type: ActivityType = event.status == .approved ? .approved : (event.status == .escalated ? .escalation : .newApplication)
+                    feed.append(ActivityItem(title: event.title, subtitle: "\(app.borrowerName) — \(event.description)", type: type, timestamp: event.timestamp))
+                }
+            }
+            self.activityFeed = Array(feed.sorted { $0.timestamp > $1.timestamp }.prefix(20))
+            
+            // Fetch Overdue Borrowers
+            var overdue: [OverdueBorrower] = []
+            for app in rows where app.status == .disbursed || app.status == .approved {
+                if let sourceID = app.sourceApplicationID, let borrowerID = app.borrowerID {
+                    if let loans = try? await environment.loans.fetchActiveLoans(borrowerID: borrowerID) {
+                        if let loan = loans.first(where: { $0.applicationID == sourceID }) {
+                            let overdueEMIs = loan.emiSchedule.filter { $0.status == .overdue }
+                            if !overdueEMIs.isEmpty {
+                                let totalOverdue = overdueEMIs.reduce(0) { $0 + NSDecimalNumber(decimal: $1.totalAmount).doubleValue }
+                                let oldestOverdue = overdueEMIs.map { $0.dueDate }.min() ?? Date()
+                                let dpd = max(0, Calendar.current.dateComponents([.day], from: oldestOverdue, to: Date()).day ?? 0)
+                                
+                                overdue.append(OverdueBorrower(
+                                    borrowerName: app.borrowerName,
+                                    borrowerInitials: app.borrowerInitials,
+                                    loanId: "LN-\(sourceID.uuidString.prefix(6).uppercased())",
+                                    dpdDays: dpd,
+                                    outstandingEMI: NSDecimalNumber(decimal: overdueEMIs.first!.totalAmount).doubleValue,
+                                    totalOutstanding: NSDecimalNumber(decimal: loan.outstandingBalance).doubleValue,
+                                    priority: dpd > 30 ? .urgent : (dpd > 15 ? .high : .normal),
+                                    lastContactDate: nil,
+                                    phoneNumber: app.phoneNumber,
+                                    collectionEfficiency: 0.0,
+                                    contactAttempts: 0
+                                ))
+                            }
+                        }
+                    }
+                }
+            }
+            self.overdueBorrowers = overdue
+
+            // Fetch User/Profile & Conversations
+            if let user = await environment.auth.currentUser {
+                var branch = "Main Branch"
+                var empId = "EMP-\(user.uniqueID)"
+                if let profiles = try? await environment.admin.listStaffProfiles(),
+                   let staff = profiles.first(where: { $0.id == user.id }) {
+                    empId = staff.employeeID
+                    if staff.branchID != nil { branch = "Assigned Branch" }
+                }
+                let initials = user.fullName.split(separator: " ").compactMap { $0.first.map(String.init) }.prefix(2).joined().uppercased()
+                
+                let total = recentApplications.count
+                let approved = recentApplications.filter { $0.status == .approved || $0.status == .disbursed }.count
+                let pending = recentApplications.filter { $0.status == .pending || $0.status == .underReview }.count
+                let rate = total > 0 ? (Double(approved) / Double(total) * 100.0) : 0.0
+                
+                self.officerProfile = LoanOfficerProfile(
+                    name: user.fullName,
+                    designation: "Loan Officer",
+                    branch: branch,
+                    employeeId: empId,
+                    avatarInitials: initials.isEmpty ? "U" : initials,
+                    pendingTasks: pending,
+                    totalApproved: approved,
+                    approvalRate: rate
+                )
+                
+                // Conversations
+                if let threads = try? await environment.messaging.threads(for: user.id) {
+                    var newConvos: [BorrowerConversation] = []
+                    for thread in threads {
+                        let msgs = (try? await environment.messaging.messages(threadID: thread.id)) ?? []
+                        let loMsgs = msgs.map { m in
+                            LOChatMessage(text: m.body, sender: m.senderID == user.id ? .officer : .borrower, timestamp: m.sentAt, isRead: m.readAt != nil)
+                        }
+                        let app = rows.first { $0.sourceApplicationID == thread.applicationID }
+                        let bName = app?.borrowerName ?? "Borrower"
+                        let bInitials = app?.borrowerInitials ?? "B"
+                        let unread = msgs.filter { $0.readAt == nil && $0.senderID != user.id }.count
+                        
+                        newConvos.append(BorrowerConversation(
+                            borrowerName: bName,
+                            borrowerInitials: bInitials,
+                            lastMessage: thread.lastMessagePreview ?? "",
+                            lastMessageTime: thread.updatedAt,
+                            unreadCount: unread,
+                            messages: loMsgs.sorted { $0.timestamp < $1.timestamp },
+                            isOnline: false
+                        ))
+                    }
+                    self.conversations = newConvos.sorted { $0.lastMessageTime > $1.lastMessageTime }
+                }
+            }
+            
+            // Notifications
+            if let notifs = try? await environment.notifications.fetchHistory(limit: 20) {
+                self.notifications = notifs.map { n in
+                    AppNotification(
+                        title: n.title,
+                        message: n.body,
+                        type: .systemUpdate,
+                        timestamp: n.receivedAt,
+                        isRead: false,
+                        priority: 2
+                    )
+                }
+            }
 
             recalculateKPIs()
         } catch {
-            // Keep the seeded sample data if the shared service is unavailable.
+            // Keep the seeded sample data if the backend is unavailable.
+        }
+    }
+
+    private static func makeOfficerApplication(
+        from app: LoanApplication,
+        events: [ApplicationEvent],
+        documents: [LoanDocument] = []
+    ) -> LOLoanApplication {
+        let name = app.borrowerName ?? "Borrower"
+        let initials = name
+            .split(separator: " ")
+            .compactMap { $0.first.map(String.init) }
+            .prefix(2)
+            .joined()
+            .uppercased()
+        let amount = NSDecimalNumber(decimal: app.requestedAmount).doubleValue
+        let officerStatus = app.status.officerStatus
+
+        let loDocuments = documents.map(Self.makeOfficerDocument)
+        // Derive KYC status from the real document vault.
+        let kyc: LOKYCStatus
+        if loDocuments.isEmpty {
+            kyc = .pending
+        } else if loDocuments.allSatisfy({ $0.status == .verified }) {
+            kyc = .verified
+        } else if loDocuments.contains(where: { $0.status == .rejected }) {
+            kyc = .partial
+        } else {
+            kyc = .pending
+        }
+
+        let timeline: [TimelineEvent] = events
+            .sorted { $0.createdAt > $1.createdAt }
+            .map { event in
+                TimelineEvent(
+                    title: Self.eventTitle(event.eventType),
+                    description: event.remark ?? Self.eventTitle(event.eventType),
+                    timestamp: event.createdAt,
+                    status: officerStatus,
+                    officerName: ""
+                )
+            }
+
+        return LOLoanApplication(
+            sourceApplicationID: app.id,
+            borrowerID: app.borrowerID,
+            borrowerName: name,
+            borrowerInitials: initials.isEmpty ? "?" : initials,
+            creditScore: 720,
+            loanAmount: amount,
+            riskLevel: .low,
+            kycStatus: kyc,
+            fraudFlag: false,
+            status: officerStatus,
+            applicationDate: app.createdAt,
+            loanType: app.productName ?? (app.loanType.rawValue.capitalized + " Loan"),
+            tenure: app.tenureMonths,
+            interestRate: app.interestRate,
+            employmentType: "Not specified",
+            employer: "—",
+            monthlyIncome: 0,
+            existingLiabilities: 0,
+            eligibilityScore: 0,
+            emiAmount: amount / Double(max(app.tenureMonths, 1)),
+            phoneNumber: app.borrowerPhone ?? "—",
+            email: app.borrowerEmail ?? "—",
+            address: "—",
+            purpose: "—",
+            documents: loDocuments,
+            timeline: timeline
+        )
+    }
+
+    /// Maps a backend document to the officer's rich document model.
+    private static func makeOfficerDocument(_ doc: LoanDocument) -> LOLoanDocument {
+        let status: DocumentStatus
+        switch doc.status {
+        case .verified: status = .verified
+        case .rejected: status = .rejected
+        case .pending:  status = .needsReview
+        }
+        let (type, icon): (String, String)
+        switch doc.kind {
+        case .identityProof: (type, icon) = ("Identity Proof", "person.text.rectangle.fill")
+        case .addressProof:  (type, icon) = ("Address Proof", "house.fill")
+        case .incomeProof:   (type, icon) = ("Income Proof", "doc.text.fill")
+        case .bankStatement: (type, icon) = ("Bank Statement", "building.columns.fill")
+        case .collateral:    (type, icon) = ("Collateral", "shield.fill")
+        case .other:         (type, icon) = ("Document", "doc.fill")
+        }
+        return LOLoanDocument(
+            sourceDocumentID: doc.id,
+            name: doc.fileName,
+            type: type,
+            status: status,
+            uploadDate: doc.uploadedAt,
+            ocrVerified: doc.status == .verified,
+            icon: icon
+        )
+    }
+
+    // Maps a free-form requested document name to the backend's documentType enum.
+    private static func backendDocumentType(_ name: String) -> String {
+        let n = name.lowercased()
+        if n.contains("pan") { return "pan_card" }
+        if n.contains("aadhaar") || n.contains("aadhar") { return "aadhaar_card" }
+        if n.contains("salary") { return "salary_slip" }
+        if n.contains("bank") { return "bank_statement" }
+        if n.contains("itr") || n.contains("tax") { return "itr" }
+        if n.contains("photo") || n.contains("passport") { return "passport_photo" }
+        if n.contains("employment") || n.contains("employer") { return "employment_certificate" }
+        if n.contains("address") { return "address_proof" }
+        return "other"
+    }
+
+    private static func eventTitle(_ rawType: String) -> String {
+        switch rawType {
+        case "submitted": return "Application Submitted"
+        case "auto_assigned", "assigned": return "Assigned to Officer"
+        case "review_started": return "Review Started"
+        case "documents_requested": return "Documents Requested"
+        case "documents_uploaded": return "Documents Uploaded"
+        case "sent_to_manager": return "Sent to Manager"
+        case "approved": return "Approved"
+        case "rejected": return "Rejected"
+        case "loan_disbursed": return "Loan Disbursed"
+        default: return rawType.replacingOccurrences(of: "_", with: " ").capitalized
         }
     }
 

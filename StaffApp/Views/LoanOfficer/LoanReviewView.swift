@@ -41,108 +41,145 @@ struct LoanReviewView: View {
     @State private var showBlockerAlert = false
     @State private var highlightRemarks = false
     @State private var selectedReviewDocument: LOLoanDocument? = nil
+    @State private var showConversation = false
 
-    /// The application under review — uses selectedApplication or falls back to the first recent one.
-    private var application: LOLoanApplication {
-        viewModel.selectedApplication ?? viewModel.recentApplications.first ?? SampleData.recentApplications[0]
+    /// The application under review — uses selectedApplication or falls back to the first real one.
+    private var application: LOLoanApplication? {
+        viewModel.selectedApplication ?? viewModel.recentApplications.first
+    }
+    
+    /// Non-optional accessor for use inside view sections that are only shown when application != nil.
+    private var currentApplication: LOLoanApplication {
+        // swiftlint:disable:next force_unwrapping
+        application! // Safe: only called from sections rendered inside the else-branch guard
     }
     
     private var blockerAlertMessage: String {
-        let blockers = application.validationIssues.filter { $0.isBlocker }
+        let blockers = (application?.validationIssues ?? []).filter { $0.isBlocker }
         return blockers.map { "• " + $0.message }.joined(separator: "\n")
     }
 
     var body: some View {
         @Bindable var bindableViewModel = viewModel
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 20) {
-                borrowerProfileSection
-                
-                segmentSelector
-                
-                switch selectedSegment {
-                case .overview:
-                    VStack(spacing: 20) {
-                        borrowerProfileDetailsSection
-                        validationChecklistSection
-                        loanDetailsSection
-                        collateralSection
-                        timelineSection
+        
+        if viewModel.selectedApplication == nil && viewModel.recentApplications.isEmpty {
+            ContentUnavailableView("No Application", systemImage: "doc.text.magnifyingglass", description: Text("No application data available to review."))
+                .navigationTitle("Loan Review")
+                .navigationBarTitleDisplayMode(.inline)
+        } else {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 20) {
+                    borrowerProfileSection
+                    
+                    segmentSelector
+                    
+                    switch selectedSegment {
+                    case .overview:
+                        VStack(spacing: 20) {
+                            borrowerProfileDetailsSection
+                            validationChecklistSection
+                            loanDetailsSection
+                            collateralSection
+                            timelineSection
+                        }
+                        .transition(.opacity)
+                    case .documents:
+                        documentKYCSection
+                            .transition(.opacity)
+                    case .actions:
+                        recommendationSection
+                            .transition(.opacity)
                     }
-                    .transition(.opacity)
-                case .documents:
-                    documentKYCSection
-                        .transition(.opacity)
-                case .actions:
-                    recommendationSection
-                        .transition(.opacity)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 30)
+            }
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle("Loan Review")
+            .navigationBarTitleDisplayMode(.inline)
+            
+            .confirmationDialog("Approve Application", isPresented: $bindableViewModel.showApproveConfirmation, titleVisibility: .visible) {
+                Button("Approve Loan", role: .confirm) {
+                    if let app = application {
+                        viewModel.approveApplication(app, remarks: officerRemarks)
+                    }
+                    if !viewModel.navigationPath.isEmpty {
+                        viewModel.navigationPath.removeLast()
+                    }
+                }
+            } message: {
+                Text("Are you sure you want to approve \(application?.borrowerName ?? "")'s \(application?.loanType ?? "") application for \(AppFormatters.formatCurrency(application?.loanAmount ?? 0))?")
+            }
+            
+            .confirmationDialog("Reject Application", isPresented: $bindableViewModel.showRejectConfirmation, titleVisibility: .visible) {
+                Button("Reject Loan", role: .destructive) {
+                    if let app = application {
+                        viewModel.rejectApplication(app, remarks: officerRemarks)
+                    }
+                    if !viewModel.navigationPath.isEmpty {
+                        viewModel.navigationPath.removeLast()
+                    }
+                }
+            } message: {
+                Text("Are you sure you want to reject \(application?.borrowerName ?? "")'s application? This action will notify the borrower.")
+            }
+            
+            .sheet(isPresented: $bindableViewModel.showEscalateSheet) {
+                escalateSheetContent
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $bindableViewModel.showDocumentRequest) {
+                requestDocumentSheetContent
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+            }
+            .sheet(item: $selectedReviewDocument) { doc in
+                if let app = application {
+                    DocumentReviewSheet(
+                        viewModel: viewModel,
+                        application: app,
+                        document: doc
+                    )
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 30)
-        }
-        .background(Color(.systemGroupedBackground))
-        .navigationTitle("Loan Review")
-        .navigationBarTitleDisplayMode(.inline)
-        
-        .confirmationDialog("Approve Application", isPresented: $bindableViewModel.showApproveConfirmation, titleVisibility: .visible) {
-            Button("Approve Loan", role: .confirm) {
-                viewModel.approveApplication(application, remarks: officerRemarks)
-                if !viewModel.navigationPath.isEmpty {
-                    viewModel.navigationPath.removeLast()
+            .sheet(isPresented: $showConversation) {
+                if let app = application {
+                    LOConversationView(application: app)
+                        .presentationDetents([.large])
+                        .presentationDragIndicator(.visible)
                 }
             }
-        } message: {
-            Text("Are you sure you want to approve \(application.borrowerName)'s \(application.loanType) application for \(AppFormatters.formatCurrency(application.loanAmount))?")
-        }
-        
-        .confirmationDialog("Reject Application", isPresented: $bindableViewModel.showRejectConfirmation, titleVisibility: .visible) {
-            Button("Reject Loan", role: .destructive) {
-                viewModel.rejectApplication(application, remarks: officerRemarks)
-                if !viewModel.navigationPath.isEmpty {
-                    viewModel.navigationPath.removeLast()
+            .alert("Send Back for Revision", isPresented: $showSendBackAlert) {
+                Button("Send Back") {
+                    if !viewModel.navigationPath.isEmpty {
+                        viewModel.navigationPath.removeLast()
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This application will be sent back to the borrower for additional information.")
+            }
+            .alert("Approval Blocked", isPresented: $showBlockerAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("This application has critical blocker issues that must be resolved first:\n\n\(blockerAlertMessage)")
+            }
+            .onAppear {
+                withAnimation() {
+                    animateIn = true
+                }
+                // Open (or reuse) the borrower⇄officer conversation for this app.
+                if let app = application {
+                    viewModel.ensureThread(for: app)
                 }
             }
-        } message: {
-            Text("Are you sure you want to reject \(application.borrowerName)'s application? This action will notify the borrower.")
-        }
-        
-        .sheet(isPresented: $bindableViewModel.showEscalateSheet) {
-            escalateSheetContent
-        }
-        .sheet(isPresented: $bindableViewModel.showDocumentRequest) {
-            requestDocumentSheetContent
-        }
-        .sheet(item: $selectedReviewDocument) { doc in
-            DocumentReviewSheet(
-                viewModel: viewModel,
-                application: application,
-                document: doc
-            )
-        }
-        .alert("Send Back for Revision", isPresented: $showSendBackAlert) {
-            Button("Send Back") {
-                if !viewModel.navigationPath.isEmpty {
-                    viewModel.navigationPath.removeLast()
-                }
+            .onDisappear {
+                viewModel.highlightMessageButton = false
             }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This application will be sent back to the borrower for additional information.")
-        }
-        .alert("Approval Blocked", isPresented: $showBlockerAlert) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("This application has critical blocker issues that must be resolved first:\n\n\(blockerAlertMessage)")
-        }
-        .onAppear {
-            withAnimation() {
-                animateIn = true
-            }
-        }
-        .onDisappear {
-            viewModel.highlightMessageButton = false
         }
     }
 }
@@ -237,17 +274,17 @@ extension LoanReviewView {
 extension LoanReviewView {
     private var validationChecklistSection: some View {
         Group {
-            if !application.validationIssues.isEmpty {
+            if !currentApplication.validationIssues.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
                     LOSectionHeader(
                         title: "System Validation Checks",
-                        subtitle: "\(application.validationIssues.filter { !$0.isBlocker }.count) Warnings, \(application.validationIssues.filter { $0.isBlocker }.count) Blocker(s)",
+                        subtitle: "\(currentApplication.validationIssues.filter { !$0.isBlocker }.count) Warnings, \(currentApplication.validationIssues.filter { $0.isBlocker }.count) Blocker(s)",
                         icon: "exclamationmark.shield.fill"
                     )
                     
                     LOPremiumCard(cornerRadius: 16, padding: 16) {
                         VStack(alignment: .leading, spacing: 12) {
-                            ForEach(application.validationIssues) { issue in
+                            ForEach(currentApplication.validationIssues) { issue in
                                 HStack(alignment: .top, spacing: 10) {
                                     Image(systemName: issue.isBlocker ? "xmark.octagon.fill" : "exclamationmark.triangle.fill")
                                         .font(.system(size: 16, weight: .semibold))
@@ -264,7 +301,7 @@ extension LoanReviewView {
                                     Spacer()
                                 }
                                 
-                                if issue.id != application.validationIssues.last?.id {
+                                if issue.id != currentApplication.validationIssues.last?.id {
                                     Divider()
                                 }
                             }
@@ -272,11 +309,11 @@ extension LoanReviewView {
                     }
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
-                            .stroke(application.canProceedToApproval ? Color.orange.opacity(0.3) : Color.red.opacity(0.3), lineWidth: 1.5)
+                            .stroke(currentApplication.canProceedToApproval ? Color.orange.opacity(0.3) : Color.red.opacity(0.3), lineWidth: 1.5)
                     )
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(application.canProceedToApproval ? Color.orange.opacity(0.04) : Color.red.opacity(0.04))
+                            .fill(currentApplication.canProceedToApproval ? Color.orange.opacity(0.04) : Color.red.opacity(0.04))
                     )
                 }
                 .opacity(animateIn ? 1 : 0)
@@ -294,18 +331,18 @@ extension LoanReviewView {
                 // Row 1: Avatar + Name and Employment Info
                 HStack(spacing: 14) {
                     LOAvatarView(
-                        initials: application.borrowerInitials,
+                        initials: currentApplication.borrowerInitials,
                         size: 52,
-                        colors: avatarGradient(for: application.riskLevel)
+                        colors: avatarGradient(for: currentApplication.riskLevel)
                     )
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(application.borrowerName)
+                        Text(currentApplication.borrowerName)
                             .font(.system(size: 20, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                         
-                        Text(application.employmentType)
+                        Text(currentApplication.employmentType)
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(.secondary)
                     }
@@ -317,14 +354,14 @@ extension LoanReviewView {
                 HStack(alignment: .center) {
                     HStack(spacing: 6) {
                         LOStatusBadge(
-                            text: application.status.rawValue,
-                            color: application.status.color,
-                            icon: application.status.icon,
+                            text: currentApplication.status.rawValue,
+                            color: currentApplication.status.color,
+                            icon: currentApplication.status.icon,
                             size: .small
                         )
                         LOStatusBadge(
-                            text: "\(application.riskLevel.rawValue) Risk",
-                            color: riskColor(for: application.riskLevel),
+                            text: "\(currentApplication.riskLevel.rawValue) Risk",
+                            color: riskColor(for: currentApplication.riskLevel),
                             icon: "shield.fill",
                             size: .small
                         )
@@ -345,13 +382,13 @@ extension LoanReviewView {
                         HStack(spacing: 4) {
                             Image(systemName: "creditcard.fill")
                                 .font(.system(size: 11))
-                                .foregroundColor(creditScoreColor(for: application.creditScore))
-                            Text("\(application.creditScore)")
+                                .foregroundColor(creditScoreColor(for: currentApplication.creditScore))
+                            Text("\(currentApplication.creditScore)")
                                 .font(.system(size: 15, weight: .bold, design: .rounded))
                                 .foregroundColor(.primary)
                         }
                         
-                        Text(creditScoreRating(for: application.creditScore))
+                        Text(creditScoreRating(for: currentApplication.creditScore))
                             .font(.system(size: 10, weight: .bold))
                             .foregroundColor(.secondary)
                             .textCase(.uppercase)
@@ -364,7 +401,7 @@ extension LoanReviewView {
                     
                     // Column 2: Loan Amount
                     VStack(spacing: 4) {
-                        Text(AppFormatters.formatCurrency(application.loanAmount))
+                        Text(AppFormatters.formatCurrency(currentApplication.loanAmount))
                             .font(.system(size: 15, weight: .bold, design: .rounded))
                             .foregroundColor(.primary)
                         
@@ -385,9 +422,9 @@ extension LoanReviewView {
                             Image(systemName: "star.fill")
                                 .font(.system(size: 11))
                                 .foregroundColor(.orange)
-                            Text("\(application.eligibilityScore)%")
+                            Text("\(currentApplication.eligibilityScore)%")
                                 .font(.system(size: 15, weight: .bold, design: .rounded))
-                                .foregroundColor(eligibilityColor(for: application.eligibilityScore))
+                                .foregroundColor(eligibilityColor(for: currentApplication.eligibilityScore))
                         }
                         
                         Text("Match Score")
@@ -405,8 +442,12 @@ extension LoanReviewView {
 
     private var messageBorrowerButton: some View {
         Button {
-            if let conversation = viewModel.conversations.first(where: {
-                $0.borrowerName == application.borrowerName
+            withAnimation { viewModel.highlightMessageButton = false }
+            // Real backend application → open the live borrower⇄officer thread.
+            if currentApplication.sourceApplicationID != nil, currentApplication.borrowerID != nil {
+                showConversation = true
+            } else if let conversation = viewModel.conversations.first(where: {
+                $0.borrowerName == currentApplication.borrowerName
             }) {
                 withAnimation {
                     viewModel.highlightMessageButton = false
@@ -464,28 +505,28 @@ extension LoanReviewView {
             VStack(spacing: 12) {
                 LOSectionHeader(title: "Borrower Information")
                 
-                LODetailRow(icon: "building.2.fill", title: "Employer", value: application.employer)
+                LODetailRow(icon: "building.2.fill", title: "Employer", value: currentApplication.employer)
                 
                 LODetailRow(
                     icon: "indianrupeesign.circle.fill",
                     title: "Monthly Income",
-                    value: AppFormatters.formatCurrency(application.monthlyIncome),
+                    value: AppFormatters.formatCurrency(currentApplication.monthlyIncome),
                     valueColor: .green
                 )
                 
                 LODetailRow(
                     icon: "star.fill",
                     title: "Eligibility Score",
-                    value: "\(application.eligibilityScore)/100",
-                    valueColor: application.eligibilityScore >= 70 ? .green : (application.eligibilityScore >= 50 ? .orange : .red)
+                    value: "\(currentApplication.eligibilityScore)/100",
+                    valueColor: currentApplication.eligibilityScore >= 70 ? .green : (currentApplication.eligibilityScore >= 50 ? .orange : .red)
                 )
 
                 Divider()
 
                 // Contact row
                 VStack(alignment: .leading, spacing: 5) {
-                    contactButton(icon: "phone.fill", label: application.phoneNumber, color: .green)
-                    contactButton(icon: "envelope.fill", label: application.email, color: .blue)
+                    contactButton(icon: "phone.fill", label: currentApplication.phoneNumber, color: .green)
+                    contactButton(icon: "envelope.fill", label: currentApplication.email, color: .blue)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -533,33 +574,33 @@ extension LoanReviewView {
             
             LOPremiumCard {
                 VStack(spacing: 2) {
-                    LODetailRow(icon: "doc.text.fill", title: "Loan Type", value: application.loanType)
+                    LODetailRow(icon: "doc.text.fill", title: "Loan Type", value: currentApplication.loanType)
                     LODetailRow(
                         icon: "indianrupeesign.circle",
                         title: "Requested Amount",
-                        value: AppFormatters.formatCurrency(application.loanAmount),
+                        value: AppFormatters.formatCurrency(currentApplication.loanAmount),
                         valueColor: .primary
                     )
                     LODetailRow(
                         icon: "calendar.badge.clock",
                         title: "EMI",
-                        value: AppFormatters.formatCurrency(application.emiAmount),
+                        value: AppFormatters.formatCurrency(currentApplication.emiAmount),
                         valueColor: .blue
                     )
                     LODetailRow(
                         icon: "percent",
                         title: "Interest Rate",
-                        value: String(format: "%.2f%%", application.interestRate)
+                        value: String(format: "%.2f%%", currentApplication.interestRate)
                     )
                     LODetailRow(
                         icon: "clock.fill",
                         title: "Tenure",
-                        value: "\(application.tenure) months"
+                        value: "\(currentApplication.tenure) months"
                     )
                     LODetailRow(
                         icon: "text.quote",
                         title: "Purpose",
-                        value: application.purpose
+                        value: currentApplication.purpose
                     )
                     
                     Divider()
@@ -575,8 +616,8 @@ extension LoanReviewView {
     }
     
     private var repaymentSummaryCard: some View {
-        let totalPayable = application.emiAmount * Double(application.tenure)
-        let totalInterest = totalPayable - application.loanAmount
+        let totalPayable = currentApplication.emiAmount * Double(currentApplication.tenure)
+        let totalInterest = totalPayable - currentApplication.loanAmount
         
         return VStack(spacing: 8) {
             HStack {
@@ -619,7 +660,7 @@ extension LoanReviewView {
         VStack(alignment: .leading, spacing: 12) {
             LOSectionHeader(
                 title: "Documents & KYC",
-                subtitle: "\(application.documents.filter { $0.status == .verified }.count)/\(application.documents.count) verified",
+                subtitle: "\(currentApplication.documents.filter { $0.status == .verified }.count)/\(currentApplication.documents.count) verified",
                 actionTitle: "Request New",
                 action: {
                     requestedDocumentName = ""
@@ -630,9 +671,20 @@ extension LoanReviewView {
             )
 
             LOPremiumCard {
-                VStack(spacing: 10) {
-                    ForEach(application.documents) { document in
-                        documentCard(document)
+                if currentApplication.documents.isEmpty {
+                    HStack {
+                        Spacer()
+                        Text("No documents uploaded yet.")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.secondary)
+                            .padding(.vertical, 8)
+                        Spacer()
+                    }
+                } else {
+                    VStack(spacing: 10) {
+                        ForEach(currentApplication.documents) { document in
+                            documentCard(document)
+                        }
                     }
                 }
             }
@@ -695,7 +747,7 @@ extension LoanReviewView {
             }
             .buttonStyle(.plain)
 
-            if document.id != application.documents.last?.id {
+            if document.id != currentApplication.documents.last?.id {
                 Divider()
             }
         }
@@ -912,7 +964,7 @@ extension LoanReviewView {
                 withAnimation {
                     highlightRemarks = true
                 }
-            } else if !application.canProceedToApproval {
+            } else if !currentApplication.canProceedToApproval {
                 showBlockerAlert = true
             } else {
                 viewModel.showApproveConfirmation = true
@@ -946,19 +998,19 @@ extension LoanReviewView {
             )
             
             LOPremiumCard {
-                if application.timeline.isEmpty {
+                if currentApplication.timeline.isEmpty {
                     Text("No timeline events logged yet.")
                         .font(.system(size: 14))
                         .foregroundStyle(.secondary)
                         .padding(.vertical, 8)
                 } else {
                     VStack(alignment: .leading, spacing: 0) {
-                        ForEach(0..<application.timeline.count, id: \.self) { index in
-                            let event = application.timeline[index]
+                        ForEach(0..<currentApplication.timeline.count, id: \.self) { index in
+                            let event = currentApplication.timeline[index]
                             TimelineRow(
                                 event: event,
                                 isFirst: index == 0,
-                                isLast: index == application.timeline.count - 1
+                                isLast: index == currentApplication.timeline.count - 1
                             )
                         }
                     }
@@ -1097,8 +1149,9 @@ extension LoanReviewView {
                 Spacer()
 
                 Button {
-                    if !escalationNotes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        viewModel.escalateApplication(application, remarks: escalationNotes)
+                    if !escalationNotes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                       let app = application {
+                        viewModel.escalateApplication(app, remarks: escalationNotes)
                         viewModel.showEscalateSheet = false
                         if !viewModel.navigationPath.isEmpty {
                             viewModel.navigationPath.removeLast()
@@ -1228,8 +1281,9 @@ extension LoanReviewView {
                 Spacer()
 
                 Button {
-                    if !requestedDocumentName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        viewModel.requestDocument(application, docName: requestedDocumentName, note: requestedDocumentNote)
+                    if !requestedDocumentName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                       let app = application {
+                        viewModel.requestDocument(app, docName: requestedDocumentName, note: requestedDocumentNote)
                         viewModel.showDocumentRequest = false
                     }
                 } label: {

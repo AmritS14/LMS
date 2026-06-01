@@ -16,10 +16,7 @@ struct ContentView: View {
                     case .fraudAlerts:
                         LoanReviewView()
                     case .messages:
-                        ChatView(
-                            conversation: SampleData.conversations[0]
-                        )
-                        .environment(AppViewModel())
+                        CommunicationsMainView()
                     case .notifications:
                         NotificationsTabView()
                     case .documents:

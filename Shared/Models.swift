@@ -202,6 +202,7 @@ struct LoanApplication: Identifiable, Codable, Sendable, Hashable {
     // Optional enriched fields populated by the backend's joined responses.
     var borrowerName: String? = nil
     var borrowerEmail: String? = nil
+    var borrowerPhone: String? = nil
     var productName: String? = nil
 }
 

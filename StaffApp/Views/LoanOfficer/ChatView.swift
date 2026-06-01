@@ -153,7 +153,15 @@ struct ChatView: View {
 #Preview {
 
     ChatView(
-        conversation: SampleData.conversations[0]
+        conversation: BorrowerConversation(
+            borrowerName: "Preview User",
+            borrowerInitials: "PU",
+            lastMessage: "",
+            lastMessageTime: Date(),
+            unreadCount: 0,
+            messages: [],
+            isOnline: false
+        )
     )
     .environment(AppViewModel())
 }

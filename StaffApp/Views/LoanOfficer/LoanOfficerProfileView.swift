@@ -110,7 +110,7 @@ struct PerformanceGridView: View {
                 // Total Approved
                 MetricCard(
                     title: "Total Approved",
-                    value: "\(viewModel.kpiData[1].value)",
+                    value: "\(viewModel.kpiData.count > 1 ? viewModel.kpiData[1].value : 0)",
                     icon: "checkmark.seal.fill",
                     color: .green,
                     subtitle: "Applications approved"
@@ -128,7 +128,7 @@ struct PerformanceGridView: View {
                 // Active Tasks
                 MetricCard(
                     title: "Pending Cases",
-                    value: "\(viewModel.kpiData[0].value)",
+                    value: "\(viewModel.kpiData.count > 0 ? viewModel.kpiData[0].value : 0)",
                     icon: "doc.plaintext.fill",
                     color: .orange,
                     subtitle: "Awaiting review"

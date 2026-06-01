@@ -6,14 +6,11 @@ struct OfficerTabView: View {
             Tab("Dashboard", systemImage: "rectangle.grid.2x2.fill") {
                 OfficerNavigationStack { DashboardView() }
             }
-            Tab("Queue", systemImage: "tray.full") {
+            Tab("Applications", systemImage: "tray.full.fill") {
                 OfficerNavigationStack { AllApplicationsView() }
             }
-            Tab("Documents", systemImage: "doc.richtext") {
-                OfficerNavigationStack { DocumentsView() }
-            }
-            Tab("Messages", systemImage: "bubble.left.and.bubble.right") {
-                OfficerNavigationStack { CommunicationsMainView() }
+            Tab("Recovery", systemImage: "arrow.clockwise.circle.fill") {
+                OfficerNavigationStack { RecoveryVerificationView() }
             }
         }
     }
@@ -47,8 +44,7 @@ struct OfficerNavigationStack<Root: View>: View {
         case .fraudAlerts:
             LoanReviewView()
         case .messages:
-            ChatView(conversation: SampleData.conversations[0])
-                .environment(viewModel)
+            CommunicationsMainView()
         case .notifications:
             NotificationsTabView()
         case .documents:
