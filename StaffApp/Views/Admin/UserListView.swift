@@ -96,6 +96,9 @@ struct UserListView: View {
                 .accessibilityLabel("Add staff user")
             }
         }
+        .sheet(isPresented: $showAddStaff) {
+            AddStaffSheet(viewModel: viewModel)
+        }
     }
 
     // MARK: - Sections
