@@ -355,7 +355,7 @@ struct ForeclosureSheet: View {
             VStack(spacing: Spacing.xs) {
                 Text("Loan Foreclosed Successfully")
                     .font(.title2.weight(.semibold))
-                Text("Your Home Loan outstanding balance is now ₹0.00 and status is settled.")
+                Text("Your \(loan.loanType.rawValue.capitalized) Loan outstanding balance is now ₹0.00 and status is settled.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

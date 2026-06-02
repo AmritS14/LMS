@@ -2,7 +2,7 @@ import Foundation
 
 protocol AuthService: Sendable {
     func signIn(email: String, password: String) async throws -> User
-    func signUp(email: String, password: String, fullName: String, phone: String) async throws
+    func signUp(email: String, password: String, fullName: String, phone: String, dob: Date) async throws
     func verifyEmailOTP(email: String, code: String) async throws -> User
     func requestOTP(identifier: String) async throws
     func verifyOTP(identifier: String, code: String) async throws -> User

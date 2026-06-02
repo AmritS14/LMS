@@ -10,6 +10,7 @@ struct RegisterView: View {
     @State private var phone = ""
     @State private var password = ""
     @State private var confirmPassword = ""
+    @State private var dateOfBirth = Calendar.current.date(byAdding: .year, value: -18, to: Date()) ?? Date()
 
     @State private var isSubmitting = false
     @State private var showSuccess = false
@@ -36,12 +37,18 @@ struct RegisterView: View {
         !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !phone.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         isPasswordValid &&
-        password == confirmPassword
+        password == confirmPassword &&
+        isAtLeast18
+    }
+
+    private var isAtLeast18: Bool {
+        let age = Calendar.current.dateComponents([.year], from: dateOfBirth, to: Date()).year ?? 0
+        return age >= 18
     }
 
     var body: some View {
         Form {
-            Section("Personal Details") {
+            Section {
                 TextField("Full Name", text: $fullName)
                     .textContentType(.name)
                     .textInputAutocapitalization(.words)
@@ -62,6 +69,16 @@ struct RegisterView: View {
                     .textContentType(.telephoneNumber)
                     .keyboardType(.phonePad)
                     .focused($focusedField, equals: .phone)
+
+                DatePicker("Date of Birth", selection: $dateOfBirth, displayedComponents: .date)
+                    .environment(\.locale, Locale(identifier: "en_IN"))
+            } header: {
+                Text("Personal Details")
+            } footer: {
+                Text("Important: Please ensure that your Full Name, Date of Birth, and Phone Number exactly match the details on your government-issued documents (Aadhaar Card and PAN Card). The same mobile number must be registered with your Aadhaar for proper KYC verification.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, Spacing.xs)
             }
 
             Section {
@@ -80,6 +97,14 @@ struct RegisterView: View {
                 Text("Password")
             } footer: {
                 passwordRequirements
+            }
+
+            if !isAtLeast18 {
+                Section {
+                    Label("You must be at least 18 years old to register.", systemImage: "xmark.circle.fill")
+                        .foregroundStyle(Color.lmsDanger)
+                        .font(.footnote)
+                }
             }
 
             if let errorMessage {
@@ -145,7 +170,8 @@ struct RegisterView: View {
                 authService: auth,
                 password: password,
                 fullName: fullName.trimmingCharacters(in: .whitespacesAndNewlines),
-                phone: phone.trimmingCharacters(in: .whitespacesAndNewlines)
+                phone: phone.trimmingCharacters(in: .whitespacesAndNewlines),
+                dob: dateOfBirth
             )
             isSubmitting = false
             if success {

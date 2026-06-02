@@ -76,7 +76,7 @@ struct BorrowerMessagingView: View {
 
     private func subtitle(for thread: MessageThread) -> String {
         if let app = application(for: thread) {
-            return "Application • \(app.status.rawValue.capitalized)"
+            return "Application • \(app.status.displayLabel)"
         }
         return "Customer care"
     }

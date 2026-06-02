@@ -43,8 +43,11 @@ actor MockAuthService: AuthService {
         return user
     }
 
-    func signUp(email: String, password: String, fullName: String, phone: String) async throws {
-        try await Task.sleep(for: .milliseconds(500))
+    func signUp(email: String, password: String, fullName: String, phone: String, dob: Date) async throws {
+        try await Task.sleep(for: .seconds(0.8))
+        if email.contains("fail") {
+            throw NSError(domain: "Auth", code: 400, userInfo: [NSLocalizedDescriptionKey: "Registration failed"])
+        }
     }
 
     func verifyEmailOTP(email: String, code: String) async throws -> User {

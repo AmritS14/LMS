@@ -1,3 +1,4 @@
+#if DEBUG
 import Foundation
 
 // Manager-only seed data. Reuses the shared `MockOfficerData` borrower roster
@@ -332,4 +333,4 @@ enum MockManagerData {
         )
     }
 }
-
+#endif

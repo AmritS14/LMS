@@ -82,26 +82,6 @@ struct LoanPolicyEditSheet: View {
                             in: 12...360, step: 12)
                 }
 
-                // MARK: Eligibility
-
-                Section("Eligibility Criteria") {
-                    Stepper("Min Credit Score: \(policy.minCreditScore)",
-                            value: $policy.minCreditScore,
-                            in: 500...800, step: 10)
-
-                    VStack(alignment: .leading, spacing: Spacing.s) {
-                        HStack {
-                            Text("Max DTI Ratio")
-                            Spacer()
-                            Text("\(String(format: "%.0f", policy.maxDTIRatio * 100))%")
-                                .font(.subheadline.weight(.semibold))
-                                .monospacedDigit()
-                        }
-                        Slider(value: $policy.maxDTIRatio, in: 0.2...0.8, step: 0.05)
-                            .tint(typeColor)
-                    }
-                }
-
                 // MARK: Status
 
                 Section {

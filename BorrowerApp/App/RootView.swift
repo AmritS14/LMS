@@ -3,6 +3,8 @@ import SwiftUI
 struct RootView: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.appEnvironment) private var env
+    
+    @State private var showUpdatePassword = false
 
     var body: some View {
         Group {
@@ -33,6 +35,16 @@ struct RootView: View {
                     }
                 }
             }
+        }
+        .onOpenURL { url in
+            if url.scheme == "lms" && url.host == "reset-password" {
+                showUpdatePassword = true
+            }
+        }
+        .sheet(isPresented: $showUpdatePassword) {
+            UpdatePasswordView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
     }
 }

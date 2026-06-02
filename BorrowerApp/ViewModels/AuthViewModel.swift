@@ -24,11 +24,11 @@ final class AuthViewModel {
         }
     }
 
-    func signUp(authService: any AuthService, password: String, fullName: String, phone: String) async -> Bool {
+    func signUp(authService: any AuthService, password: String, fullName: String, phone: String, dob: Date) async -> Bool {
         isBusy = true
         errorMessage = nil
         do {
-            try await authService.signUp(email: identifier, password: password, fullName: fullName, phone: phone)
+            try await authService.signUp(email: identifier, password: password, fullName: fullName, phone: phone, dob: dob)
             isBusy = false
             return true
         } catch {

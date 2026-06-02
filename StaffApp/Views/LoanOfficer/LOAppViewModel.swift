@@ -101,7 +101,7 @@ private extension Array {
 
     func configure(environment: AppEnvironment) {
         self.environment = environment
-        Task { await refreshFromService() }
+        Task { await refreshAll() }
     }
 
     func ensureThread(for application: LOLoanApplication) {
@@ -117,7 +117,7 @@ private extension Array {
         }
     }
 
-    private func refreshFromService() async {
+    func refreshAll() async {
         guard let environment else { return }
 
         if officerID == nil {
@@ -340,7 +340,7 @@ private extension Array {
             emiAmount: amount / Double(max(app.tenureMonths, 1)),
             phoneNumber: app.borrowerPhone ?? "—",
             email: app.borrowerEmail ?? "—",
-            address: "—",
+            address: [borrowerProfile?.address?.line1, borrowerProfile?.address?.city, borrowerProfile?.address?.state].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", "),
             purpose: "—",
             documents: loDocuments,
             timeline: timeline
@@ -510,6 +510,31 @@ private extension Array {
                 }
                 updateKPIs()
                 syncStatus(for: recentApplications[index], to: .rejected, note: remarks)
+            }
+        }
+    }
+
+    func sendBackApplication(_ app: LOLoanApplication, remarks: String = "") {
+        if let index = recentApplications.firstIndex(where: { $0.id == app.id }) {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                recentApplications[index].status = .underReview
+                
+                // Add timeline event
+                let event = TimelineEvent(
+                    title: "Sent Back to Borrower",
+                    description: "Requested additional info. Remarks: \(remarks.isEmpty ? "No remarks provided" : remarks)",
+                    timestamp: Date(),
+                    status: .underReview,
+                    officerName: officerProfile.name
+                )
+                recentApplications[index].timeline.insert(event, at: 0)
+                
+                // Update selection
+                if selectedApplication?.id == app.id {
+                    selectedApplication = recentApplications[index]
+                }
+                
+                syncStatus(for: recentApplications[index], to: .additionalInfoRequired, note: remarks)
             }
         }
     }

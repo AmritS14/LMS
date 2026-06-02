@@ -10,6 +10,7 @@ struct BorrowerProfileView: View {
     @State private var isCheckingCreditScore = false
     @State private var creditScoreLastChecked: Date?
     @State private var showCreditCheckSheet = false
+    @State private var showEmploymentSheet = false
 
     private var kycStatusText: String {
         switch session.borrowerProfile?.kycStatus {
@@ -41,6 +42,29 @@ struct BorrowerProfileView: View {
                         value: session.currentUser?.phone ?? "—")
             }
 
+            // Employment & Income
+            Section {
+                Button {
+                    showEmploymentSheet = true
+                } label: {
+                    HStack {
+                        iconBadge(icon: "briefcase.fill", color: .purple)
+                        Text("Employment Details")
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        if let type = session.borrowerProfile?.employmentType, let income = session.borrowerProfile?.monthlyIncome {
+                            Text("\(type.rawValue.capitalized) • \(Formatting.currency(income))")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("Setup")
+                                .font(.subheadline)
+                                .foregroundStyle(Color.accentColor)
+                        }
+                    }
+                }
+            }
+
             // Credit Score
             Section {
                 creditScoreRow
@@ -57,14 +81,25 @@ struct BorrowerProfileView: View {
             // Verification
             Section("Verification") {
                 NavigationLink {
-                    KYCView()
+                    AadhaarKYCView()
                 } label: {
                     let isVerified = session.borrowerProfile?.kycStatus == .verified
                     iconLabelRow(
-                        icon: isVerified ? "checkmark.seal.fill" : "exclamationmark.triangle.fill",
-                        iconColor: isVerified ? .teal : .orange,
-                        title: "KYC Status",
-                        detail: kycStatusText
+                        icon: isVerified ? "checkmark.seal.fill" : "person.text.rectangle.fill",
+                        iconColor: isVerified ? .teal : .blue,
+                        title: "Official Aadhaar KYC",
+                        detail: isVerified ? "Verified via UIDAI" : "Required for Loan Approval"
+                    )
+                }
+                
+                NavigationLink {
+                    KYCView()
+                } label: {
+                    iconLabelRow(
+                        icon: "testtube.2",
+                        iconColor: .purple,
+                        title: "Mock KYC Simulator",
+                        detail: "Testing purposes only"
                     )
                 }
             }
@@ -122,6 +157,15 @@ struct BorrowerProfileView: View {
             )
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showEmploymentSheet) {
+            if let env {
+                EmploymentDetailsSheet(env: env) {
+                    Task { await loadData() }
+                }
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+            }
         }
     }
 
@@ -458,7 +502,7 @@ struct CreditCheckSheet: View {
                                 let score = try await verifyPANAndFetchScore(pan: trimmed)
                                 isChecking = false
                                 
-                                // Save score to session
+                                // Save score to backend and update session
                                 var updatedProfile = session.borrowerProfile ?? BorrowerProfile(
                                     id: session.currentUser?.id ?? UUID(),
                                     dateOfBirth: Date()
@@ -466,8 +510,10 @@ struct CreditCheckSheet: View {
                                 updatedProfile.creditScore = score
                                 updatedProfile.panNumber = trimmed
                                 
-                                // Commits directly to live Supabase!
-                                try await env?.auth.saveBorrowerProfile(updatedProfile)
+                                if let env {
+                                    try await env.auth.saveBorrowerProfile(updatedProfile)
+                                }
+                                
                                 session.borrowerProfile = updatedProfile
                                 
                                 creditScoreLastChecked = .now
@@ -499,5 +545,99 @@ struct CreditCheckSheet: View {
     private func verifyPANAndFetchScore(pan: String) async throws -> Int {
         try await Task.sleep(for: .seconds(2.0)) // Simulating bureau fetch latency
         return Int.random(in: 710...820) // Return a high quality mock score
+    }
+}
+
+struct EmploymentDetailsSheet: View {
+    let env: AppEnvironment
+    var onSaved: () -> Void
+
+    @Environment(SessionStore.self) private var session
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var employmentType: EmploymentType = .salaried
+    @State private var monthlyIncomeText: String = ""
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                if let errorMessage {
+                    Section {
+                        Text(errorMessage)
+                            .foregroundStyle(Color.lmsDanger)
+                            .font(.subheadline)
+                    }
+                }
+
+                Section("Employment Type") {
+                    Picker("Type", selection: $employmentType) {
+                        ForEach(EmploymentType.allCases, id: \.self) { type in
+                            Text(type.rawValue.capitalized).tag(type)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+
+                Section("Monthly Income") {
+                    TextField("e.g. 50000", text: $monthlyIncomeText)
+                        .keyboardType(.numberPad)
+                }
+            }
+            .navigationTitle("Employment")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    if isSaving {
+                        ProgressView()
+                    } else {
+                        Button("Save") {
+                            save()
+                        }
+                        .disabled(monthlyIncomeText.isEmpty)
+                    }
+                }
+            }
+            .onAppear {
+                if let type = session.borrowerProfile?.employmentType {
+                    employmentType = type
+                }
+                if let income = session.borrowerProfile?.monthlyIncome {
+                    monthlyIncomeText = "\(income)"
+                }
+            }
+        }
+    }
+
+    private func save() {
+        guard let amount = Decimal(string: monthlyIncomeText) else {
+            errorMessage = "Please enter a valid monthly income."
+            return
+        }
+
+        Task {
+            isSaving = true
+            do {
+                var profile = session.borrowerProfile ?? BorrowerProfile(
+                    id: session.currentUser?.id ?? UUID(),
+                    dateOfBirth: Date()
+                )
+                profile.employmentType = employmentType
+                profile.monthlyIncome = amount
+
+                try await env.auth.saveBorrowerProfile(profile)
+                session.borrowerProfile = profile
+                
+                onSaved()
+                dismiss()
+            } catch {
+                errorMessage = error.localizedDescription
+                isSaving = false
+            }
+        }
     }
 }

@@ -155,6 +155,9 @@ struct LoanReviewView: View {
             }
             .alert("Send Back for Revision", isPresented: $showSendBackAlert) {
                 Button("Send Back") {
+                    if let app = application {
+                        viewModel.sendBackApplication(app, remarks: "Application sent back for revision.")
+                    }
                     if !viewModel.navigationPath.isEmpty {
                         viewModel.navigationPath.removeLast()
                     }
@@ -537,7 +540,11 @@ extension LoanReviewView {
 
     private func contactButton(icon: String, label: String, color: Color) -> some View {
         Button {
-            // Tap action
+            if icon == "phone.fill", let url = URL(string: "tel://\(label.filter(\.isNumber))") {
+                UIApplication.shared.open(url)
+            } else if icon == "envelope.fill", let url = URL(string: "mailto:\(label)") {
+                UIApplication.shared.open(url)
+            }
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: icon)

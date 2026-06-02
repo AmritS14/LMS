@@ -45,12 +45,15 @@ struct KYCView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if session.borrowerProfile?.kycStatus == .verified {
-                // If already verified, show a mock success screen
+                let formatter = DateFormatter()
+                formatter.dateStyle = .medium
+                let dobStr = session.borrowerProfile != nil ? formatter.string(from: session.borrowerProfile!.dateOfBirth) : "Data not provided"
+                let addressStr = [session.borrowerProfile?.address?.line1, session.borrowerProfile?.address?.line2, session.borrowerProfile?.address?.city, session.borrowerProfile?.address?.state].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", ")
                 let result = AadhaarKYCResult(
                     fullName: session.currentUser?.fullName ?? "Naman Gupta",
-                    dob: "15/08/1998",
-                    gender: "Male",
-                    address: "402, Signature Towers, Sector 30, Gurugram, Haryana - 122001",
+                    dob: dobStr,
+                    gender: "Not provided",
+                    address: addressStr.isEmpty ? "Address not provided" : addressStr,
                     maskedAadhaar: "XXXX XXXX " + (session.borrowerProfile?.aadhaarLast4 ?? "1234")
                 )
                 currentStep = .success(result)
@@ -273,6 +276,16 @@ struct KYCView: View {
                                 updatedProfile.kycStatus = .verified
                                 updatedProfile.aadhaarLast4 = String(aadhaarNumber.suffix(4))
                                 
+                                // Auto-populate address from Aadhaar
+                                updatedProfile.address = PostalAddress(
+                                    line1: result.address,
+                                    line2: nil,
+                                    city: "Bengaluru", // Mocked for now; real Aadhaar would have discrete fields
+                                    state: "Karnataka",
+                                    pinCode: 560001,
+                                    country: "India"
+                                )
+                                
                                 try await env?.auth.saveBorrowerProfile(updatedProfile)
                                 session.borrowerProfile = updatedProfile
                                 
@@ -418,11 +431,15 @@ struct KYCView: View {
         try await Task.sleep(for: .seconds(1.5)) // Simulating network latency
         
         if otp == "123456" || otp.count == 6 {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .medium
+            let dobStr = session.borrowerProfile != nil ? formatter.string(from: session.borrowerProfile!.dateOfBirth) : "Data not provided"
+            let addressStr = [session.borrowerProfile?.address?.line1, session.borrowerProfile?.address?.line2, session.borrowerProfile?.address?.city, session.borrowerProfile?.address?.state].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", ")
             return AadhaarKYCResult(
                 fullName: session.currentUser?.fullName ?? "Naman Gupta",
-                dob: "15/08/1998",
-                gender: "Male",
-                address: "402, Signature Towers, Sector 30, Gurugram, Haryana - 122001",
+                dob: dobStr,
+                gender: "Not provided",
+                address: addressStr.isEmpty ? "Address not provided" : addressStr,
                 maskedAadhaar: "XXXX XXXX " + String(aadhaarNumber.suffix(4))
             )
         } else {

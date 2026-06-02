@@ -1137,6 +1137,11 @@ final class ManagerStore {
         }
     }
 
+    func fetchDocuments(for applicationID: UUID) async throws -> [LoanDocument] {
+        guard let environment else { return [] }
+        return try await environment.documents.documents(forApplication: applicationID)
+    }
+
 #if DEBUG
     static var preview: ManagerStore {
         let store = ManagerStore()
