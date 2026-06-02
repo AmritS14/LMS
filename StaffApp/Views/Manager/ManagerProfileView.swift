@@ -3,6 +3,7 @@ import SwiftUI
 struct ManagerProfileView: View {
     @Environment(ManagerStore.self) private var managerStore
     @Environment(SessionStore.self) private var session
+    @Environment(\.appEnvironment) private var env
 
     @State private var notificationsEnabled = true
     @State private var emailAlerts = true
@@ -141,7 +142,11 @@ struct ManagerProfileView: View {
         .confirmationDialog("Sign Out", isPresented: $showLogoutConfirmation,
                             titleVisibility: .visible) {
             Button("Sign Out", role: .destructive) {
-                // TODO: AuthService.signOut
+                Task {
+                    try? await env.auth.signOut()
+                    session.currentUser = nil
+                    session.staffProfile = nil
+                }
             }
             Button("Cancel", role: .cancel) {}
         } message: {

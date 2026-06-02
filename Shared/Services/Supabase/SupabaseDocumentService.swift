@@ -3,7 +3,7 @@ import Supabase
 
 actor SupabaseDocumentService: DocumentService {
     private let client: SupabaseClient
-    private let apiBase = "http://localhost:3000"
+    private let apiBase = "https://arshitsinghal-lms-backend-new.hf.space"
     
     init(client: SupabaseClient = SupabaseManager.shared.client) {
         self.client = client

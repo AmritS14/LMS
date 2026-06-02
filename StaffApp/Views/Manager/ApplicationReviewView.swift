@@ -319,33 +319,53 @@ struct ApplicationReviewView: View {
 
     // MARK: Action bar
 
+    @ViewBuilder
     private func actionBar(_ app: ManagerApplication) -> some View {
-        VStack(spacing: Spacing.s) {
-            HStack(spacing: Spacing.s) {
-                Button(role: .destructive) { activeSheet = .reject } label: {
-                    Label("Reject", systemImage: "slash.circle").frame(maxWidth: .infinity)
+        if app.status == .disbursed || app.status == .rejected || app.status == .closed {
+            EmptyView()
+        } else if app.status == .approved {
+            VStack(spacing: Spacing.s) {
+                Button {
+                    store.disburseLoan(application: app)
+                    dismiss()
+                } label: {
+                    Label("Disburse Loan", systemImage: "banknote.fill")
+                        .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
-                .tint(.red)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .tint(.blue)
+            }
+            .padding(Spacing.m)
+            .background(.bar)
+        } else {
+            VStack(spacing: Spacing.s) {
+                HStack(spacing: Spacing.s) {
+                    Button(role: .destructive) { activeSheet = .reject } label: {
+                        Label("Reject", systemImage: "slash.circle").frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.red)
 
-                Button { activeSheet = .sendBack } label: {
-                    Label("Send Back", systemImage: "arrow.uturn.backward").frame(maxWidth: .infinity)
+                    Button { activeSheet = .sendBack } label: {
+                        Label("Send Back", systemImage: "arrow.uturn.backward").frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.orange)
                 }
-                .buttonStyle(.bordered)
-                .tint(.orange)
-            }
-            .controlSize(.large)
+                .controlSize(.large)
 
-            Button { activeSheet = .approve } label: {
-                Label("Approve", systemImage: "checkmark.seal.fill")
-                    .frame(maxWidth: .infinity)
+                Button { activeSheet = .approve } label: {
+                    Label("Approve", systemImage: "checkmark.seal.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .tint(.green)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .tint(.green)
+            .padding(Spacing.m)
+            .background(.bar)
         }
-        .padding(Spacing.m)
-        .background(.bar)
     }
 
     @ViewBuilder

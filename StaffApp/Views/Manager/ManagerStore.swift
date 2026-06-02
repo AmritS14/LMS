@@ -916,6 +916,42 @@ final class ManagerStore {
         }
     }
 
+    func disburseLoan(application: ManagerApplication) {
+        guard let idx = applications.firstIndex(where: { $0.id == application.id }) else { return }
+        let existing = applications[idx]
+        var updatedApp = existing.base.application
+        updatedApp.status = .disbursed
+        updatedApp.updatedAt = .now
+
+        let rebased = OfficerApplication(
+            application: updatedApp,
+            borrower: existing.base.borrower,
+            profile: existing.base.profile,
+            employer: existing.base.employer,
+            existingLiabilities: existing.base.existingLiabilities,
+            purpose: existing.base.purpose,
+            fraudFlag: existing.base.fraudFlag
+        )
+        applications[idx] = ManagerApplication(
+            base: rebased, officerName: existing.officerName,
+            recommendation: existing.recommendation, evaluationNote: existing.evaluationNote
+        )
+
+        auditLogs.insert(
+            ManagerAuditLogEntry(
+                loanReferenceCode: existing.referenceCode, action: "Disbursed",
+                managerName: currentUserName, timestamp: .now, status: .completed
+            ),
+            at: 0
+        )
+
+        if let environment {
+            Task {
+                try? await environment.loans.disburseLoan(applicationID: updatedApp.id)
+            }
+        }
+    }
+
     // MARK: Mutations — Notifications
 
     func markAllNotificationsRead() {
