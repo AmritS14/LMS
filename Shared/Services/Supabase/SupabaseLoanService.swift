@@ -187,7 +187,7 @@ actor SupabaseLoanService: LoanService {
         let response = try await client
             .from("loan_products")
             .select()
-            .eq("is_active", value: true)
+            .order("name", ascending: true)
             .execute()
         
         let dbProducts = try SupabaseManager.shared.decoder.decode([DBLoanProduct].self, from: response.data)
@@ -351,7 +351,8 @@ actor SupabaseLoanService: LoanService {
     }
 
     func updateStatus(applicationID: UUID, to status: ApplicationStatus, note: String?) async throws {
-        // Route through specific workflow endpoints based on target status
+        // Route through specific workflow endpoints based on target status.
+        // The backend state machine (application-workflow.ts) defines valid transitions.
         switch status {
         case .underReview:
             try await startReview(applicationID: applicationID)
@@ -361,6 +362,13 @@ actor SupabaseLoanService: LoanService {
             try await rejectApplication(applicationID: applicationID, remark: note)
         case .escalated:
             try await sendToManager(applicationID: applicationID, remark: note)
+        case .additionalInfoRequired:
+            // "Send Back" is not a direct backend transition from manager_review.
+            // The backend workflow only allows manager_review → approved | rejected.
+            // We map Send Back to a rejection with a [RETURNED] prefix so the officer
+            // knows the application was sent back for revision, not permanently rejected.
+            let returnedRemark = "[RETURNED TO OFFICER] " + (note ?? "Please address the issues and resubmit.")
+            try await rejectApplication(applicationID: applicationID, remark: returnedRemark)
         default:
             throw NSError(domain: "LoanService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Use specific workflow actions for status transitions"])
         }

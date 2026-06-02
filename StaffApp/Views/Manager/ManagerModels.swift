@@ -387,7 +387,7 @@ enum RiskAlertSeverity: String, CaseIterable, Hashable {
 // MARK: - Loan policies
 
 struct LoanPolicyConfig: Identifiable, Hashable {
-    let id = UUID()
+    var id: UUID
     var loanType: LoanType
     var interestRateMin: Double
     var interestRateMax: Double

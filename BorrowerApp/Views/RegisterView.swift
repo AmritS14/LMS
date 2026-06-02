@@ -2,6 +2,8 @@ import SwiftUI
 
 struct RegisterView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(SessionStore.self) private var session
+    @Environment(\.appEnvironment) private var env
 
     @State private var fullName = ""
     @State private var email = ""
@@ -12,6 +14,8 @@ struct RegisterView: View {
     @State private var isSubmitting = false
     @State private var showSuccess = false
     @State private var errorMessage: String?
+    @State private var navigateToOTP = false
+    @State private var viewModel = AuthViewModel()
 
     @FocusState private var focusedField: Field?
 
@@ -96,12 +100,11 @@ struct RegisterView: View {
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Create Account")
         .navigationBarTitleDisplayMode(.inline)
-        .alert("Account Created", isPresented: $showSuccess) {
-            Button("Sign In") { dismiss() }
-        } message: {
-            Text("Your account has been created. Please sign in with your credentials.")
+        .navigationDestination(isPresented: $navigateToOTP) {
+            OTPVerificationView(viewModel: viewModel)
         }
     }
+
 
     // MARK: - Password Requirements
     private var passwordRequirements: some View {
@@ -128,13 +131,29 @@ struct RegisterView: View {
                 : "Please fill in all fields correctly."
             return
         }
+        guard let auth = env?.auth else {
+            errorMessage = "App is not configured. Please try again."
+            return
+        }
         errorMessage = nil
         isSubmitting = true
         focusedField = nil
+        // Set the identifier on the shared view model so OTPVerificationView can use it
+        viewModel.identifier = email.trimmingCharacters(in: .whitespacesAndNewlines)
         Task {
-            try? await Task.sleep(for: .milliseconds(800))
+            let success = await viewModel.signUp(
+                authService: auth,
+                password: password,
+                fullName: fullName.trimmingCharacters(in: .whitespacesAndNewlines),
+                phone: phone.trimmingCharacters(in: .whitespacesAndNewlines)
+            )
             isSubmitting = false
-            showSuccess = true
+            if success {
+                // Navigate to OTP verification screen
+                navigateToOTP = true
+            } else {
+                errorMessage = viewModel.errorMessage ?? "Registration failed. Please try again."
+            }
         }
     }
 }

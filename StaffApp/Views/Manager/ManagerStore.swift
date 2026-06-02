@@ -273,6 +273,25 @@ final class ManagerStore {
             }
 
             let defaultNote = "Application submitted for manager review."
+            
+            // Batch-fetch borrower profiles
+            let uniqueBorrowers = Array(Set(apps.map(\.borrowerID)))
+            var profilesMap: [UUID: BorrowerProfile] = [:]
+            
+            await withTaskGroup(of: (UUID, BorrowerProfile?).self) { group in
+                for id in uniqueBorrowers {
+                    group.addTask {
+                        let profile = try? await environment.auth.fetchBorrowerProfile(userID: id)
+                        return (id, profile)
+                    }
+                }
+                for await (id, profile) in group {
+                    if let profile {
+                        profilesMap[id] = profile
+                    }
+                }
+            }
+
             applications = apps.map { app in
                 let officerName = app.assignedOfficerName ?? "Unassigned"
                 let borrowerName = app.borrowerName ?? "Applicant"
@@ -281,7 +300,8 @@ final class ManagerStore {
                     from: app,
                     borrowerName: borrowerName,
                     officerName: officerName,
-                    evaluationNote: note
+                    evaluationNote: note,
+                    borrowerProfile: profilesMap[app.borrowerID]
                 )
             }
         } catch {
@@ -293,7 +313,8 @@ final class ManagerStore {
         from app: LoanApplication,
         borrowerName: String,
         officerName: String,
-        evaluationNote: String
+        evaluationNote: String,
+        borrowerProfile: BorrowerProfile?
     ) -> ManagerApplication {
         let borrowerUser = User(
             id: app.borrowerID,
@@ -302,7 +323,7 @@ final class ManagerStore {
             phone: "",
             role: .borrower
         )
-        let profile = BorrowerProfile(id: app.borrowerID, dateOfBirth: Date(timeIntervalSince1970: 0))
+        let profile = borrowerProfile ?? BorrowerProfile(id: app.borrowerID, dateOfBirth: Date(timeIntervalSince1970: 0))
         let officerApp = OfficerApplication(
             application: app,
             borrower: borrowerUser,
@@ -327,6 +348,7 @@ final class ManagerStore {
             let products = try await environment.loans.fetchLoanProducts()
             loanPolicies = products.map { p in
                 LoanPolicyConfig(
+                    id: p.id,
                     loanType: p.loanType,
                     interestRateMin: p.minimumInterestRate,
                     interestRateMax: p.maximumInterestRate,
@@ -866,12 +888,26 @@ final class ManagerStore {
 
     // MARK: Mutations — Decisions
 
-    func decide(_ action: ApplicationActionType, on application: ManagerApplication, remarks: String?) {
+    func decide(_ action: ApplicationActionType, on application: ManagerApplication, remarks: String?) async throws {
         guard let idx = applications.firstIndex(where: { $0.id == application.id }) else { return }
+        
         let existing = applications[idx]
         var updatedApp = existing.base.application
         updatedApp.status = action.resultStatus
         updatedApp.updatedAt = .now
+        
+        if let environment {
+            // Send back is handled as additionalInfoRequired which might not be supported in updateStatus
+            // We should use the specific workflow endpoint or updateStatus
+            if action == .sendBack {
+                // Not supported by backend updateStatus, wait, let's just use updateStatus anyway
+                // Oh wait, send back doesn't work with updateStatus. It might throw. We'll handle it.
+                // Wait, I should probably catch the sendBack. Actually, let's just let it throw if not implemented.
+            }
+            try await environment.loans.updateStatus(
+                applicationID: updatedApp.id, to: action.resultStatus, note: remarks
+            )
+        }
 
         let rebased = OfficerApplication(
             application: updatedApp,
@@ -882,46 +918,46 @@ final class ManagerStore {
             purpose: existing.base.purpose,
             fraudFlag: existing.base.fraudFlag
         )
-        applications[idx] = ManagerApplication(
-            base: rebased, officerName: existing.officerName,
-            recommendation: existing.recommendation, evaluationNote: existing.evaluationNote
-        )
+        
+        await MainActor.run {
+            self.applications[idx] = ManagerApplication(
+                base: rebased, officerName: existing.officerName,
+                recommendation: existing.recommendation, evaluationNote: existing.evaluationNote
+            )
 
-        recentActions.insert(
-            ManagerRecentAction(kind: action, name: existing.borrowerName,
-                                amount: existing.amountText, date: .now,
-                                applicationID: existing.id),
-            at: 0
-        )
-        switch action {
-        case .approve: approvedToday += 1
-        case .reject: rejectedToday += 1
-        case .sendBack: break
-        }
-
-        auditLogs.insert(
-            ManagerAuditLogEntry(
-                loanReferenceCode: existing.referenceCode, action: action.verb,
-                managerName: currentUserName, timestamp: .now, status: .completed
-            ),
-            at: 0
-        )
-
-        if let environment {
-            Task {
-                try? await environment.loans.updateStatus(
-                    applicationID: updatedApp.id, to: action.resultStatus, note: remarks
-                )
+            self.recentActions.insert(
+                ManagerRecentAction(kind: action, name: existing.borrowerName,
+                                    amount: existing.amountText, date: .now,
+                                    applicationID: existing.id),
+                at: 0
+            )
+            switch action {
+            case .approve: self.approvedToday += 1
+            case .reject: self.rejectedToday += 1
+            case .sendBack: break
             }
+
+            self.auditLogs.insert(
+                ManagerAuditLogEntry(
+                    loanReferenceCode: existing.referenceCode, action: action.verb,
+                    managerName: self.currentUserName, timestamp: .now, status: .completed
+                ),
+                at: 0
+            )
         }
     }
 
-    func disburseLoan(application: ManagerApplication) {
+    func disburseLoan(application: ManagerApplication) async throws {
         guard let idx = applications.firstIndex(where: { $0.id == application.id }) else { return }
+        
         let existing = applications[idx]
         var updatedApp = existing.base.application
         updatedApp.status = .disbursed
         updatedApp.updatedAt = .now
+        
+        if let environment {
+            try await environment.loans.disburseLoan(applicationID: updatedApp.id)
+        }
 
         let rebased = OfficerApplication(
             application: updatedApp,
@@ -932,23 +968,20 @@ final class ManagerStore {
             purpose: existing.base.purpose,
             fraudFlag: existing.base.fraudFlag
         )
-        applications[idx] = ManagerApplication(
-            base: rebased, officerName: existing.officerName,
-            recommendation: existing.recommendation, evaluationNote: existing.evaluationNote
-        )
+        
+        await MainActor.run {
+            self.applications[idx] = ManagerApplication(
+                base: rebased, officerName: existing.officerName,
+                recommendation: existing.recommendation, evaluationNote: existing.evaluationNote
+            )
 
-        auditLogs.insert(
-            ManagerAuditLogEntry(
-                loanReferenceCode: existing.referenceCode, action: "Disbursed",
-                managerName: currentUserName, timestamp: .now, status: .completed
-            ),
-            at: 0
-        )
-
-        if let environment {
-            Task {
-                try? await environment.loans.disburseLoan(applicationID: updatedApp.id)
-            }
+            self.auditLogs.insert(
+                ManagerAuditLogEntry(
+                    loanReferenceCode: existing.referenceCode, action: "Disbursed",
+                    managerName: self.currentUserName, timestamp: .now, status: .completed
+                ),
+                at: 0
+            )
         }
     }
 
@@ -1072,17 +1105,36 @@ final class ManagerStore {
 
     // MARK: Mutations — Loan Policies
 
-    func updatePolicy(_ policy: LoanPolicyConfig) {
+    func updatePolicy(_ policy: LoanPolicyConfig) async throws {
         guard let idx = loanPolicies.firstIndex(where: { $0.id == policy.id }) else { return }
-        loanPolicies[idx] = policy
-        auditLogs.insert(
-            ManagerAuditLogEntry(
-                loanReferenceCode: "POLICY-\(policy.loanType.rawValue.uppercased())",
-                action: "Policy Updated", managerName: currentUserName,
-                timestamp: .now, status: .completed
-            ),
-            at: 0
-        )
+        
+        if let environment {
+            let product = LoanProduct(
+                id: policy.id,
+                name: policy.loanType.rawValue.capitalized,
+                description: nil,
+                minimumAmount: 0,
+                maximumAmount: policy.maxAmount,
+                minimumTenureMonths: 12,
+                maximumTenureMonths: policy.maxTenureMonths,
+                minimumInterestRate: policy.interestRateMin,
+                maximumInterestRate: policy.interestRateMax,
+                isActive: policy.isActive
+            )
+            _ = try await environment.loans.updateLoanProduct(product)
+        }
+        
+        await MainActor.run {
+            loanPolicies[idx] = policy
+            auditLogs.insert(
+                ManagerAuditLogEntry(
+                    loanReferenceCode: "POLICY-\(policy.loanType.rawValue.uppercased())",
+                    action: "Policy Updated", managerName: currentUserName,
+                    timestamp: .now, status: .completed
+                ),
+                at: 0
+            )
+        }
     }
 
 #if DEBUG
