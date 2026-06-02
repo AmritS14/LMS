@@ -36,16 +36,13 @@ actor SupabaseAuthService: AuthService {
     }
     
     func requestOTP(identifier: String) async throws {
-        try await client.auth.signInWithOTP(email: identifier)
+        // Not used in email/password flow
+        throw NSError(domain: "Auth", code: 501, userInfo: [NSLocalizedDescriptionKey: "Use email/password sign-in instead."])
     }
-
+    
     func verifyOTP(identifier: String, code: String) async throws -> User {
-        let session = try await client.auth.verifyOTP(
-            email: identifier,
-            token: code,
-            type: .magiclink
-        )
-        return try await mapSupabaseUserToLocalUser(session.user)
+        // Not used in email/password flow
+        throw NSError(domain: "Auth", code: 501, userInfo: [NSLocalizedDescriptionKey: "Use verifyEmailOTP instead."])
     }
     
     func signInWithPasskey() async throws -> User {
