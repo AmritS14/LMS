@@ -839,7 +839,18 @@ enum AppDestination: Hashable {
     case chat(BorrowerConversation)
 }
 
+struct SampleRecoveryData {
+    static let overdueBorrowers: [OverdueBorrower] = [
+        OverdueBorrower(borrowerName: "Rahul Verma", borrowerInitials: "RV", loanId: "LN-2024-0847", dpdDays: 45, outstandingEMI: 34500, totalOutstanding: 892000, priority: .urgent, lastContactDate: Calendar.current.date(byAdding: .day, value: -5, to: Date()), phoneNumber: "+91 98765 11111", collectionEfficiency: 42.0, contactAttempts: 7),
+        OverdueBorrower(borrowerName: "Anita Deshmukh", borrowerInitials: "AD", loanId: "LN-2024-1023", dpdDays: 30, outstandingEMI: 21800, totalOutstanding: 456000, priority: .high, lastContactDate: Calendar.current.date(byAdding: .day, value: -2, to: Date()), phoneNumber: "+91 87654 22222", collectionEfficiency: 58.0, contactAttempts: 4),
+        OverdueBorrower(borrowerName: "Suresh Gupta", borrowerInitials: "SG", loanId: "LN-2024-0562", dpdDays: 15, outstandingEMI: 15600, totalOutstanding: 234000, priority: .normal, lastContactDate: Calendar.current.date(byAdding: .day, value: -1, to: Date()), phoneNumber: "+91 76543 33333", collectionEfficiency: 72.0, contactAttempts: 2),
+        OverdueBorrower(borrowerName: "Kavita Joshi", borrowerInitials: "KJ", loanId: "LN-2024-0991", dpdDays: 60, outstandingEMI: 45200, totalOutstanding: 1230000, priority: .urgent, lastContactDate: Calendar.current.date(byAdding: .day, value: -10, to: Date()), phoneNumber: "+91 65432 44444", collectionEfficiency: 28.0, contactAttempts: 12),
+        OverdueBorrower(borrowerName: "Deepak Malhotra", borrowerInitials: "DM", loanId: "LN-2024-1105", dpdDays: 7, outstandingEMI: 18900, totalOutstanding: 567000, priority: .low, lastContactDate: nil, phoneNumber: "+91 54321 55555", collectionEfficiency: 85.0, contactAttempts: 0)
+    ]
+}
+
 // MARK: - Formatters
+
 
 struct AppFormatters {
     static let currencyFormatter: NumberFormatter = {

@@ -37,7 +37,7 @@ import Combine
     var recentApplications: [LOLoanApplication] = []
     var activityFeed: [ActivityItem] = []
     var notifications: [AppNotification] = []
-    var overdueBorrowers: [OverdueBorrower] = []
+    var overdueBorrowers: [OverdueBorrower] = SampleRecoveryData.overdueBorrowers
     //var fieldVisits: [FieldVisit] = []
     var conversations: [BorrowerConversation] = []
     var digitalDocuments: [DigitalDocument] = []
@@ -196,7 +196,7 @@ import Combine
                     }
                 }
             }
-            self.overdueBorrowers = overdue
+            self.overdueBorrowers = overdue.isEmpty ? SampleRecoveryData.overdueBorrowers : overdue
 
             // Fetch User/Profile & Conversations
             if let user = await environment.auth.currentUser {
@@ -446,7 +446,7 @@ import Combine
             KPIData(title: "Pending\nApplications", value: pendingCount, trend: 12.3, trendUp: true, icon: "doc.text.fill", color: .orange, chartData: [0.3, 0.5, 0.4, 0.7, 0.6, 0.8, 0.75]),
             KPIData(title: "Approved\nLoans", value: approvedCount, trend: 8.7, trendUp: true, icon: "checkmark.circle.fill", color: .green, chartData: [0.4, 0.5, 0.55, 0.6, 0.65, 0.7, 0.8]),
             KPIData(title: "Escalated\nCases", value: escalatedCount, trend: -3.2, trendUp: false, icon: "arrow.up.circle.fill", color: .purple, chartData: [0.6, 0.7, 0.5, 0.4, 0.45, 0.35, 0.3]),
-            KPIData(title: "Overdue\nBorrowers", value: 19, trend: -5.1, trendUp: false, icon: "person.crop.circle.badge.exclamationmark.fill", color: Color(red: 0.8, green: 0.4, blue: 0), chartData: [0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4])
+            KPIData(title: "Overdue\nBorrowers", value: overdueBorrowers.count, trend: -5.1, trendUp: false, icon: "person.crop.circle.badge.exclamationmark.fill", color: Color(red: 0.8, green: 0.4, blue: 0), chartData: [0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4])
         ]
     }
 

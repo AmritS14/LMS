@@ -6,10 +6,10 @@ struct OfficerTabView: View {
             Tab("Dashboard", systemImage: "rectangle.grid.2x2.fill") {
                 OfficerNavigationStack { DashboardView() }
             }
-            Tab("Applications", systemImage: "tray.full.fill") {
+            Tab("Applications", systemImage: "doc.on.doc.fill") {
                 OfficerNavigationStack { AllApplicationsView() }
             }
-            Tab("Recovery", systemImage: "arrow.clockwise.circle.fill") {
+            Tab("Recovery", systemImage: "indianrupeesign.circle.fill") {
                 OfficerNavigationStack { RecoveryVerificationView() }
             }
         }

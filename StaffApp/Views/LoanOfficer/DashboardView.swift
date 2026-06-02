@@ -127,8 +127,8 @@ struct KPIOverviewSection: View {
         VStack(alignment: .leading) {
 
             LOSectionHeader(
-                title: "Today's Activity",
-                subtitle: "Daily metrics overview"
+                title: "Performance Overview",
+                subtitle: "Portfolio metrics summary"
             )
             .padding(.horizontal, 20)
 
