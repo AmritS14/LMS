@@ -361,7 +361,7 @@ final class ManagerStore {
         do {
             let resp = try await supabase
                 .from("loan_application_events")
-                .select("id, application_id, actor_id, event_type, remark, created_at, loan_applications(id, requested_amount, borrower_id, users(full_name))")
+                .select("id, application_id, actor_id, event_type, remark, created_at, loan_applications(id, requested_amount, borrower_id, users:users!loan_applications_borrower_id_fkey(full_name))")
                 .eq("actor_id", value: managerID.uuidString)
                 .in("event_type", values: ["approved", "rejected", "sent_to_manager"])
                 .order("created_at", ascending: false)
@@ -465,7 +465,7 @@ final class ManagerStore {
         do {
             let resp = try await supabase
                 .from("emis")
-                .select("id, loan_id, total_amount, due_date, loans!inner(loan_applications!inner(id, users(full_name)))")
+                .select("id, loan_id, total_amount, due_date, loans!inner(loan_applications!inner(id, users:users!loan_applications_borrower_id_fkey(full_name)))")
                 .eq("status", value: "overdue")
                 .order("due_date", ascending: true)
                 .limit(10)
@@ -501,7 +501,7 @@ final class ManagerStore {
             let officerIDs = officers.map(\.id.uuidString)
             let evResp = try await supabase
                 .from("loan_application_events")
-                .select("id, application_id, actor_id, event_type, created_at, loan_applications(id, requested_amount, borrower_id, users(full_name))")
+                .select("id, application_id, actor_id, event_type, created_at, loan_applications(id, requested_amount, borrower_id, users:users!loan_applications_borrower_id_fkey(full_name))")
                 .in("actor_id", values: officerIDs)
                 .in("event_type", values: ["approved", "rejected", "sent_to_manager", "review_started"])
                 .order("created_at", ascending: false)

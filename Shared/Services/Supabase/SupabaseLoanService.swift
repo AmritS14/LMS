@@ -337,7 +337,7 @@ actor SupabaseLoanService: LoanService {
         try await ensureProductCache()
         let response = try await client
             .from("loan_applications")
-            .select("id, borrower_id, assigned_officer_id, loan_product_id, requested_amount, tenure_months, interest_rate, status, created_at, updated_at, users:users!loan_applications_borrower_id_fkey(id, email, full_name, phone), loan_products(id, name)")
+            .select("id, borrower_id, assigned_officer_id, loan_product_id, requested_amount, tenure_months, interest_rate, status, created_at, updated_at, users:users!loan_applications_borrower_id_fkey(id, email, full_name, phone), assigned_officer:users!loan_applications_assigned_officer_id_fkey(id, email, full_name), loan_products(id, name)")
             .in("status", values: statuses)
             .order("created_at", ascending: false)
             .execute()
