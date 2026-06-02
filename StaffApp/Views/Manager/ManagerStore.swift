@@ -142,7 +142,7 @@ final class ManagerStore {
             let id: UUID
             let requested_amount: Decimal?
             let borrower_id: UUID?
-            let users: NestedUser?
+            let borrower: NestedUser?
         }
         let id: UUID
         let application_id: UUID
@@ -182,7 +182,7 @@ final class ManagerStore {
             struct NestedApp: Decodable {
                 struct NestedUser: Decodable { let full_name: String? }
                 let id: UUID
-                let users: NestedUser?
+                let borrower: NestedUser?
             }
             let loan_applications: NestedApp?
         }
@@ -361,7 +361,7 @@ final class ManagerStore {
         do {
             let resp = try await supabase
                 .from("loan_application_events")
-                .select("id, application_id, actor_id, event_type, remark, created_at, loan_applications(id, requested_amount, borrower_id, users:users!loan_applications_borrower_id_fkey(full_name))")
+                .select("id, application_id, actor_id, event_type, remark, created_at, loan_applications(id, requested_amount, borrower_id, borrower:users!loan_applications_borrower_id_fkey(full_name))")
                 .eq("actor_id", value: managerID.uuidString)
                 .in("event_type", values: ["approved", "rejected", "sent_to_manager"])
                 .order("created_at", ascending: false)
@@ -373,7 +373,7 @@ final class ManagerStore {
             // Resolve borrower names (already embedded in the join)
             recentActions = events.compactMap { event -> ManagerRecentAction? in
                 guard let kind = actionKind(from: event.event_type) else { return nil }
-                let name = event.loan_applications?.users?.full_name ?? "Applicant"
+                let name = event.loan_applications?.borrower?.full_name ?? "Applicant"
                 let amount = event.loan_applications?.requested_amount.map { Formatting.currency($0) } ?? "—"
                 return ManagerRecentAction(
                     kind: kind, name: name, amount: amount,
@@ -465,14 +465,14 @@ final class ManagerStore {
         do {
             let resp = try await supabase
                 .from("emis")
-                .select("id, loan_id, total_amount, due_date, loans!inner(loan_applications!inner(id, users:users!loan_applications_borrower_id_fkey(full_name)))")
+                .select("id, loan_id, total_amount, due_date, loans!inner(loan_applications!inner(id, borrower:users!loan_applications_borrower_id_fkey(full_name)))")
                 .eq("status", value: "overdue")
                 .order("due_date", ascending: true)
                 .limit(10)
                 .execute()
             let dbEMIs = try decoder.decode([DBEMIWithLoan].self, from: resp.data)
             riskAlerts = dbEMIs.map { emi in
-                let borrowerName = emi.loans?.loan_applications?.users?.full_name ?? "Borrower"
+                let borrowerName = emi.loans?.loan_applications?.borrower?.full_name ?? "Borrower"
                 let appID = emi.loans?.loan_applications?.id
                 let refCode = appID.map {
                     "LN-" + $0.uuidString.replacingOccurrences(of: "-", with: "").prefix(6).uppercased()
@@ -501,7 +501,7 @@ final class ManagerStore {
             let officerIDs = officers.map(\.id.uuidString)
             let evResp = try await supabase
                 .from("loan_application_events")
-                .select("id, application_id, actor_id, event_type, created_at, loan_applications(id, requested_amount, borrower_id, users:users!loan_applications_borrower_id_fkey(full_name))")
+                .select("id, application_id, actor_id, event_type, created_at, loan_applications(id, requested_amount, borrower_id, borrower:users!loan_applications_borrower_id_fkey(full_name))")
                 .in("actor_id", values: officerIDs)
                 .in("event_type", values: ["approved", "rejected", "sent_to_manager", "review_started"])
                 .order("created_at", ascending: false)
@@ -524,7 +524,7 @@ final class ManagerStore {
 
                 let recentDecisions = officerEvents.prefix(3).compactMap { event -> OfficerDecisionRecord? in
                     guard let kind = actionKind(from: event.event_type) else { return nil }
-                    let name = event.loan_applications?.users?.full_name ?? "Applicant"
+                    let name = event.loan_applications?.borrower?.full_name ?? "Applicant"
                     let amount = event.loan_applications?.requested_amount.map { Formatting.currency($0) } ?? "—"
                     return OfficerDecisionRecord(applicantName: name, amount: amount, action: kind, date: event.created_at)
                 }

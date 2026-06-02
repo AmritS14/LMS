@@ -52,7 +52,7 @@ actor SupabaseLoanService: LoanService {
         let status: String
         let created_at: Date
         let updated_at: Date
-        let users: NestedUser?
+        let borrower: NestedUser?
         let assigned_officer: NestedOfficer?
         let loan_products: NestedProduct?
     }
@@ -159,7 +159,7 @@ actor SupabaseLoanService: LoanService {
     }
 
     private func toDomainEnriched(_ db: DBEnrichedApplication) -> LoanApplication {
-        let name = db.users?.full_name.flatMap { $0.isEmpty ? nil : $0 }
+        let name = db.borrower?.full_name.flatMap { $0.isEmpty ? nil : $0 }
         let officerName = db.assigned_officer?.full_name.flatMap { $0.isEmpty ? nil : $0 }
         return LoanApplication(
             id: db.id,
@@ -175,8 +175,8 @@ actor SupabaseLoanService: LoanService {
             createdAt: db.created_at,
             updatedAt: db.updated_at,
             borrowerName: name,
-            borrowerEmail: db.users?.email,
-            borrowerPhone: db.users?.phone,
+            borrowerEmail: db.borrower?.email,
+            borrowerPhone: db.borrower?.phone,
             productName: db.loan_products?.name
         )
     }
@@ -337,10 +337,15 @@ actor SupabaseLoanService: LoanService {
         try await ensureProductCache()
         let response = try await client
             .from("loan_applications")
-            .select("id, borrower_id, assigned_officer_id, loan_product_id, requested_amount, tenure_months, interest_rate, status, created_at, updated_at, users:users!loan_applications_borrower_id_fkey(id, email, full_name, phone), assigned_officer:users!loan_applications_assigned_officer_id_fkey(id, email, full_name), loan_products(id, name)")
+            .select("id, borrower_id, assigned_officer_id, loan_product_id, requested_amount, tenure_months, interest_rate, status, created_at, updated_at, borrower:users!loan_applications_borrower_id_fkey(id, email, full_name, phone), assigned_officer:users!loan_applications_assigned_officer_id_fkey(id, email, full_name), loan_products(id, name)")
             .in("status", values: statuses)
             .order("created_at", ascending: false)
             .execute()
+        
+        if let str = String(data: response.data, encoding: .utf8) {
+            print("SUPABASE_DEBUG_JSON: \(str)")
+        }
+
         let dbApps = try SupabaseManager.shared.decoder.decode([DBEnrichedApplication].self, from: response.data)
         return dbApps.map(toDomainEnriched)
     }
