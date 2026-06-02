@@ -69,7 +69,7 @@ struct ManagerApplication: Identifiable, Hashable {
     var referenceCode: String {
         "LN-" + base.id.uuidString.replacingOccurrences(of: "-", with: "").prefix(6).uppercased()
     }
-    var subtitle: String { "\(referenceCode) • \(loanTypeLabel) Loan" }
+    var subtitle: String { "\(referenceCode) • \(loanTypeLabel)" }
     var tenureText: String {
         let years = tenureMonths / 12
         let months = tenureMonths % 12
