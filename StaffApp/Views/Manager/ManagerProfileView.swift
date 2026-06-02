@@ -143,7 +143,7 @@ struct ManagerProfileView: View {
                             titleVisibility: .visible) {
             Button("Sign Out", role: .destructive) {
                 Task {
-                    try? await env.auth.signOut()
+                    try? await env?.auth.signOut()
                     session.currentUser = nil
                     session.staffProfile = nil
                 }
