@@ -39,24 +39,18 @@ struct ProfileView: View {
             
             // Preferences Section
 //            preferencesSection
+            
+            Button(role: .destructive) { showSignOutConfirmation = true } label: {
+                HStack {
+                    Spacer()
+                    Text("Sign out")
+                    Spacer()
+                }
+            }
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Button(role: .destructive) {
-                        showSignOutConfirmation = true
-                    } label: {
-                        Label("Logout", systemImage: "rectangle.portrait.and.arrow.forward")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.body)
-                }
-            }
-        }
         .alert("Log Out?", isPresented: $showSignOutConfirmation) {
             Button("Log Out", role: .destructive) { signOut() }
             Button("Cancel", role: .cancel) {}
@@ -97,13 +91,6 @@ struct ProfileView: View {
     private var accountSection: some View {
         Section {
             NavigationLink("Personal Information", destination: PersonalInfoView())
-            NavigationLink(destination: KYCDetailedView()) {
-                HStack {
-                    Text("KYC Status")
-                    Spacer()
-                    Text("Verified").foregroundStyle(.secondary)
-                }
-            }
         } header: {
             Text("Account")
                 .font(.title3)
@@ -283,75 +270,6 @@ struct PersonalInfoView: View {
             Text(value)
                 .foregroundStyle(.primary)
                 .fontWeight(.medium)
-        }
-    }
-}
-
-// 2. KYC Status View
-struct KYCDetailedView: View {
-    var body: some View {
-        List {
-            Section {
-                HStack {
-                    Text("Verification Status")
-                    Spacer()
-                    Text("Verified")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Color.green.opacity(0.15), in: Capsule())
-                        .foregroundStyle(.green)
-                }
-                detailRow(title: "Verification Date", value: "15 May 2026")
-                detailRow(title: "Authorized Officer", value: "System Auto-KYC")
-            } header: {
-                Text("KYC Overview").font(.title3).fontWeight(.bold).foregroundStyle(.primary).textCase(nil)
-            }
-            
-            Section {
-                documentRow(title: "Aadhaar Card", number: "xxxx xxxx 5678", systemImage: "person.text.rectangle")
-                documentRow(title: "PAN Card", number: "ABCDE1234F", systemImage: "creditcard.fill")
-                documentRow(title: "Employee ID Verification", number: "EMP-00123", systemImage: "person.badge.shield.checkered")
-            } header: {
-                Text("Verified Documents").font(.title3).fontWeight(.bold).foregroundStyle(.primary).textCase(nil)
-            }
-        }
-        .listStyle(.insetGrouped)
-        .navigationTitle("KYC Status")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-    
-    private func detailRow(title: String, value: String) -> some View {
-        HStack {
-            Text(title)
-                .foregroundStyle(.secondary)
-            Spacer()
-            Text(value)
-                .foregroundStyle(.primary)
-                .fontWeight(.medium)
-        }
-    }
-    
-    private func documentRow(title: String, number: String, systemImage: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.title3)
-                .foregroundStyle(AdminColor.accent)
-                .frame(width: 32, height: 32)
-                .background(AdminColor.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
-                
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                Text(number)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(.green)
         }
     }
 }
