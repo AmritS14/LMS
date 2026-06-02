@@ -313,7 +313,7 @@ struct ApplicationReviewView: View {
                 Image(systemName: "doc.text.fill")
                     .foregroundStyle(Color.lmsAccent)
                     .frame(width: 24)
-                Text(doc.type.rawValue.capitalized).font(.subheadline).foregroundStyle(.primary)
+                Text(doc.kind.rawValue.capitalized).font(.subheadline).foregroundStyle(.primary)
                 Spacer()
                 Image(systemName: verified ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
