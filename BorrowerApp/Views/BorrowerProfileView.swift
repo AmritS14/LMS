@@ -49,20 +49,30 @@ struct BorrowerProfileView: View {
                 } label: {
                     HStack {
                         iconBadge(icon: "briefcase.fill", color: .purple)
-                        Text("Employment Details")
-                            .foregroundStyle(.primary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Employment Details")
+                                .foregroundStyle(.primary)
+                            if let type = session.borrowerProfile?.employmentType,
+                               let income = session.borrowerProfile?.monthlyIncome {
+                                Text(type.rawValue.capitalized)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(Formatting.currency(income))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                         Spacer()
-                        if let type = session.borrowerProfile?.employmentType, let income = session.borrowerProfile?.monthlyIncome {
-                            Text("\(type.rawValue.capitalized) • \(Formatting.currency(income))")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        } else {
+                        if session.borrowerProfile?.employmentType == nil {
                             Text("Setup")
-                                .font(.subheadline)
                                 .foregroundStyle(Color.accentColor)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color(uiColor: .systemFill), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                         }
                     }
                 }
+                .foregroundStyle(.primary)
             }
 
             // Credit Score
