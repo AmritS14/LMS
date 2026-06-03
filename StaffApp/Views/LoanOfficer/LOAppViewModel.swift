@@ -10,7 +10,7 @@ import Combine
     var highlightMessageButton: Bool = false
     var showSideMenu: Bool = false
     var searchText: String = ""
-    var selectedBranch: String = "Mumbai Central"
+    var selectedBranch: String = ""
 
     // Data — starts empty; populated by refreshFromService() from backend
     var officerProfile = LoanOfficerProfile(
@@ -55,10 +55,10 @@ import Combine
     private var environment: AppEnvironment?
     private var officerID: UUID?
 
-    // Dynamic KPI counters tracking base numbers
-    private var pendingCount = 47
-    private var approvedCount = 132
-    private var escalatedCount = 8
+    // Dynamic KPI counters — populated from real backend data
+    private var pendingCount = 0
+    private var approvedCount = 0
+    private var escalatedCount = 0
 
     // UI State
     var showApproveConfirmation = false
@@ -78,7 +78,9 @@ import Combine
     }
 
     var branches: [String] {
-        ["Mumbai Central", "Mumbai South", "Delhi NCR", "Pune West", "Bangalore East", "Chennai Central"]
+        // Populated from the backend; fallback to current branch if available
+        guard !selectedBranch.isEmpty else { return [] }
+        return [selectedBranch]
     }
 
     var filteredApplications: [LOLoanApplication] {
@@ -175,12 +177,14 @@ import Combine
 
             // Fetch User/Profile & Conversations
             if let user = await environment.auth.currentUser {
-                var branch = "Main Branch"
-                var empId = "EMP-\(user.uniqueID)"
+                var branch = ""
+                var empId = user.uniqueID
                 if let profiles = try? await environment.admin.listStaffProfiles(),
                    let staff = profiles.first(where: { $0.id == user.id }) {
                     empId = staff.employeeID
-                    if staff.branchID != nil { branch = "Assigned Branch" }
+                    // branchID is available but branch name requires a separate lookup;
+                    // store a sentinel so the UI can show "Branch Assigned" if needed.
+                    if staff.branchID != nil { branch = "Branch Assigned" }
                 }
                 let initials = user.fullName.split(separator: " ").compactMap { $0.first.map(String.init) }.prefix(2).joined().uppercased()
                 
@@ -287,31 +291,44 @@ import Combine
                 )
             }
 
+        // Derive risk level from document statuses (no credit score available from backend yet)
+        let riskLevel: RiskLevel
+        let hasBlockerDocs = loDocuments.contains(where: { $0.status == .tampered || $0.status == .missing })
+        if hasBlockerDocs {
+            riskLevel = .high
+        } else if loDocuments.contains(where: { $0.status == .pending || $0.status == .needsReview || $0.status == .rejected }) {
+            riskLevel = .medium
+        } else if loDocuments.isEmpty {
+            riskLevel = .medium  // Unknown — no docs to evaluate
+        } else {
+            riskLevel = .low
+        }
+
         return LOLoanApplication(
             sourceApplicationID: app.id,
             borrowerID: app.borrowerID,
             borrowerName: name,
             borrowerInitials: initials.isEmpty ? "?" : initials,
-            creditScore: 720,
+            creditScore: 0,          // Not available from backend — shown as "—" in UI
             loanAmount: amount,
-            riskLevel: .low,
+            riskLevel: riskLevel,
             kycStatus: kyc,
-            fraudFlag: false,
+            fraudFlag: false,        // Fraud flagging not yet surfaced in this API response
             status: officerStatus,
             applicationDate: app.createdAt,
             loanType: app.productName ?? (app.loanType.rawValue.capitalized + " Loan"),
             tenure: app.tenureMonths,
             interestRate: app.interestRate,
-            employmentType: "Not specified",
-            employer: "—",
-            monthlyIncome: 0,
-            existingLiabilities: 0,
-            eligibilityScore: 0,
+            employmentType: "—",     // Not in current API response
+            employer: "—",           // Not in current API response
+            monthlyIncome: 0,        // Not in current API response
+            existingLiabilities: 0,  // Not in current API response
+            eligibilityScore: 0,     // Computed server-side; not yet returned
             emiAmount: amount / Double(max(app.tenureMonths, 1)),
             phoneNumber: app.borrowerPhone ?? "—",
             email: app.borrowerEmail ?? "—",
-            address: "—",
-            purpose: "—",
+            address: "—",            // Not in current API response
+            purpose: "—",            // Not in current API response
             documents: loDocuments,
             timeline: timeline
         )
@@ -399,11 +416,12 @@ import Combine
 
     // Actions
     func updateKPIs() {
+        let overdueCount = overdueBorrowers.count
         kpiData = [
-            KPIData(title: "Pending\nApplications", value: pendingCount, trend: 12.3, trendUp: true, icon: "doc.text.fill", color: .orange, chartData: [0.3, 0.5, 0.4, 0.7, 0.6, 0.8, 0.75]),
-            KPIData(title: "Approved\nLoans", value: approvedCount, trend: 8.7, trendUp: true, icon: "checkmark.circle.fill", color: .green, chartData: [0.4, 0.5, 0.55, 0.6, 0.65, 0.7, 0.8]),
-            KPIData(title: "Escalated\nCases", value: escalatedCount, trend: -3.2, trendUp: false, icon: "arrow.up.circle.fill", color: .purple, chartData: [0.6, 0.7, 0.5, 0.4, 0.45, 0.35, 0.3]),
-            KPIData(title: "Overdue\nBorrowers", value: 19, trend: -5.1, trendUp: false, icon: "person.crop.circle.badge.exclamationmark.fill", color: Color(red: 0.8, green: 0.4, blue: 0), chartData: [0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4])
+            KPIData(title: "Pending\nApplications", value: pendingCount, trend: 0, trendUp: true, icon: "doc.text.fill", color: .orange, chartData: [0.3, 0.5, 0.4, 0.7, 0.6, 0.8, 0.75]),
+            KPIData(title: "Approved\nLoans", value: approvedCount, trend: 0, trendUp: true, icon: "checkmark.circle.fill", color: .green, chartData: [0.4, 0.5, 0.55, 0.6, 0.65, 0.7, 0.8]),
+            KPIData(title: "Escalated\nCases", value: escalatedCount, trend: 0, trendUp: false, icon: "arrow.up.circle.fill", color: .purple, chartData: [0.6, 0.7, 0.5, 0.4, 0.45, 0.35, 0.3]),
+            KPIData(title: "Overdue\nBorrowers", value: overdueCount, trend: 0, trendUp: false, icon: "person.crop.circle.badge.exclamationmark.fill", color: Color(red: 0.8, green: 0.4, blue: 0), chartData: [0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4])
         ]
     }
 
@@ -416,7 +434,7 @@ import Combine
                 // Add timeline event
                 let event = TimelineEvent(
                     title: "Approved & Recommended",
-                    description: "Recommended for final approval by Rajesh Kumar. Remarks: \(remarks.isEmpty ? "No remarks provided" : remarks)",
+                    description: "Recommended for final approval by \(officerProfile.name.isEmpty ? "Loan Officer" : officerProfile.name). Remarks: \(remarks.isEmpty ? "No remarks provided" : remarks)",
                     timestamp: Date(),
                     status: .approved,
                     officerName: officerProfile.name
@@ -459,7 +477,7 @@ import Combine
                 // Add timeline event
                 let event = TimelineEvent(
                     title: "Application Rejected",
-                    description: "Rejected by Rajesh Kumar. Remarks: \(remarks.isEmpty ? "No remarks provided" : remarks)",
+                    description: "Rejected by \(officerProfile.name.isEmpty ? "Loan Officer" : officerProfile.name). Remarks: \(remarks.isEmpty ? "No remarks provided" : remarks)",
                     timestamp: Date(),
                     status: .rejected,
                     officerName: officerProfile.name
@@ -492,7 +510,7 @@ import Combine
                 // Add timeline event
                 let event = TimelineEvent(
                     title: "Escalated to Manager",
-                    description: "Escalated by Rajesh Kumar. Notes: \(remarks.isEmpty ? "No escalation notes provided" : remarks)",
+                    description: "Escalated by \(officerProfile.name.isEmpty ? "Loan Officer" : officerProfile.name). Notes: \(remarks.isEmpty ? "No escalation notes provided" : remarks)",
                     timestamp: Date(),
                     status: .escalated,
                     officerName: officerProfile.name
@@ -738,7 +756,7 @@ import Combine
                         description: desc,
                         timestamp: Date(),
                         status: recentApplications[appIdx].status,
-                        officerName: "Rajesh Kumar"
+                        officerName: officerProfile.name
                     )
                     recentApplications[appIdx].timeline.insert(timelineEvent, at: 0)
                     

@@ -53,10 +53,10 @@ struct DashboardHeaderSection: View {
             
             VStack(alignment: .leading, spacing: 5) {
                 
-                Text(viewModel.officerProfile.name)
+                Text(viewModel.officerProfile.name.isEmpty ? "Welcome" : viewModel.officerProfile.name)
                     .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(.primary)
-                Text(viewModel.selectedBranch)
+                Text(viewModel.selectedBranch.isEmpty ? viewModel.officerProfile.designation : viewModel.selectedBranch)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.secondary)
             }

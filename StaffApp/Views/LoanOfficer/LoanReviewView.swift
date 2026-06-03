@@ -382,13 +382,13 @@ extension LoanReviewView {
                         HStack(spacing: 4) {
                             Image(systemName: "creditcard.fill")
                                 .font(.system(size: 11))
-                                .foregroundColor(creditScoreColor(for: currentApplication.creditScore))
-                            Text("\(currentApplication.creditScore)")
+                                .foregroundColor(currentApplication.creditScore > 0 ? creditScoreColor(for: currentApplication.creditScore) : .secondary)
+                            Text(currentApplication.creditScore > 0 ? "\(currentApplication.creditScore)" : "N/A")
                                 .font(.system(size: 15, weight: .bold, design: .rounded))
                                 .foregroundColor(.primary)
                         }
                         
-                        Text(creditScoreRating(for: currentApplication.creditScore))
+                        Text(currentApplication.creditScore > 0 ? creditScoreRating(for: currentApplication.creditScore) : "Unknown")
                             .font(.system(size: 10, weight: .bold))
                             .foregroundColor(.secondary)
                             .textCase(.uppercase)
@@ -421,10 +421,10 @@ extension LoanReviewView {
                         HStack(spacing: 4) {
                             Image(systemName: "star.fill")
                                 .font(.system(size: 11))
-                                .foregroundColor(.orange)
-                            Text("\(currentApplication.eligibilityScore)%")
+                                .foregroundColor(currentApplication.eligibilityScore > 0 ? .orange : .secondary)
+                            Text(currentApplication.eligibilityScore > 0 ? "\(currentApplication.eligibilityScore)%" : "N/A")
                                 .font(.system(size: 15, weight: .bold, design: .rounded))
-                                .foregroundColor(eligibilityColor(for: currentApplication.eligibilityScore))
+                                .foregroundColor(currentApplication.eligibilityScore > 0 ? eligibilityColor(for: currentApplication.eligibilityScore) : .secondary)
                         }
                         
                         Text("Match Score")
@@ -510,14 +510,14 @@ extension LoanReviewView {
                 LODetailRow(
                     icon: "indianrupeesign.circle.fill",
                     title: "Monthly Income",
-                    value: AppFormatters.formatCurrency(currentApplication.monthlyIncome),
+                    value: currentApplication.monthlyIncome > 0 ? AppFormatters.formatCurrency(currentApplication.monthlyIncome) : "—",
                     valueColor: .green
                 )
                 
                 LODetailRow(
                     icon: "star.fill",
                     title: "Eligibility Score",
-                    value: "\(currentApplication.eligibilityScore)/100",
+                    value: currentApplication.eligibilityScore > 0 ? "\(currentApplication.eligibilityScore)/100" : "N/A",
                     valueColor: currentApplication.eligibilityScore >= 70 ? .green : (currentApplication.eligibilityScore >= 50 ? .orange : .red)
                 )
 
@@ -779,55 +779,59 @@ extension LoanReviewView {
 // MARK: - Collateral Section
 extension LoanReviewView {
     private var collateralSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            LOSectionHeader(title: "Collateral")
+        Group {
+            if !viewModel.collateral.propertyType.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    LOSectionHeader(title: "Collateral")
 
-            LOPremiumCard {
-                VStack(spacing: 8) {
-                    LODetailRow(icon: "house.fill", title: "Property Type", value: viewModel.collateral.propertyType)
-                    LODetailRow(icon: "mappin.circle.fill", title: "Address", value: viewModel.collateral.address)
-                    LODetailRow(
-                        icon: "indianrupeesign.circle.fill",
-                        title: "Current Valuation",
-                        value: AppFormatters.formatCurrency(viewModel.collateral.currentValuation),
-                        valueColor: .green
-                    )
-                    LODetailRow(
-                        icon: "calendar",
-                        title: "Last Valuation",
-                        value: AppFormatters.formatDate(viewModel.collateral.lastValuationDate)
-                    )
+                    LOPremiumCard {
+                        VStack(spacing: 8) {
+                            LODetailRow(icon: "house.fill", title: "Property Type", value: viewModel.collateral.propertyType)
+                            LODetailRow(icon: "mappin.circle.fill", title: "Address", value: viewModel.collateral.address)
+                            LODetailRow(
+                                icon: "indianrupeesign.circle.fill",
+                                title: "Current Valuation",
+                                value: AppFormatters.formatCurrency(viewModel.collateral.currentValuation),
+                                valueColor: .green
+                            )
+                            LODetailRow(
+                                icon: "calendar",
+                                title: "Last Valuation",
+                                value: AppFormatters.formatDate(viewModel.collateral.lastValuationDate)
+                            )
 
-                    Divider()
+                            Divider()
 
-                    // Coverage ratio visualization
-                    HStack(spacing: 16) {
-                        LOCircularProgress(
-                            progress: min(viewModel.collateral.coverageRatio / 2.0, 1.0),
-                            color: viewModel.collateral.coverageRatio >= 1.5 ? .green : (viewModel.collateral.coverageRatio >= 1.0 ? .orange : .red),
-                            size: 72
-                        )
+                            // Coverage ratio visualization
+                            HStack(spacing: 16) {
+                                LOCircularProgress(
+                                    progress: min(viewModel.collateral.coverageRatio / 2.0, 1.0),
+                                    color: viewModel.collateral.coverageRatio >= 1.5 ? .green : (viewModel.collateral.coverageRatio >= 1.0 ? .orange : .red),
+                                    size: 72
+                                )
 
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Coverage Ratio")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(.primary)
-                            Text(String(format: "%.2fx", viewModel.collateral.coverageRatio))
-                                .font(.system(size: 24, weight: .bold, design: .rounded))
-                                .foregroundStyle(viewModel.collateral.coverageRatio >= 1.5 ? .green : (viewModel.collateral.coverageRatio >= 1.0 ? .orange : .red))
-                            Text(viewModel.collateral.coverageRatio >= 1.5 ? "Adequate collateral" : "Marginal coverage")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.secondary)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Coverage Ratio")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundStyle(.primary)
+                                    Text(String(format: "%.2fx", viewModel.collateral.coverageRatio))
+                                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                                        .foregroundStyle(viewModel.collateral.coverageRatio >= 1.5 ? .green : (viewModel.collateral.coverageRatio >= 1.0 ? .orange : .red))
+                                    Text(viewModel.collateral.coverageRatio >= 1.5 ? "Adequate collateral" : "Marginal coverage")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Spacer()
+                            }
+                            .padding(.vertical, 4)
                         }
-
-                        Spacer()
                     }
-                    .padding(.vertical, 4)
                 }
+                .opacity(animateIn ? 1 : 0)
+                .offset(y: animateIn ? 0 : 20)
             }
         }
-        .opacity(animateIn ? 1 : 0)
-        .offset(y: animateIn ? 0 : 20)
     }
 }
 

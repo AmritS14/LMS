@@ -11,11 +11,7 @@ struct LoanOfficerProfileView: View {
     // Collapsible branch section state
     @State private var isBranchExpanded = false
     
-    // Interactive Signature Pad state
-    @State private var currentLine = [CGPoint]()
-    @State private var lines = [[CGPoint]]()
-    @State private var isSignatureSaved = false
-    
+
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 24) {
@@ -35,13 +31,7 @@ struct LoanOfficerProfileView: View {
                     syncOnCellular: $syncOnCellular
                 )
                 
-                // Premium Interactive Digital Signature Pad
-                SignaturePadSection(
-                    currentLine: $currentLine,
-                    lines: $lines,
-                    isSignatureSaved: $isSignatureSaved
-                )
-                
+
                 Spacer(minLength: 40)
             }
             .padding(.bottom, 20)
@@ -137,10 +127,10 @@ struct PerformanceGridView: View {
                 // Disbursed Volume
                 MetricCard(
                     title: "Disbursed Value",
-                    value: "₹45.8 Cr",
+                    value: viewModel.kpiData.count > 1 ? AppFormatters.formatCurrency(Double(viewModel.kpiData[1].value) * 100000) : "—",
                     icon: "indianrupeesign.circle.fill",
                     color: .purple,
-                    subtitle: "FY 2025-26"
+                    subtitle: "Approved loans"
                 )
             }
             .padding(.horizontal, 20)
@@ -198,6 +188,7 @@ struct MetricCard: View {
 
 // MARK: - Branch Details Section
 struct BranchDetailsSection: View {
+    @Environment(AppViewModel.self) var viewModel
     @Binding var isExpanded: Bool
     
     var body: some View {
@@ -215,7 +206,7 @@ struct BranchDetailsSection: View {
                         Text("Branch Details")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(.primary)
-                        Text("Mumbai Central office information")
+                        Text(viewModel.selectedBranch.isEmpty ? "Branch not assigned" : viewModel.selectedBranch)
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)
                     }
@@ -236,15 +227,9 @@ struct BranchDetailsSection: View {
             
             if isExpanded {
                 VStack(spacing: 0) {
-                    LODetailRow(icon: "tag.fill", title: "Branch Code", value: "BR-MUM-01")
+                    LODetailRow(icon: "building.2.fill", title: "Branch", value: viewModel.selectedBranch.isEmpty ? "Not assigned" : viewModel.selectedBranch)
                     Divider().padding(.vertical, 8)
-                    LODetailRow(icon: "globe.asia.australia.fill", title: "Region", value: "Western India")
-                    Divider().padding(.vertical, 8)
-                    LODetailRow(icon: "person.badge.key.fill", title: "Branch Manager", value: "Anil Deshmukh")
-                    Divider().padding(.vertical, 8)
-                    LODetailRow(icon: "phone.fill", title: "Contact Desk", value: "+91 22 6678 9100")
-                    Divider().padding(.vertical, 8)
-                    LODetailRow(icon: "mappin.and.ellipse", title: "Address", value: "BKC Capital Towers, G Block, Bandra East, Mumbai, 400051")
+                    LODetailRow(icon: "person.fill", title: "Employee ID", value: viewModel.officerProfile.employeeId.isEmpty ? "—" : viewModel.officerProfile.employeeId)
                 }
                 .padding(16)
                 .background(Color(.secondarySystemGroupedBackground))
@@ -328,126 +313,3 @@ struct SettingsSection: View {
     }
 }
 
-// MARK: - Signature Pad Section
-struct SignaturePadSection: View {
-    @Binding var currentLine: [CGPoint]
-    @Binding var lines: [[CGPoint]]
-    @Binding var isSignatureSaved: Bool
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            LOSectionHeader(
-                title: "Digital Signature",
-                subtitle: "Used to sign sanction letters"
-            )
-            .padding(.horizontal, 20)
-            
-            VStack(spacing: 12) {
-                // Drawing Canvas
-                ZStack {
-                    Color(.systemBackground)
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color(.separator).opacity(0.4), lineWidth: 1)
-                        )
-                    
-                    // Guide Line
-                    Path { path in
-                        path.move(to: CGPoint(x: 20, y: 110))
-                        path.addLine(to: CGPoint(x: 320, y: 110))
-                    }
-                    .stroke(Color.secondary.opacity(0.2), style: StrokeStyle(lineWidth: 1, lineCap: .round, dash: [5]))
-                    
-                    // Existing lines
-                    ForEach(0..<lines.count, id: \.self) { index in
-                        DrawingLine(points: lines[index])
-                            .stroke(Color.primary, style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
-                    }
-                    
-                    // Current drawing line
-                    DrawingLine(points: currentLine)
-                        .stroke(Color.primary, style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
-                    
-                    if lines.isEmpty && currentLine.isEmpty {
-                        Text("Sign here on the screen")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.secondary.opacity(0.6))
-                    }
-                }
-                .frame(height: 150)
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { value in
-                            let newPoint = value.location
-                            // Limit drawing within canvas bounds
-                            if newPoint.y >= 0 && newPoint.y <= 150 {
-                                currentLine.append(newPoint)
-                            }
-                        }
-                        .onEnded { _ in
-                            if !currentLine.isEmpty {
-                                lines.append(currentLine)
-                                currentLine = []
-                            }
-                        }
-                )
-                
-                // Controls
-                HStack(spacing: 12) {
-                    Button(action: {
-                        lines.removeAll()
-                        currentLine.removeAll()
-                        isSignatureSaved = false
-                    }) {
-                        Label("Clear", systemImage: "arrow.counterclockwise")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.red)
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 16)
-                            .background(Color.red.opacity(0.1))
-                            .cornerRadius(10)
-                    }
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        if !lines.isEmpty {
-                            withAnimation {
-                                isSignatureSaved = true
-                            }
-                        }
-                    }) {
-                        Label(isSignatureSaved ? "Signature Saved" : "Save Signature", systemImage: isSignatureSaved ? "checkmark" : "square.and.arrow.down")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white)
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 16)
-                            .background(lines.isEmpty ? Color.gray : (isSignatureSaved ? Color.green : Color.blue))
-                            .cornerRadius(10)
-                    }
-                    .disabled(lines.isEmpty)
-                }
-            }
-            .padding(16)
-            .background(Color(.secondarySystemGroupedBackground))
-            .cornerRadius(18)
-            .padding(.horizontal, 20)
-        }
-    }
-}
-
-// Helper view to draw line path from points
-struct DrawingLine: Shape {
-    var points: [CGPoint]
-    
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        guard let firstPoint = points.first else { return path }
-        path.move(to: firstPoint)
-        for point in points.dropFirst() {
-            path.addLine(to: point)
-        }
-        return path
-    }
-}
