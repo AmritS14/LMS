@@ -140,13 +140,11 @@ struct BorrowerProfileView: View {
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.large)
         .task { await loadData() }
-        .confirmationDialog(
-            "Sign out of your account?",
-            isPresented: $showSignOutConfirm,
-            titleVisibility: .visible
-        ) {
+        .alert("Sign Out?", isPresented: $showSignOutConfirm) {
             Button("Sign Out", role: .destructive) { signOut() }
             Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Are you sure you want to sign out of your account?")
         }
         .sheet(isPresented: $showCreditCheckSheet) {
             CreditCheckSheet(

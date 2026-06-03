@@ -68,7 +68,7 @@ struct LoanOfficerProfileView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Officer Profile")
         .navigationBarTitleDisplayMode(.inline)
-        .confirmationDialog("Sign Out", isPresented: $showLogoutConfirmation, titleVisibility: .visible) {
+        .alert("Sign Out?", isPresented: $showLogoutConfirmation) {
             Button("Sign Out", role: .destructive) {
                 Task {
                     try? await env?.auth.signOut()
