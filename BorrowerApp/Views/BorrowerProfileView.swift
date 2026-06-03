@@ -129,6 +129,7 @@ struct BorrowerProfileView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.large)
+        .refreshable { await loadData() }
         .task { await loadData() }
         .confirmationDialog(
             "Sign out of your account?",

@@ -237,6 +237,10 @@ struct ChatDetailView: View {
                 .padding(.vertical, Spacing.sm)
             }
             .scrollDismissesKeyboard(.interactively)
+            .refreshable {
+                guard let env else { return }
+                await viewModel.selectThread(thread, messagingService: env.messaging)
+            }
             .onChange(of: viewModel.activeThreadMessages.count) { _, _ in
                 scrollToBottom(proxy: proxy)
             }

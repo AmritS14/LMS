@@ -24,6 +24,7 @@ struct DashboardView: View {
         }
         .background(Color(.systemGroupedBackground))
         .toolbarTitleDisplayMode(.large)
+        .refreshable { await viewModel.refreshAll() }
         .task { await viewModel.refreshAll() }
     }
 }
