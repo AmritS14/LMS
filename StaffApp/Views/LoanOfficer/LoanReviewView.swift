@@ -518,7 +518,7 @@ extension LoanReviewView {
             VStack(spacing: 12) {
                 LOSectionHeader(title: "Borrower Information")
                 
-                LODetailRow(icon: "building.2.fill", title: "Employer", value: currentApplication.employer)
+                LODetailRow(icon: "building.2.fill", title: "Employment", value: currentApplication.employmentType)
                 
                 LODetailRow(
                     icon: "indianrupeesign.circle.fill",
@@ -609,11 +609,6 @@ extension LoanReviewView {
                         icon: "clock.fill",
                         title: "Tenure",
                         value: "\(currentApplication.tenure) months"
-                    )
-                    LODetailRow(
-                        icon: "text.quote",
-                        title: "Purpose",
-                        value: currentApplication.purpose
                     )
                     
                     Divider()

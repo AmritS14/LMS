@@ -141,21 +141,18 @@ import Combine
                 var address = "—"
                 let borrowerID = app.borrowerID
                 struct DBProfile: Decodable {
-                    struct DBAddress: Decodable {
-                        let line1: String
-                        let line2: String?
-                        let city: String
-                        let state: String
-                        let pinCode: Int
-                    }
                     let credit_score: Int?
                     let employment_type: String?
                     let monthly_income: Decimal?
-                    let address: DBAddress?
+                    let address_line1: String?
+                    let address_line2: String?
+                    let city: String?
+                    let state: String?
+                    let pin_code: Int?
                 }
                 if let response = try? await SupabaseManager.shared.client
                     .from("borrower_profiles")
-                    .select("credit_score, employment_type, monthly_income, address")
+                    .select("credit_score, employment_type, monthly_income, address_line1, address_line2, city, state, pin_code")
                     .eq("id", value: borrowerID)
                     .single()
                     .execute() {
@@ -165,9 +162,33 @@ import Combine
                         if let mi = dbProf.monthly_income {
                             monthlyIncome = NSDecimalNumber(decimal: mi).doubleValue
                         }
-                        if let addr = dbProf.address {
-                            address = "\(addr.line1)\(addr.line2.map { ", " + $0 } ?? ""), \(addr.city), \(addr.state) - \(addr.pinCode)"
+                        var addrParts: [String] = []
+                        if let l1 = dbProf.address_line1, !l1.isEmpty { addrParts.append(l1) }
+                        if let l2 = dbProf.address_line2, !l2.isEmpty { addrParts.append(l2) }
+                        if let c = dbProf.city, !c.isEmpty { addrParts.append(c) }
+                        if let s = dbProf.state, !s.isEmpty { addrParts.append(s) }
+                        if let p = dbProf.pin_code { addrParts.append("\(p)") }
+                        if !addrParts.isEmpty {
+                            address = addrParts.joined(separator: ", ")
                         }
+                    }
+                }
+                
+                var phoneNum = "—"
+                var emailAddr = "—"
+                struct DBUser: Decodable {
+                    let phone: String?
+                    let email: String?
+                }
+                if let userResponse = try? await SupabaseManager.shared.client
+                    .from("users")
+                    .select("phone, email")
+                    .eq("id", value: borrowerID)
+                    .single()
+                    .execute() {
+                    if let dbUser = try? SupabaseManager.shared.decoder.decode(DBUser.self, from: userResponse.data) {
+                        phoneNum = dbUser.phone ?? "—"
+                        emailAddr = dbUser.email ?? "—"
                     }
                 }
                 
@@ -178,7 +199,9 @@ import Combine
                     creditScore: score,
                     employmentType: empType,
                     monthlyIncome: monthlyIncome,
-                    address: address
+                    address: address,
+                    borrowerPhone: phoneNum,
+                    borrowerEmail: emailAddr
                 ))
             }
             self.recentApplications = rows
@@ -310,7 +333,9 @@ import Combine
         creditScore: Int,
         employmentType: String,
         monthlyIncome: Double,
-        address: String
+        address: String,
+        borrowerPhone: String? = nil,
+        borrowerEmail: String? = nil
     ) -> LOLoanApplication {
         let name = app.borrowerName ?? "Borrower"
         let initials = name
@@ -380,8 +405,8 @@ import Combine
             existingLiabilities: 0,
             eligibilityScore: creditScore >= 700 ? 91 : (creditScore >= 650 ? 78 : 42),
             emiAmount: amount / Double(max(app.tenureMonths, 1)),
-            phoneNumber: app.borrowerPhone ?? "—",
-            email: app.borrowerEmail ?? "—",
+            phoneNumber: (borrowerPhone == nil || borrowerPhone == "—") ? (app.borrowerPhone ?? "—") : borrowerPhone!,
+            email: (borrowerEmail == nil || borrowerEmail == "—") ? (app.borrowerEmail ?? "—") : borrowerEmail!,
             address: address,
             purpose: "—",
             documents: loDocuments,
