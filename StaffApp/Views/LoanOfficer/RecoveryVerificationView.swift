@@ -33,22 +33,28 @@ struct RecoveryVerificationView: View {
     @State private var followUpNotes: String = ""
 
     var body: some View {
-
-        VStack(spacing: 20) {
-
-            LOSectionHeader(
-                title: "Recovery",
-                subtitle: "Collection performance and overdue alerts"
-            )
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-
-            collectionEfficiencyOverview
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 20) {
+                LOSectionHeader(
+                    title: "Recovery Management",
+                    subtitle: "Collection performance and overdue alerts"
+                )
                 .padding(.horizontal, 16)
+                .padding(.top, 16)
 
-            overdueBorrowersList
-                .padding(.horizontal, 16)
+                collectionEfficiencyOverview
+                    .padding(.horizontal, 16)
+
+                overdueBorrowersList
+                    .padding(.horizontal, 16)
+
+                Spacer(minLength: 40)
+            }
+            .padding(.bottom, 20)
         }
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Recovery")
+        .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showCallLogSheet) {
             callLogSheetContent
         }
@@ -250,17 +256,35 @@ extension RecoveryVerificationView {
     // MARK: Borrowers List
 
     private var overdueBorrowersList: some View {
-
         VStack(spacing: 12) {
-
             LOSectionHeader(
                 title: "Overdue Borrowers",
                 subtitle: "\(viewModel.overdueBorrowers.count) accounts"
             )
 
-            ForEach(viewModel.overdueBorrowers) { borrower in
-
-                overdueBorrowerCard(borrower)
+            if viewModel.overdueBorrowers.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "checkmark.shield.fill")
+                        .font(.system(size: 36))
+                        .foregroundColor(.green)
+                    Text("All accounts are up to date")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.secondary)
+                    Text("No overdue payments pending recovery action.")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 32)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color(.secondarySystemGroupedBackground))
+                )
+            } else {
+                ForEach(viewModel.overdueBorrowers) { borrower in
+                    overdueBorrowerCard(borrower)
+                }
             }
         }
     }

@@ -13,6 +13,10 @@ final class DashboardViewModel {
     /// Populated for applications currently in `.additionalInfoRequired`.
     var requestNotes: [UUID: String] = [:]
 
+    /// PDF storage path for each application that has had its sanction letter issued,
+    /// keyed by application ID. Populated by scanning application events.
+    var sanctionLetterPDFPaths: [UUID: String] = [:]
+
     func fetchDashboardData(
         loanService: any LoanService,
         sanctionLetterService: any SanctionLetterService,
@@ -39,6 +43,7 @@ final class DashboardViewModel {
             self.applications = fetchedApps
             
             await loadRequestNotes(loanService: loanService)
+            await loadSanctionLetterEvents(loanService: loanService)
         } catch {
             errorMessage = String(describing: error)
         }
@@ -67,5 +72,28 @@ final class DashboardViewModel {
             }
         }
         requestNotes = notes
+    }
+
+    /// For each approved/recommended application, scan events for a
+    /// `[SANCTION_LETTER_ISSUED]` remark which carries the PDF path in `metadata`.
+    /// This allows the borrower to download the letter without a dedicated table.
+    private func loadSanctionLetterEvents(loanService: any LoanService) async {
+        let eligible = applications.filter {
+            $0.status == .approved || $0.status == .recommended || $0.status == .disbursed
+        }
+        var paths: [UUID: String] = [:]
+        for app in eligible {
+            guard let events = try? await loanService.fetchApplicationEvents(applicationID: app.id) else { continue }
+            // Look for the special sanction-letter-issued marker
+            let slEvent = events
+                .filter({ $0.remark == "[SANCTION_LETTER_ISSUED]" })
+                .sorted(by: { $0.createdAt > $1.createdAt })
+                .first
+            if slEvent != nil {
+                // The PDF path follows the naming convention used in SupabaseSanctionLetterService
+                paths[app.id] = "sanction_letters/\(app.id.uuidString).pdf"
+            }
+        }
+        sanctionLetterPDFPaths = paths
     }
 }

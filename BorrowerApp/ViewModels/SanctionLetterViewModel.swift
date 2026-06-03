@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import Combine
+import Supabase
 
 @Observable
 @MainActor
@@ -21,13 +22,36 @@ class SanctionLetterViewModel {
         errorMessage = nil
         do {
             let letter = try await sanctionLettersService.fetchSanctionLetter(for: application.id)
-            if let letter = letter, letter.status == "sent" || letter.status == "accepted" || letter.isAccepted {
+            if let letter = letter {
                 self.sanctionLetter = letter
-                self.pdfURL = getLocalPDFURL(for: letter, application: application)
+                // Try to get the PDF from Supabase Storage first; fall back to local generation
+                await loadPDFFromStorage(for: application, pdfPath: letter.pdfPath)
+                if pdfURL == nil {
+                    self.pdfURL = getLocalPDFURL(for: letter, application: application)
+                }
             } else {
-                self.sanctionLetter = nil
-                self.pdfURL = nil
-                errorMessage = "Sanction letter is not yet available for review."
+                // Even without a DB letter, try to fetch from storage using the predictable path
+                // (the officer may have uploaded via the background Task before DB insert succeeded)
+                let predictedPath = "sanction_letters/\(application.id.uuidString).pdf"
+                await loadPDFFromStorage(for: application, pdfPath: predictedPath)
+                if pdfURL != nil {
+                    // Build a minimal stub so the UI renders
+                    let stub = SanctionLetter(
+                        id: UUID(),
+                        loanApplicationID: application.id,
+                        borrowerID: application.borrowerID,
+                        pdfPath: predictedPath,
+                        generatedDate: Date(),
+                        version: 1,
+                        status: "sent",
+                        isAccepted: false,
+                        acceptedAt: nil
+                    )
+                    self.sanctionLetter = stub
+                } else {
+                    self.sanctionLetter = nil
+                    errorMessage = "Sanction letter is not yet available. Please check back later."
+                }
             }
         } catch {
             errorMessage = "Failed to load sanction letter: \(error.localizedDescription)"
@@ -55,6 +79,33 @@ class SanctionLetterViewModel {
             errorMessage = "Acceptance failed: \(error.localizedDescription)"
             isAccepting = false
             return false
+        }
+    }
+
+    // MARK: - PDF Loading
+
+    /// Attempts to get a signed download URL from Supabase Storage for the given PDF path,
+    /// then downloads the file to a local temp URL for PDFKit rendering.
+    private func loadPDFFromStorage(for application: LoanApplication, pdfPath: String) async {
+        do {
+            let client = SupabaseManager.shared.client
+            // Create a signed URL valid for 1 hour
+            let signedURL = try await client.storage
+                .from("loan_documents")
+                .createSignedURL(path: pdfPath, expiresIn: 3600)
+
+            // Download the data and cache locally
+            let (data, response) = try await URLSession.shared.data(from: signedURL)
+            if let httpResponse = response as? HTTPURLResponse,
+               (200...299).contains(httpResponse.statusCode),
+               !data.isEmpty {
+                let tempDir = FileManager.default.temporaryDirectory
+                let fileURL = tempDir.appendingPathComponent("SanctionLetter_\(application.id.uuidString).pdf")
+                try data.write(to: fileURL)
+                self.pdfURL = fileURL
+            }
+        } catch {
+            print("Storage PDF fetch failed, will fall back to local generation: \(error)")
         }
     }
 

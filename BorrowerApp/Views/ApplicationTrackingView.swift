@@ -46,7 +46,13 @@ struct ApplicationTrackingView: View {
                             PipelineTrackerView(status: app.status)
                                 .padding(.top, Spacing.xs)
 
-                            if app.status == .approved, let letter = app.sanctionLetter, letter.status == "sent" {
+                            // Show sanction letter card if:
+                            // 1. Event-based detection (officer sent via new flow), OR
+                            // 2. Legacy: sanction letter status == "sent" from DB
+                            let hasSLEvent = viewModel.sanctionLetterPDFPaths[app.id] != nil
+                            let hasLegacyLetter = app.status == .approved &&
+                                (app.sanctionLetter?.status == "sent" || app.sanctionLetter?.status == "accepted")
+                            if hasSLEvent || hasLegacyLetter {
                                 sanctionLetterPromptCard(for: app)
                                     .padding(.top, Spacing.s)
                             }
@@ -73,17 +79,17 @@ struct ApplicationTrackingView: View {
     private func sanctionLetterPromptCard(for app: LoanApplication) -> some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             HStack(spacing: Spacing.xs) {
-                Image(systemName: "doc.text.fill")
+                Image(systemName: "doc.badge.checkmark.fill")
                     .foregroundColor(.accentColor)
-                Text("Sanction Letter Pending")
+                Text("Sanction Letter Ready")
                     .font(.subheadline.weight(.bold))
             }
-            Text("Please review and accept the official sanction letter terms to unlock loan disbursement.")
+            Text("Your official loan sanction letter is ready. Review the terms and accept it to proceed to disbursement.")
                 .font(.caption)
                 .foregroundColor(.secondary)
-            
+
             NavigationLink(destination: SanctionLetterView(application: app).toolbar(.hidden, for: .tabBar)) {
-                Text("Review & Accept Terms")
+                Label("View & Accept Letter", systemImage: "arrow.down.doc.fill")
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, Spacing.xs_s)
@@ -92,7 +98,7 @@ struct ApplicationTrackingView: View {
             .tint(.accentColor)
         }
         .padding(Spacing.m)
-        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+        .background(Color.accentColor.opacity(0.06), in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                 .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)

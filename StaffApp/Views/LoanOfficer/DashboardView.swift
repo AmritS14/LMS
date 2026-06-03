@@ -12,95 +12,82 @@ struct DashboardView: View {
 
             VStack(spacing: 24) {
 
-                // MARK: Header
-                DashboardHeaderSection()
+                // MARK: Subtitle Row
+                subtitleRow
 
                 // MARK: KPI Overview
                 KPIOverviewSection()
 
-                // MARK: Recovery Section
-                RecoveryVerificationView()
+                // MARK: Recent Applications Section
+                RecentApplicationsSection()
 
                 Spacer(minLength: 40)
             }
             .padding(.bottom, 20)
         }
         .background(Color(.systemGroupedBackground))
-        .toolbarTitleDisplayMode(.inlineLarge)
+        .navigationTitle("Dashboard")
+        .toolbarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                toolbarPill
+            }
+        }
     }
-}
 
-// MARK: - Dashboard Header Section
+    private var subtitleRow: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Branch: \(viewModel.selectedBranch.isEmpty ? (viewModel.officerProfile.branch.isEmpty ? "—" : viewModel.officerProfile.branch) : viewModel.selectedBranch)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+    }
 
-struct DashboardHeaderSection: View {
-
-    @Environment(AppViewModel.self) var viewModel
-
-    var body: some View {
-
-        HStack(alignment: .center, spacing: 15) {
+    private var toolbarPill: some View {
+        HStack(spacing: 20) {
+            Button {
+                viewModel.navigationPath.append(AppDestination.notifications)
+            } label: {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: "bell.fill")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.primary)
+                    
+                    if viewModel.unreadNotifications > 0 {
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 8, height: 8)
+                            .offset(x: 4, y: -4)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Notifications")
             
             Button {
                 viewModel.navigationPath.append(AppDestination.profile)
             } label: {
-                LOAvatarView(
-                    initials: viewModel.officerProfile.avatarInitials,
-                    size: 44,
-                    colors: [
-                        Color(red: 0.2, green: 0.5, blue: 1.0),
-                        Color(red: 0.4, green: 0.3, blue: 0.9)
-                    ]
-                )
-            }
-            .buttonStyle(.plain)
-            
-            VStack(alignment: .leading, spacing: 5) {
-                
-                Text(viewModel.officerProfile.name.isEmpty ? "Welcome" : viewModel.officerProfile.name)
-                    .font(.system(size: 22, weight: .bold))
+                Image(systemName: "person.crop.circle")
+                    .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(.primary)
-                Text(viewModel.selectedBranch.isEmpty ? viewModel.officerProfile.designation : viewModel.selectedBranch)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
-            
-            Spacer()
-            
-            Button {
-                
-                viewModel.navigationPath.append(
-                    AppDestination.notifications
-                )
-                
-            } label: {
-                
-                ZStack(alignment: .topTrailing) {
-                    
-                    Image(systemName: "bell.fill")
-                        .font(.system(size: 22, weight: .medium))
-                        .foregroundStyle(.primary)
-                        .frame(width: 44, height: 44)
-                        .background(
-                            Circle()
-                                .fill(
-                                    Color(
-                                        .secondarySystemGroupedBackground
-                                    )
-                                )
-                        )
-                    
-                    LOCountBadge(
-                        count: viewModel.unreadNotifications
-                    )
-                    .offset(x: 6, y: -4)
-                }
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Profile")
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 8)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(
+            Capsule()
+                .fill(Color(.secondarySystemGroupedBackground))
+                .shadow(color: .black.opacity(0.06), radius: 6, x: 0, y: 3)
+        )
     }
 }
+
 
 // MARK: - KPI Overview Section
 
@@ -115,23 +102,14 @@ struct KPIOverviewSection: View {
 
     var body: some View {
 
-        VStack(alignment: .leading) {
+        LazyVGrid(columns: columns) {
 
-            LOSectionHeader(
-                title: "Today's Activity",
-                subtitle: "Daily metrics overview"
-            )
-            .padding(.horizontal, 20)
+            ForEach(viewModel.kpiData) { kpi in
 
-            LazyVGrid(columns: columns) {
-
-                ForEach(viewModel.kpiData) { kpi in
-
-                    KPICardView(kpi: kpi)
-                }
+                KPICardView(kpi: kpi)
             }
-            .padding(.horizontal)
         }
+        .padding(.horizontal)
     }
 }
 
@@ -185,6 +163,113 @@ struct KPICardView: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color(.separator).opacity(0.2), lineWidth: 0.5)
         )
+    }
+}
+
+// MARK: - Recent Applications Section
+
+struct RecentApplicationsSection: View {
+    @Environment(AppViewModel.self) var viewModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            LOSectionHeader(
+                title: "Recent Applications",
+                subtitle: "Latest files in queue",
+                actionTitle: "View All",
+                action: {
+                    viewModel.navigationPath.append(AppDestination.allapplications)
+                }
+            )
+            .padding(.horizontal, 20)
+
+            VStack(spacing: 14) {
+                if viewModel.recentApplications.isEmpty {
+                    VStack(spacing: 8) {
+                        Image(systemName: "tray")
+                            .font(.system(size: 32))
+                            .foregroundColor(.secondary)
+                        Text("No Applications Assigned")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 30)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color(.secondarySystemGroupedBackground))
+                    )
+                } else {
+                    ForEach(viewModel.recentApplications.prefix(3)) { application in
+                        Button {
+                            viewModel.selectedApplication = application
+                            viewModel.navigationPath.append(AppDestination.loanReview)
+                        } label: {
+                            applicationCard(application)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 20)
+                }
+            }
+        }
+    }
+
+    private func applicationCard(_ application: LOLoanApplication) -> some View {
+        LOPremiumCard {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top, spacing: 12) {
+                    LOAvatarView(
+                        initials: application.borrowerInitials,
+                        size: 48,
+                        colors: application.riskLevel == .critical ? [.red, .pink] : [.blue, .cyan]
+                    )
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 6) {
+                            Text(application.borrowerName)
+                                .font(.system(size: 16, weight: .semibold))
+                            if application.fraudFlag {
+                                Image(systemName: "exclamationmark.shield.fill")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(.red)
+                            }
+                        }
+                        
+                        Text(application.loanType)
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                        
+                        Text(AppFormatters.formatCurrency(application.loanAmount))
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                    }
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                }
+                HStack(spacing: 8) {
+                    LOStatusBadge(
+                        text: application.status.rawValue,
+                        color: application.status.color,
+                        icon: application.status.icon,
+                        size: .small
+                    )
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 3) {
+                        Image(systemName: "clock")
+                            .font(.system(size: 10))
+                        Text(AppFormatters.timeAgo(application.applicationDate))
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 4)
+                }
+            }
+        }
     }
 }
 

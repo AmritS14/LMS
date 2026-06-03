@@ -688,4 +688,32 @@ actor SupabaseLoanService: LoanService {
         
         throw NSError(domain: "Loan", code: 500, userInfo: [NSLocalizedDescriptionKey: "Failed to reload foreclosed loan"])
     }
+
+    // MARK: - Sanction Letter Issued Event
+
+    /// Inserts a `comment_added` event with special metadata so the borrower's
+    /// `ApplicationTrackingView` can detect that a sanction letter is ready to download.
+    func insertSanctionLetterIssuedEvent(applicationID: UUID, officerID: UUID, pdfPath: String) async throws {
+        struct InsertEvent: Encodable {
+            let application_id: UUID
+            let actor_id: UUID
+            let event_type: String
+            let remark: String
+            let metadata: [String: String]
+        }
+        let insertData = InsertEvent(
+            application_id: applicationID,
+            actor_id: officerID,
+            event_type: "comment_added",
+            remark: "[SANCTION_LETTER_ISSUED]",
+            metadata: [
+                "event_subtype": "sanction_letter_issued",
+                "pdf_path": pdfPath
+            ]
+        )
+        _ = try await client
+            .from("loan_application_events")
+            .insert(insertData)
+            .execute()
+    }
 }

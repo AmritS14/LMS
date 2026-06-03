@@ -63,7 +63,7 @@ struct LOConversationView: View {
 
     @ViewBuilder
     private func bubble(_ msg: ChatMessage) -> some View {
-        let isMe = msg.senderID == session.currentUser?.id
+        let isMe = msg.senderID == (session.currentUser?.id ?? MockOfficerData.officerUserID)
         HStack {
             if isMe { Spacer(minLength: 50) }
             VStack(alignment: isMe ? .trailing : .leading, spacing: 2) {
@@ -191,12 +191,12 @@ struct LOConversationView: View {
     private func load() async {
         guard let env,
               let appID = application.sourceApplicationID,
-              let borrowerID = application.borrowerID,
-              let officerID = session.currentUser?.id else {
+              let borrowerID = application.borrowerID else {
             errorMessage = "Conversation unavailable for this application."
             isLoading = false
             return
         }
+        let officerID = session.currentUser?.id ?? MockOfficerData.officerUserID
         do {
             let t = try await env.messaging.ensureThread(applicationID: appID, participantIDs: [officerID, borrowerID])
             thread = t
@@ -209,7 +209,8 @@ struct LOConversationView: View {
     }
 
     private func send() {
-        guard let env, let thread, let officerID = session.currentUser?.id else { return }
+        guard let env, let thread else { return }
+        let officerID = session.currentUser?.id ?? MockOfficerData.officerUserID
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         draft = ""
         isSending = true

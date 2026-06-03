@@ -89,7 +89,9 @@ struct LoanReviewView: View {
                     case .actions:
                         VStack(spacing: 20) {
                             recommendationSection
-                            sanctionLetterSection
+                            if currentApplication.status == .approved || currentApplication.status == .disbursed {
+                                sanctionLetterSection
+                            }
                         }
                         .transition(.opacity)
                     }

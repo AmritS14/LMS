@@ -12,6 +12,13 @@ struct DocumentReviewSheet: View {
     @State private var rejectionReason: String
     @State private var kycReport: AadhaarVerificationReport? = nil
     @State private var isLoadingReport = false
+    @State private var documentURL: URL? = nil
+    @State private var isLoadingURL = false
+
+    private var isImage: Bool {
+        let name = document.name.lowercased()
+        return name.hasSuffix(".png") || name.hasSuffix(".jpg") || name.hasSuffix(".jpeg") || name.hasSuffix(".heic")
+    }
 
     init(viewModel: AppViewModel, application: LOLoanApplication, document: LOLoanDocument) {
         self.viewModel = viewModel
@@ -54,12 +61,17 @@ struct DocumentReviewSheet: View {
             }
             .task {
                 guard let docID = document.sourceDocumentID,
-                      document.type == "Identity",
                       let env
                 else { return }
-                isLoadingReport = true
-                kycReport = try? await env.aadhaarKYC.report(documentID: docID)
-                isLoadingReport = false
+                isLoadingURL = true
+                documentURL = try? await env.documents.signedURL(documentID: docID)
+                isLoadingURL = false
+                
+                if document.type == "Identity Proof" {
+                    isLoadingReport = true
+                    kycReport = try? await env.aadhaarKYC.report(documentID: docID)
+                    isLoadingReport = false
+                }
             }
         }
     }
@@ -108,42 +120,99 @@ struct DocumentReviewSheet: View {
                 } else if let report = kycReport {
                     AadhaarVerificationReportCard(report: report)
                 } else {
-                    VStack(spacing: 12) {
-                        Image(systemName: "doc.text.viewfinder")
-                            .font(.system(size: 40))
-                            .foregroundColor(.blue.opacity(0.7))
-
-                        Text(document.name.replacingOccurrences(of: " ", with: "_").lowercased() + "_borrower_copy.pdf")
-                            .font(.system(size: 12, weight: .medium, design: .monospaced))
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-
-                        HStack(spacing: 12) {
-                            Label("PDF Document", systemImage: "doc.fill")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.secondary)
-                            Text("•").foregroundColor(.secondary)
-                            Text("2.4 MB")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.secondary)
+                    VStack(spacing: 16) {
+                        if isLoadingURL {
+                            HStack(spacing: 10) {
+                                ProgressView().scaleEffect(0.8)
+                                Text("Loading document…")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.secondary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 30)
+                        } else {
+                            VStack(spacing: 16) {
+                                // Inline Image Preview (if image)
+                                if isImage, let url = documentURL {
+                                    AsyncImage(url: url) { phase in
+                                        switch phase {
+                                        case .empty:
+                                            ProgressView()
+                                                .frame(height: 200)
+                                        case .success(let image):
+                                            image
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fit)
+                                                .frame(maxHeight: 300)
+                                                .cornerRadius(12)
+                                        case .failure:
+                                            VStack(spacing: 8) {
+                                                Image(systemName: "exclamationmark.triangle")
+                                                    .font(.title)
+                                                    .foregroundColor(.orange)
+                                                Text("Failed to load image preview")
+                                                    .font(.caption)
+                                                    .foregroundColor(.secondary)
+                                            }
+                                            .frame(height: 200)
+                                        @unknown default:
+                                            EmptyView()
+                                        }
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(8)
+                                    .background(Color(.secondarySystemGroupedBackground))
+                                    .cornerRadius(12)
+                                } else {
+                                    // Document Icon and Type label
+                                    VStack(spacing: 12) {
+                                        Image(systemName: isImage ? "photo.fill" : "doc.text.fill")
+                                            .font(.system(size: 48))
+                                            .foregroundColor(.blue.opacity(0.8))
+                                        
+                                        Text(document.name)
+                                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                            .foregroundColor(.primary)
+                                            .multilineTextAlignment(.center)
+                                            .padding(.horizontal)
+                                    }
+                                    .padding(.vertical, 16)
+                                }
+                                
+                                // Open Document Button
+                                if let url = documentURL {
+                                    Link(destination: url) {
+                                        HStack {
+                                            Image(systemName: "arrow.up.right.app.fill")
+                                            Text(isImage ? "View Full Image" : "Open Document")
+                                        }
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(
+                                            LinearGradient(
+                                                colors: [Color.blue, Color(red: 0.15, green: 0.4, blue: 0.95)],
+                                                startPoint: .leading,
+                                                endPoint: .trailing
+                                            )
+                                        )
+                                        .cornerRadius(10)
+                                        .shadow(color: Color.blue.opacity(0.3), radius: 4, x: 0, y: 2)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .padding(.horizontal, 8)
+                                } else {
+                                    Text("Unable to generate access link")
+                                        .font(.caption)
+                                        .foregroundColor(.red)
+                                }
+                            }
                         }
-
-                        HStack(spacing: 6) {
-                            Image(systemName: document.ocrVerified ? "checkmark.shield.fill" : "exclamationmark.shield.fill")
-                                .font(.system(size: 11))
-                                .foregroundColor(document.ocrVerified ? .green : .orange)
-                            Text(document.ocrVerified ? "OCR Match: 98% (Verified Security Hash)" : "OCR Status: Pending Auto-Scanning")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundColor(document.ocrVerified ? .green : .orange)
-                        }
-                        .padding(.vertical, 6)
-                        .padding(.horizontal, 12)
-                        .background(document.ocrVerified ? Color.green.opacity(0.08) : Color.orange.opacity(0.08))
-                        .cornerRadius(8)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 24)
+                    .padding(.vertical, 20)
+                    .padding(.horizontal, 16)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color(.secondarySystemGroupedBackground))

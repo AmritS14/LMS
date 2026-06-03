@@ -306,19 +306,79 @@ import Combine
                 }
             }
             
-            // Notifications
-            if let notifs = try? await environment.notifications.fetchHistory(limit: 20) {
-                self.notifications = notifs.map { n in
-                    AppNotification(
-                        title: n.title,
-                        message: n.body,
-                        type: .systemUpdate,
-                        timestamp: n.receivedAt,
+            // Notifications (Dynamically generate context-relevant Loan Officer notifications)
+            var newNotifs: [AppNotification] = []
+            
+            // 1. Overdue Borrowers
+            for borrower in overdueBorrowers {
+                newNotifs.append(AppNotification(
+                    title: "Overdue Payment: \(borrower.borrowerName)",
+                    message: "Borrower is \(borrower.dpdDays) DPD. Outstanding EMI: \(AppFormatters.formatCurrency(borrower.outstandingEMI)).",
+                    type: .overdueReminder,
+                    timestamp: Calendar.current.date(byAdding: .minute, value: -15, to: Date()) ?? Date(),
+                    isRead: false,
+                    priority: borrower.dpdDays > 30 ? 1 : 2
+                ))
+            }
+            
+            // 2. Pending & Under Review Applications (Assigned Applications)
+            for app in rows {
+                if app.status == .pending || app.status == .underReview {
+                    newNotifs.append(AppNotification(
+                        title: "Application Assigned",
+                        message: "New \(app.loanType) application from \(app.borrowerName) for \(AppFormatters.formatCurrency(app.loanAmount)) is assigned to you.",
+                        type: .assignedApplication,
+                        timestamp: app.applicationDate,
                         isRead: false,
                         priority: 2
-                    )
+                    ))
+                }
+                
+                // 3. Fraud / Credit score risk Alerts
+                if app.creditScore < 620 {
+                    newNotifs.append(AppNotification(
+                        title: "High Risk Alert: \(app.borrowerName)",
+                        message: "Credit score is low (\(app.creditScore)). Check identity and income proofs thoroughly.",
+                        type: .fraudAlert,
+                        timestamp: app.applicationDate.addingTimeInterval(300),
+                        isRead: false,
+                        priority: 1
+                    ))
+                }
+                
+                // 4. Escalations
+                if app.status == .escalated {
+                    newNotifs.append(AppNotification(
+                        title: "Application Escalated: \(app.borrowerName)",
+                        message: "Application escalated to manager for credit review.",
+                        type: .escalation,
+                        timestamp: Date().addingTimeInterval(-7200),
+                        isRead: false,
+                        priority: 2
+                    ))
                 }
             }
+            
+            // 5. System Notifications
+            newNotifs.append(AppNotification(
+                title: "e-KYC System Online",
+                message: "Aadhaar e-KYC integration is fully operational for document checks.",
+                type: .systemUpdate,
+                timestamp: Date().addingTimeInterval(-86400),
+                isRead: true,
+                priority: 2
+            ))
+            
+            newNotifs.append(AppNotification(
+                title: "Scheduled Maintenance",
+                message: "LMS backend servers will be offline for security updates on Sunday from 2:00 AM to 4:00 AM.",
+                type: .systemUpdate,
+                timestamp: Date().addingTimeInterval(-172800),
+                isRead: true,
+                priority: 2
+            ))
+            
+            self.notifications = newNotifs.sorted { $0.timestamp > $1.timestamp }
 
             recalculateKPIs()
         } catch {
@@ -621,30 +681,25 @@ import Combine
                 self.currentSanctionLetter = letter
             }
             
-            // 2. Post an in-app notification to the borrower
+            // 2. Post an in-app push notification to the borrower
             try? await environment.notifications.sendNotification(
                 topic: .system,
                 title: "Sanction Letter Available",
-                body: "A sanction letter has been generated for your \(application.loanType). Please review and accept it."
+                body: "Your sanction letter for the \(application.loanType) is ready. Open your application to review and download it."
             )
             
-            // 3. Send sanction letter PDF in the application chat thread spontaneously
+            // 3. Insert a sanction_letter_issued application event so the borrower's
+            //    dashboard shows a "Download Sanction Letter" card (no chat message needed).
             if officerID == nil {
                 officerID = (await environment.auth.currentUser)?.id
             }
             let senderID = officerID ?? MockOfficerData.officerUserID
-            if let thread = try? await environment.messaging.ensureThread(
+            let storagePath = "sanction_letters/\(appID.uuidString).pdf"
+            try? await environment.loans.insertSanctionLetterIssuedEvent(
                 applicationID: appID,
-                participantIDs: [senderID, borrowerID]
-            ) {
-                let msgBody = "[Sanction Letter]: sanction_letters/\(appID.uuidString).pdf"
-                let message = ChatMessage(
-                    threadID: thread.id,
-                    senderID: senderID,
-                    body: msgBody
-                )
-                _ = try? await environment.messaging.send(message)
-            }
+                officerID: senderID,
+                pdfPath: storagePath
+            )
             
             // 4. Add a timeline event for sending
             if let index = recentApplications.firstIndex(where: { $0.sourceApplicationID == appID }) {
@@ -1037,24 +1092,24 @@ import Combine
                     }
                     
                     // Database Sync
-                    if let environment = self.environment {
+                    if let environment = self.environment, let dbDocID = recentApplications[appIdx].documents[docIdx].sourceDocumentID {
                         Task {
                             do {
                                 switch status {
                                 case .verified:
-                                    try await environment.documents.verifyDocument(documentID: documentId, remark: reviewNotes)
-                                    print("[LOAppViewModel] Successfully verified document \(documentId)")
+                                    try await environment.documents.verifyDocument(documentID: dbDocID, remark: reviewNotes)
+                                    print("[LOAppViewModel] Successfully verified document \(dbDocID)")
                                 case .rejected:
-                                    try await environment.documents.rejectDocument(documentID: documentId, reason: rejectionReason ?? "Rejected")
-                                    print("[LOAppViewModel] Successfully rejected document \(documentId)")
+                                    try await environment.documents.rejectDocument(documentID: dbDocID, reason: rejectionReason ?? "Rejected")
+                                    print("[LOAppViewModel] Successfully rejected document \(dbDocID)")
                                 case .needsReview:
-                                    try await environment.documents.updateStatus(documentID: documentId, status: .pending)
-                                    print("[LOAppViewModel] Successfully set document \(documentId) to pending (needsReview)")
+                                    try await environment.documents.updateStatus(documentID: dbDocID, status: .pending)
+                                    print("[LOAppViewModel] Successfully set document \(dbDocID) to pending (needsReview)")
                                 default:
                                     break
                                 }
                             } catch {
-                                print("[LOAppViewModel] Failed to sync document review for \(documentId): \(error)")
+                                print("[LOAppViewModel] Failed to sync document review for \(dbDocID): \(error)")
                             }
                         }
                     }

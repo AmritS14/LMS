@@ -30,4 +30,8 @@ protocol LoanService: Sendable {
     // Foreclosure actions
     func calculateForeclosure(loanID: UUID) async throws -> ForeclosureDetails
     func forecloseLoan(loanID: UUID, totalPayoff: Decimal) async throws -> Loan
+
+    // Sanction letter issued event — stores a special application event so the
+    // borrower's dashboard can show a "Download Sanction Letter" card.
+    func insertSanctionLetterIssuedEvent(applicationID: UUID, officerID: UUID, pdfPath: String) async throws
 }

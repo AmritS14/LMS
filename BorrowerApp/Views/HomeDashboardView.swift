@@ -123,6 +123,21 @@ struct HomeDashboardView: View {
             .padding(.top, Spacing.m)
         }
 
+        // Sanction letter ready cards — shown when an officer has issued the letter
+        let slApps = viewModel.applications.filter { app in
+            viewModel.sanctionLetterPDFPaths[app.id] != nil
+                || (app.status == .approved && (app.sanctionLetter?.status == "sent" || app.sanctionLetter?.status == "accepted"))
+        }
+        if !slApps.isEmpty {
+            VStack(spacing: Spacing.s) {
+                ForEach(slApps) { app in
+                    sanctionLetterReadyCard(app)
+                }
+            }
+            .padding(.horizontal, Spacing.m)
+            .padding(.top, docPendingApps.isEmpty ? Spacing.m : Spacing.s)
+        }
+
         let pendingApps = viewModel.applications.filter { $0.status != .disbursed && $0.status != .closed }
         if !pendingApps.isEmpty {
             VStack(alignment: .leading, spacing: Spacing.s) {
@@ -343,6 +358,54 @@ struct HomeDashboardView: View {
         .overlay(
             RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
                 .stroke(Color.lmsWarning.opacity(0.3), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Sanction Letter Ready Card
+    private func sanctionLetterReadyCard(_ app: LoanApplication) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(spacing: Spacing.sm) {
+                ZStack {
+                    Circle()
+                        .fill(Color.accentColor.opacity(0.12))
+                        .frame(width: 38, height: 38)
+                    Image(systemName: "doc.badge.checkmark.fill")
+                        .foregroundStyle(Color.accentColor)
+                        .font(.system(size: 17))
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Sanction Letter Ready")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text("\(app.loanType.rawValue.capitalized) Loan • \(Formatting.currency(app.requestedAmount))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+
+            Text("Your official loan sanction letter has been issued. Review and accept the terms to proceed to disbursement.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+
+            NavigationLink(destination: SanctionLetterView(application: app).toolbar(.hidden, for: .tabBar)) {
+                Label("View & Accept Letter", systemImage: "arrow.down.doc.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Spacing.s)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.accentColor)
+        }
+        .padding(Spacing.m)
+        .background(Color.accentColor.opacity(0.06), in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                .stroke(Color.accentColor.opacity(0.25), lineWidth: 1)
         )
     }
 

@@ -145,7 +145,7 @@ struct ChatView: View {
         }
         do {
             let dbMsgs = try await env.messaging.messages(threadID: conversation.id)
-            let currentUserID = session.currentUser?.id
+            let currentUserID = session.currentUser?.id ?? MockOfficerData.officerUserID
             self.messages = dbMsgs.map { m in
                 LOChatMessage(
                     text: m.body,
@@ -180,7 +180,8 @@ struct ChatView: View {
         )
         self.messages.append(localMsg)
 
-        guard let env, let currentUserID = session.currentUser?.id else { return }
+        guard let env else { return }
+        let currentUserID = session.currentUser?.id ?? MockOfficerData.officerUserID
         Task {
             do {
                 let msg = ChatMessage(
