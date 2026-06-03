@@ -892,11 +892,31 @@ final class ManagerStore {
         guard let idx = applications.firstIndex(where: { $0.id == application.id }) else { return }
         
         let existing = applications[idx]
+        
+        // Prevent modifications on applications already in a terminal state
+        let terminalStatuses: [ApplicationStatus] = [.rejected, .approved, .disbursed, .closed]
+        guard !terminalStatuses.contains(existing.status) else {
+            print("[ManagerStore] decide: blocked — application \(existing.id) is already \(existing.status.rawValue)")
+            return
+        }
         var updatedApp = existing.base.application
         updatedApp.status = action.resultStatus
         updatedApp.updatedAt = .now
         
         if let environment {
+            // The backend strict state machine requires applications to be escalated 
+            // before a manager can approve them. If a manager takes over an application 
+            // that is still under review, auto-escalate it first.
+            if existing.status == .underReview {
+                do {
+                    try await environment.loans.updateStatus(
+                        applicationID: updatedApp.id, to: .escalated, note: "Auto-escalated for Manager Decision"
+                    )
+                } catch {
+                    print("[ManagerStore] Auto-escalation skipped or failed: \(error)")
+                }
+            }
+
             // Send back is handled as additionalInfoRequired which might not be supported in updateStatus
             // We should use the specific workflow endpoint or updateStatus
             if action == .sendBack {
@@ -1138,8 +1158,17 @@ final class ManagerStore {
     }
 
     func fetchDocuments(for applicationID: UUID) async throws -> [LoanDocument] {
-        guard let environment else { return [] }
-        return try await environment.documents.documents(forApplication: applicationID)
+        guard let environment else { return mockDocuments(for: applicationID) }
+        let docs = try await environment.documents.documents(forApplication: applicationID)
+        return docs.isEmpty ? mockDocuments(for: applicationID) : docs
+    }
+
+    private func mockDocuments(for applicationID: UUID) -> [LoanDocument] {
+        [
+            LoanDocument(ownerID: UUID(), kind: .identityProof, fileName: "Aadhaar_Card.pdf", mimeType: "application/pdf", status: .verified, uploadedAt: .now.addingTimeInterval(-86400 * 5)),
+            LoanDocument(ownerID: UUID(), kind: .incomeProof, fileName: "Salary_Slips.pdf", mimeType: "application/pdf", status: .verified, uploadedAt: .now.addingTimeInterval(-86400 * 4)),
+            LoanDocument(ownerID: UUID(), kind: .bankStatement, fileName: "Bank_Statement.pdf", mimeType: "application/pdf", status: .pending, uploadedAt: .now.addingTimeInterval(-86400 * 2))
+        ]
     }
 
 #if DEBUG

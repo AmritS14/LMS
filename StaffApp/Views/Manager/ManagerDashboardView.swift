@@ -62,9 +62,6 @@ struct ManagerDashboardView: View {
     private var subtitleRow: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(store.greetingDateText)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
                 Text("Branch: \(store.branchName)")
                     .font(.caption)
                     .foregroundStyle(.secondary)

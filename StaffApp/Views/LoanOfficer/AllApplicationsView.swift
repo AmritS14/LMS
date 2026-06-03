@@ -58,8 +58,6 @@ struct AllApplicationsView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Applications")
         .navigationBarTitleDisplayMode(.large)
-        .refreshable { await viewModel.refreshAll() }
-        .task { await viewModel.refreshAll() }
     }
 }
 

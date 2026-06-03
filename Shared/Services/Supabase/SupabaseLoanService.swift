@@ -615,8 +615,14 @@ actor SupabaseLoanService: LoanService {
         let (data, httpResponse) = try await URLSession.shared.data(for: request)
 
         if let httpRes = httpResponse as? HTTPURLResponse, !(200...299).contains(httpRes.statusCode) {
-            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
-            throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: "\(action) failed: \(errorStr)"])
+            var errorMessage = "Unknown error"
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let message = json["message"] as? String {
+                errorMessage = message
+            } else {
+                errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
+            }
+            throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: "\(action) failed: \(errorMessage)"])
         }
     }
 

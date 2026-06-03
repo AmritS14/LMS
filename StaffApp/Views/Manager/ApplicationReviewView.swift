@@ -14,6 +14,12 @@ struct ApplicationReviewView: View {
 
     private var app: ManagerApplication? { store.application(id: applicationID) }
 
+    /// Whether the application is in a terminal state where no modifications should be allowed.
+    private var isTerminal: Bool {
+        guard let app else { return true }
+        return [.rejected, .approved, .disbursed, .closed].contains(app.status)
+    }
+
     var body: some View {
         Group {
             if let app {
@@ -31,6 +37,9 @@ struct ApplicationReviewView: View {
     private func content(_ app: ManagerApplication) -> some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: Spacing.m) {
+                if isTerminal {
+                    terminalStatusBanner(app)
+                }
                 borrowerSection(app)
                 loanSection(app)
                 riskSummarySection(app)
@@ -192,7 +201,7 @@ struct ApplicationReviewView: View {
 
     private var documentsSection: some View {
         SectionCard(title: "Verified Documents",
-                    footer: "Tap a document to toggle verification.") {
+                    footer: isTerminal ? nil : "Tap a document to toggle verification.") {
             if documents.isEmpty {
                 Text("No documents attached.")
                     .font(.subheadline)
@@ -208,7 +217,11 @@ struct ApplicationReviewView: View {
                                 size: .small)
                 }
                 ForEach(documents) { doc in
-                    documentRow(doc)
+                    if isTerminal {
+                        readOnlyDocumentRow(doc)
+                    } else {
+                        documentRow(doc)
+                    }
                 }
             }
         }
@@ -325,10 +338,58 @@ struct ApplicationReviewView: View {
         .buttonStyle(.plain)
     }
 
+    /// Read-only document row shown when the application is in a terminal state (rejected/approved/disbursed/closed).
+    private func readOnlyDocumentRow(_ doc: LoanDocument) -> some View {
+        let verified = verifiedDocs.contains(doc.id)
+        return HStack(spacing: Spacing.sm) {
+            Image(systemName: "doc.text.fill")
+                .foregroundStyle(Color.lmsAccent)
+                .frame(width: 24)
+            Text(doc.kind.rawValue.capitalized).font(.subheadline).foregroundStyle(.primary)
+            Spacer()
+            Image(systemName: verified ? "checkmark.circle.fill" : "circle")
+                .font(.title3)
+                .foregroundStyle(verified ? Color.lmsSuccess : Color.lmsGray4)
+        }
+        .padding(Spacing.sm)
+        .background(Color.lmsBackground, in: RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous))
+    }
+
+    // MARK: Terminal status banner
+
+    private func terminalStatusBanner(_ app: ManagerApplication) -> some View {
+        let (icon, text, color): (String, String, Color) = switch app.status {
+        case .rejected:
+            ("xmark.octagon.fill", "This application has been rejected. No further modifications are allowed.", .lmsDanger)
+        case .approved:
+            ("checkmark.seal.fill", "This application has been approved. Pending disbursement.", .lmsSuccess)
+        case .disbursed:
+            ("banknote.fill", "This loan has been disbursed. This record is read-only.", .lmsInfo)
+        case .closed:
+            ("archivebox.fill", "This application is closed.", .secondary)
+        default:
+            ("info.circle.fill", "This application is in a final state.", .secondary)
+        }
+
+        return HStack(spacing: Spacing.sm) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(color)
+            Text(text)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+        }
+        .padding(Spacing.m)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(color.opacity(0.10), in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+    }
+
     // MARK: Action bar
 
     @State private var isDisbursing = false
     @State private var disburseError: String? = nil
+
+    @State private var showEscalationWarning = false
 
     @ViewBuilder
     private func actionBar(_ app: ManagerApplication) -> some View {
@@ -387,13 +448,27 @@ struct ApplicationReviewView: View {
                 }
                 .controlSize(.large)
 
-                Button { activeSheet = .approve } label: {
+                Button { 
+                    if app.status == .underReview {
+                        showEscalationWarning = true
+                    } else {
+                        activeSheet = .approve 
+                    }
+                } label: {
                     Label("Approve", systemImage: "checkmark.seal.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .tint(.green)
+                .alert("Not Escalated", isPresented: $showEscalationWarning) {
+                    Button("Cancel", role: .cancel) { }
+                    Button("Escalate & Approve", role: .none) {
+                        activeSheet = .approve
+                    }
+                } message: {
+                    Text("This application is still under review by the officer and has not been escalated. Are you sure you want to take it over and approve it?")
+                }
             }
             .padding(Spacing.m)
             .background(.bar)
