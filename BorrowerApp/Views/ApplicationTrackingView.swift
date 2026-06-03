@@ -45,6 +45,11 @@ struct ApplicationTrackingView: View {
 
                             PipelineTrackerView(status: app.status)
                                 .padding(.top, Spacing.xs)
+
+                            if app.status == .approved, let letter = app.sanctionLetter, letter.status == "sent" {
+                                sanctionLetterPromptCard(for: app)
+                                    .padding(.top, Spacing.s)
+                            }
                         }
                         .padding(.vertical, Spacing.xs)
                     }
@@ -56,9 +61,42 @@ struct ApplicationTrackingView: View {
         .navigationBarTitleDisplayMode(.large)
         .task {
             if let env, let userID = session.currentUser?.id {
-                await viewModel.fetchDashboardData(loanService: env.loans, borrowerID: userID)
+                await viewModel.fetchDashboardData(
+                    loanService: env.loans,
+                    sanctionLetterService: env.sanctionLetters,
+                    borrowerID: userID
+                )
             }
         }
+    }
+
+    private func sanctionLetterPromptCard(for app: LoanApplication) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.s) {
+            HStack(spacing: Spacing.xs) {
+                Image(systemName: "doc.text.fill")
+                    .foregroundColor(.accentColor)
+                Text("Sanction Letter Pending")
+                    .font(.subheadline.weight(.bold))
+            }
+            Text("Please review and accept the official sanction letter terms to unlock loan disbursement.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            
+            NavigationLink(destination: SanctionLetterView(application: app).toolbar(.hidden, for: .tabBar)) {
+                Text("Review & Accept Terms")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Spacing.xs_s)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.accentColor)
+        }
+        .padding(Spacing.m)
+        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
+        )
     }
 
     private func statusBadge(for status: ApplicationStatus) -> some View {

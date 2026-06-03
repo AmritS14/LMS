@@ -29,7 +29,8 @@ struct StaffApp: App {
         messaging: SupabaseMessagingService(client: SupabaseManager.shared.client),
         keychain: SecureKeychainService(),
         admin: SupabaseAdminService(client: SupabaseManager.shared.client),
-        aadhaarKYC: SupabaseAadhaarKYCService(client: SupabaseManager.shared.client)
+        aadhaarKYC: SupabaseAadhaarKYCService(client: SupabaseManager.shared.client),
+        sanctionLetters: SupabaseSanctionLetterService(client: SupabaseManager.shared.client)
     )
 
     var body: some Scene {

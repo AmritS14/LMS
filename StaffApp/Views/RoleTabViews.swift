@@ -9,9 +9,6 @@ struct OfficerTabView: View {
             Tab("Applications", systemImage: "tray.full.fill") {
                 OfficerNavigationStack { AllApplicationsView() }
             }
-            Tab("Recovery", systemImage: "arrow.clockwise.circle.fill") {
-                OfficerNavigationStack { RecoveryVerificationView() }
-            }
         }
     }
 }

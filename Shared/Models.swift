@@ -204,6 +204,7 @@ struct LoanApplication: Identifiable, Codable, Sendable, Hashable {
     var borrowerEmail: String? = nil
     var borrowerPhone: String? = nil
     var productName: String? = nil
+    var sanctionLetter: SanctionLetter? = nil
 }
 
 struct ApplicationEvent: Identifiable, Codable, Sendable {
@@ -389,4 +390,18 @@ struct PushNotification: Identifiable, Codable, Sendable, Hashable {
     var body: String
     var deepLink: URL?
     var receivedAt: Date = .now
+}
+
+// MARK: - Sanction Letters
+
+struct SanctionLetter: Identifiable, Codable, Sendable, Hashable {
+    var id: UUID = UUID()
+    var loanApplicationID: UUID
+    var borrowerID: UUID
+    var pdfPath: String
+    var generatedDate: Date = .now
+    var version: Int = 1
+    var status: String = "generated" // 'generated', 'accepted'
+    var isAccepted: Bool = false
+    var acceptedAt: Date? = nil
 }

@@ -485,7 +485,11 @@ struct HomeDashboardView: View {
 
     private func loadData() async {
         guard let env, let userID = session.currentUser?.id else { return }
-        await viewModel.fetchDashboardData(loanService: env.loans, borrowerID: userID)
+        await viewModel.fetchDashboardData(
+            loanService: env.loans,
+            sanctionLetterService: env.sanctionLetters,
+            borrowerID: userID
+        )
         // Auto-select first pending application for the swipeable card view
         let pendingApps = viewModel.applications.filter { $0.status != .disbursed && $0.status != .closed }
         if let first = pendingApps.first {

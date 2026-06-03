@@ -354,7 +354,7 @@ actor SupabaseLoanService: LoanService {
             try await approveApplication(applicationID: applicationID, remark: note)
         case .rejected:
             try await rejectApplication(applicationID: applicationID, remark: note)
-        case .escalated:
+        case .escalated, .recommended:
             try await sendToManager(applicationID: applicationID, remark: note)
         default:
             throw NSError(domain: "LoanService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Use specific workflow actions for status transitions"])

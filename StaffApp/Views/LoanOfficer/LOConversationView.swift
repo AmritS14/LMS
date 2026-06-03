@@ -67,18 +67,102 @@ struct LOConversationView: View {
         HStack {
             if isMe { Spacer(minLength: 50) }
             VStack(alignment: isMe ? .trailing : .leading, spacing: 2) {
-                Text(msg.body)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(isMe ? Color.accentColor : Color(.secondarySystemGroupedBackground))
-                    .foregroundStyle(isMe ? .white : .primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                if msg.body.hasPrefix("[Sanction Letter]:") {
+                    sanctionLetterCard(isMe: isMe)
+                } else {
+                    Text(msg.body)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(isMe ? Color.accentColor : Color(.secondarySystemGroupedBackground))
+                        .foregroundStyle(isMe ? .white : .primary)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
                 Text(msg.sentAt.formatted(date: .omitted, time: .shortened))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
             if !isMe { Spacer(minLength: 50) }
         }
+    }
+
+    @ViewBuilder
+    private func sanctionLetterCard(isMe: Bool) -> some View {
+        if let pdfURL = getPDFURL() {
+            ShareLink(
+                item: pdfURL,
+                preview: SharePreview("Sanction Letter", image: Image(systemName: "doc.text.fill"))
+            ) {
+                HStack(spacing: 8) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.red.opacity(0.1))
+                            .frame(width: 40, height: 40)
+                        Image(systemName: "doc.text.fill")
+                            .foregroundStyle(.red)
+                            .font(.title3)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Loan Sanction Letter")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(isMe ? .white : .primary)
+                            .multilineTextAlignment(.leading)
+                        Text("Tap to view or share PDF")
+                            .font(.caption)
+                            .foregroundStyle(isMe ? .white.opacity(0.8) : .secondary)
+                            .multilineTextAlignment(.leading)
+                    }
+                    
+                    Spacer(minLength: 8)
+                    
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.footnote)
+                        .foregroundStyle(isMe ? .white.opacity(0.8) : .secondary)
+                }
+                .padding(12)
+                .background(isMe ? Color.accentColor : Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.red.opacity(0.2), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+            .frame(maxWidth: 280)
+        } else {
+            Text("Sanction Letter PDF")
+                .padding(12)
+                .background(isMe ? Color.accentColor : Color(.secondarySystemGroupedBackground))
+                .foregroundStyle(isMe ? .white : .primary)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+    }
+
+    private func getPDFURL() -> URL? {
+        guard let appID = application.sourceApplicationID else { return nil }
+        let amount = Decimal(application.loanAmount)
+        let rate = application.interestRate
+        let tenure = application.tenure
+        let fee = max(Decimal(2500), amount * Decimal(0.015))
+        let referenceCode = "SL-" + appID.uuidString.replacingOccurrences(of: "-", with: "").prefix(6).uppercased()
+        
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("Sanction_Letter_\(appID.uuidString).pdf")
+        let lType = LoanType(rawValue: application.loanType.lowercased().replacingOccurrences(of: " loan", with: "")) ?? .personal
+        let emi = amount / Decimal(max(tenure, 1))
+        
+        let pdfData = SupabaseSanctionLetterService.drawPDF(
+            applicationID: appID,
+            amount: amount,
+            interestRate: rate,
+            tenureMonths: tenure,
+            loanType: lType,
+            borrowerName: application.borrowerName,
+            referenceCode: referenceCode,
+            emi: emi,
+            fee: fee
+        )
+        try? pdfData.write(to: fileURL)
+        return fileURL
     }
 
     private var inputBar: some View {

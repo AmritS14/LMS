@@ -13,7 +13,11 @@ final class DashboardViewModel {
     /// Populated for applications currently in `.additionalInfoRequired`.
     var requestNotes: [UUID: String] = [:]
 
-    func fetchDashboardData(loanService: any LoanService, borrowerID: UUID) async {
+    func fetchDashboardData(
+        loanService: any LoanService,
+        sanctionLetterService: any SanctionLetterService,
+        borrowerID: UUID
+    ) async {
         isLoading = true
         errorMessage = nil
         do {
@@ -22,7 +26,18 @@ final class DashboardViewModel {
 
             let fetchedLoans = try await loansReq
             self.activeLoans = fetchedLoans.filter { $0.status == .active }
-            self.applications = try await appsReq
+            
+            var fetchedApps = try await appsReq
+            for i in 0..<fetchedApps.count {
+                let app = fetchedApps[i]
+                if app.status == .approved || app.status == .disbursed || app.status == .recommended {
+                    if let letter = try? await sanctionLetterService.fetchSanctionLetter(for: app.id) {
+                        fetchedApps[i].sanctionLetter = letter
+                    }
+                }
+            }
+            self.applications = fetchedApps
+            
             await loadRequestNotes(loanService: loanService)
         } catch {
             errorMessage = String(describing: error)

@@ -278,6 +278,18 @@ actor MockNotificationService: NotificationService {
         try await Task.sleep(for: .milliseconds(150))
                         return Array(history.sorted { $0.receivedAt > $1.receivedAt }.prefix(limit))
     }
+
+    func sendNotification(topic: NotificationTopic, title: String, body: String) async throws {
+        let notif = PushNotification(
+            id: UUID(),
+            topic: topic,
+            title: title,
+            body: body,
+            deepLink: nil,
+            receivedAt: Date()
+        )
+        history.insert(notif, at: 0)
+    }
 }
 
 // MARK: - MockKeychainService

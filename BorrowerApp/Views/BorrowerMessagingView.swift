@@ -33,7 +33,11 @@ struct BorrowerMessagingView: View {
             Section {
                 ForEach(sortedThreads) { thread in
                     NavigationLink {
-                        ChatDetailView(thread: thread, title: title(for: thread))
+                        ChatDetailView(
+                            thread: thread,
+                            title: title(for: thread),
+                            application: application(for: thread)
+                        )
                     } label: {
                         ThreadRow(
                             title: title(for: thread),
@@ -198,6 +202,7 @@ private struct ThreadRow: View {
 struct ChatDetailView: View {
     let thread: MessageThread
     let title: String
+    let application: LoanApplication?
 
     @Environment(SessionStore.self) private var session
     @Environment(\.appEnvironment) private var env
@@ -259,13 +264,24 @@ struct ChatDetailView: View {
             if isMe { Spacer(minLength: 60) }
 
             VStack(alignment: isMe ? .trailing : .leading, spacing: 2) {
-                Text(msg.body)
-                    .font(.body)
-                    .padding(.horizontal, Spacing.sm)
-                    .padding(.vertical, Spacing.s)
-                    .background(isMe ? Color.accentColor : Color.lmsSurface)
-                    .foregroundStyle(isMe ? .white : .primary)
-                    .clipShape(bubbleShape(isMe: isMe))
+                if msg.body.hasPrefix("[Sanction Letter]:") {
+                    if let app = application {
+                        NavigationLink(destination: SanctionLetterView(application: app).toolbar(.hidden, for: .tabBar)) {
+                            sanctionLetterCard(isMe: isMe)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        sanctionLetterCard(isMe: isMe)
+                    }
+                } else {
+                    Text(msg.body)
+                        .font(.body)
+                        .padding(.horizontal, Spacing.sm)
+                        .padding(.vertical, Spacing.s)
+                        .background(isMe ? Color.accentColor : Color.lmsSurface)
+                        .foregroundStyle(isMe ? .white : .primary)
+                        .clipShape(bubbleShape(isMe: isMe))
+                }
 
                 Text(Formatting.date(msg.sentAt))
                     .font(.caption2)
@@ -275,6 +291,44 @@ struct ChatDetailView: View {
 
             if !isMe { Spacer(minLength: 60) }
         }
+    }
+
+    private func sanctionLetterCard(isMe: Bool) -> some View {
+        HStack(spacing: Spacing.s) {
+            ZStack {
+                Circle()
+                    .fill(Color.red.opacity(0.1))
+                    .frame(width: 40, height: 40)
+                Image(systemName: "doc.text.fill")
+                    .foregroundStyle(.red)
+                    .font(.title3)
+            }
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Loan Sanction Letter")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(isMe ? .white : .primary)
+                    .multilineTextAlignment(.leading)
+                Text("Tap to review & e-sign terms")
+                    .font(.caption)
+                    .foregroundStyle(isMe ? .white.opacity(0.8) : .secondary)
+                    .multilineTextAlignment(.leading)
+            }
+            
+            Spacer(minLength: 8)
+            
+            Image(systemName: "chevron.right")
+                .font(.footnote)
+                .foregroundStyle(isMe ? .white.opacity(0.8) : .secondary)
+        }
+        .padding(12)
+        .background(isMe ? Color.accentColor : Color.lmsSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.red.opacity(0.2), lineWidth: 1)
+        )
+        .frame(maxWidth: 280)
     }
 
     private func bubbleShape(isMe: Bool) -> some Shape {

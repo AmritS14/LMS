@@ -87,8 +87,11 @@ struct LoanReviewView: View {
                         documentKYCSection
                             .transition(.opacity)
                     case .actions:
-                        recommendationSection
-                            .transition(.opacity)
+                        VStack(spacing: 20) {
+                            recommendationSection
+                            sanctionLetterSection
+                        }
+                        .transition(.opacity)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -175,6 +178,16 @@ struct LoanReviewView: View {
                 // Open (or reuse) the borrower⇄officer conversation for this app.
                 if let app = application {
                     viewModel.ensureThread(for: app)
+                    // Auto-start the review if application is in pending status (transition to under_review on backend)
+                    if app.status == .pending {
+                        Task {
+                            await viewModel.startReview(for: app)
+                        }
+                    }
+                    let appID = app.sourceApplicationID ?? app.id
+                    Task {
+                        await viewModel.loadSanctionLetter(for: appID)
+                    }
                 }
             }
             .onDisappear {
@@ -613,6 +626,187 @@ extension LoanReviewView {
         }
         .opacity(animateIn ? 1 : 0)
         .offset(y: animateIn ? 0 : 20)
+    }
+    
+    private var sanctionLetterSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            LOSectionHeader(title: "Sanction Letter Management", icon: "doc.text.fill")
+            
+            LOPremiumCard {
+                VStack(spacing: 16) {
+                    if let app = application {
+                        let appID = app.sourceApplicationID ?? app.id
+                        
+                        if viewModel.generatingSanctionLetterAppID == appID {
+                            HStack(spacing: 12) {
+                                ProgressView()
+                                    .scaleEffect(1.0)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Generating Sanction Letter...")
+                                        .font(.system(size: 14, weight: .bold))
+                                    Text("Creating PDF draft and uploading documents")
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                            }
+                            .padding(.vertical, 8)
+                        } else if viewModel.sendingSanctionLetterAppID == appID {
+                            HStack(spacing: 12) {
+                                ProgressView()
+                                    .scaleEffect(1.0)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Sending to Borrower...")
+                                        .font(.system(size: 14, weight: .bold))
+                                    Text("Notifying borrower and posting in chat thread")
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                            }
+                            .padding(.vertical, 8)
+                        } else if let letter = viewModel.currentSanctionLetter {
+                            VStack(alignment: .leading, spacing: 12) {
+                                // Status display
+                                HStack(spacing: 10) {
+                                    if letter.status == "generated" {
+                                        Image(systemName: "doc.badge.plus")
+                                            .font(.system(size: 20))
+                                            .foregroundColor(.orange)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("Draft Generated (Not Sent)")
+                                                .font(.system(size: 14, weight: .bold))
+                                                .foregroundStyle(.primary)
+                                            Text("The borrower will not see this until you send it.")
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    } else if letter.status == "sent" {
+                                        Image(systemName: "paperplane.fill")
+                                            .font(.system(size: 20))
+                                            .foregroundColor(.blue)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("Sent to Borrower")
+                                                .font(.system(size: 14, weight: .bold))
+                                                .foregroundStyle(.primary)
+                                            Text("Pending borrower review & e-signature.")
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    } else if letter.status == "accepted" || letter.isAccepted {
+                                        Image(systemName: "checkmark.seal.fill")
+                                            .font(.system(size: 20))
+                                            .foregroundColor(.green)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("Accepted & Signed")
+                                                .font(.system(size: 14, weight: .bold))
+                                                .foregroundStyle(.primary)
+                                            if let acceptedAt = letter.acceptedAt {
+                                                Text("Signed on \(AppFormatters.formatDate(acceptedAt))")
+                                                    .font(.system(size: 12))
+                                                    .foregroundStyle(.secondary)
+                                            } else {
+                                                Text("Terms agreed and accepted by borrower.")
+                                                    .font(.system(size: 12))
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                        }
+                                    }
+                                    Spacer()
+                                }
+                                
+                                Divider()
+                                
+                                HStack(spacing: 12) {
+                                    if let pdfURL = viewModel.getSanctionLetterPDFURL(for: appID) {
+                                        ShareLink(
+                                            item: pdfURL,
+                                            preview: SharePreview("Sanction Letter", image: Image(systemName: "doc.text.fill"))
+                                        ) {
+                                            HStack {
+                                                Image(systemName: "eye.fill")
+                                                Text("Preview PDF")
+                                            }
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundColor(.blue)
+                                            .padding(.vertical, 8)
+                                            .padding(.horizontal, 16)
+                                            .background(Color.blue.opacity(0.1))
+                                            .cornerRadius(10)
+                                        }
+                                    }
+                                    
+                                    if letter.status == "generated" {
+                                        Button {
+                                            Task {
+                                                await viewModel.sendSanctionLetterToBorrower(for: app)
+                                            }
+                                        } label: {
+                                            HStack {
+                                                Image(systemName: "paperplane.fill")
+                                                Text("Send to Borrower")
+                                            }
+                                            .font(.system(size: 13, weight: .bold))
+                                            .foregroundColor(.white)
+                                            .padding(.vertical, 8)
+                                            .padding(.horizontal, 16)
+                                            .background(
+                                                LinearGradient(
+                                                    colors: [.blue, Color(red: 0.15, green: 0.4, blue: 0.95)],
+                                                    startPoint: .leading,
+                                                    endPoint: .trailing
+                                                )
+                                            )
+                                            .cornerRadius(10)
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            // No sanction letter generated yet
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "doc.text.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(.secondary)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("No Sanction Letter Generated")
+                                            .font(.system(size: 14, weight: .bold))
+                                        Text("Generate draft to review terms before sending.")
+                                            .font(.system(size: 12))
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                }
+                                
+                                Divider()
+                                
+                                Button {
+                                    Task {
+                                        await viewModel.generateSanctionLetter(for: app)
+                                    }
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "plus.circle.fill")
+                                        Text("Generate Sanction Letter")
+                                    }
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .padding(.vertical, 10)
+                                    .frame(maxWidth: .infinity)
+                                    .background(Color.blue)
+                                    .cornerRadius(10)
+                                }
+                            }
+                        }
+                    } else {
+                        Text("No application selected")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
     }
     
     private var repaymentSummaryCard: some View {

@@ -9,18 +9,24 @@ struct ChatView: View {
 
     @Environment(\.dismiss) var dismiss
     @Environment(AppViewModel.self) var viewModel
+    @Environment(SessionStore.self) private var session
+    @Environment(\.appEnvironment) private var env
 
     let conversation: BorrowerConversation
     var isPushed: Bool = false
 
     @State private var messageText = ""
+    @State private var messages: [LOChatMessage] = []
+    @State private var isLoading = true
 
     var body: some View {
         if isPushed {
             chatContent
+                .task { await loadMessages() }
         } else {
             NavigationStack {
                 chatContent
+                    .task { await loadMessages() }
             }
         }
     }
@@ -29,42 +35,38 @@ struct ChatView: View {
         VStack(spacing: 0) {
 
             // MARK: Messages
-
-            ScrollView {
-
-                LazyVStack(spacing: 12) {
-
-                    ForEach(conversation.messages) { message in
-
-                        HStack {
-
-                            if message.sender == .officer {
-
-                                Spacer()
-
-                                messageBubble(
-                                    text: message.text,
-                                    color: .blue,
-                                    textColor: .white,
-                                    alignment: .trailing
-                                )
-
-                            } else {
-
-                                messageBubble(
-                                    text: message.text,
-                                    color: Color(.secondarySystemBackground),
-                                    textColor: .primary,
-                                    alignment: .leading
-                                )
-
-                                Spacer()
+            if isLoading {
+                Spacer()
+                ProgressView()
+                Spacer()
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(messages) { message in
+                            HStack {
+                                if message.sender == .officer {
+                                    Spacer()
+                                    messageBubble(
+                                        text: message.text,
+                                        color: .blue,
+                                        textColor: .white,
+                                        alignment: .trailing
+                                    )
+                                } else {
+                                    messageBubble(
+                                        text: message.text,
+                                        color: Color(.secondarySystemBackground),
+                                        textColor: .primary,
+                                        alignment: .leading
+                                    )
+                                    Spacer()
+                                }
                             }
+                            .padding(.horizontal, 16)
                         }
-                        .padding(.horizontal, 16)
                     }
+                    .padding(.top, 16)
                 }
-                .padding(.top, 16)
             }
 
             Divider()
@@ -84,11 +86,8 @@ struct ChatView: View {
                 )
 
                 Button {
-
                     sendMessage()
-
                 } label: {
-
                     Image(systemName: "paperplane.fill")
                         .font(.system(size: 18))
                         .foregroundColor(.white)
@@ -136,24 +135,75 @@ struct ChatView: View {
         .frame(maxWidth: 260, alignment: alignment == .leading ? .leading : .trailing)
     }
 
+    // MARK: - Load Messages
+
+    private func loadMessages() async {
+        guard let env else {
+            self.messages = conversation.messages
+            self.isLoading = false
+            return
+        }
+        do {
+            let dbMsgs = try await env.messaging.messages(threadID: conversation.id)
+            let currentUserID = session.currentUser?.id
+            self.messages = dbMsgs.map { m in
+                LOChatMessage(
+                    text: m.body,
+                    sender: m.senderID == currentUserID ? .officer : .borrower,
+                    timestamp: m.sentAt,
+                    isRead: m.readAt != nil
+                )
+            }
+            try? await env.messaging.markRead(threadID: conversation.id, upTo: Date())
+        } catch {
+            print("Failed to load messages from DB: \(error)")
+            self.messages = conversation.messages
+        }
+        self.isLoading = false
+    }
+
     // MARK: - Send Message
 
     private func sendMessage() {
-
         guard !messageText.trimmingCharacters(in: .whitespaces).isEmpty else {
             return
         }
 
-        print("Message Sent: \(messageText)")
-
+        let text = messageText.trimmingCharacters(in: .whitespaces)
         messageText = ""
+
+        let localMsg = LOChatMessage(
+            text: text,
+            sender: .officer,
+            timestamp: Date(),
+            isRead: true
+        )
+        self.messages.append(localMsg)
+
+        guard let env, let currentUserID = session.currentUser?.id else { return }
+        Task {
+            do {
+                let msg = ChatMessage(
+                    threadID: conversation.id,
+                    senderID: currentUserID,
+                    body: text
+                )
+                _ = try await env.messaging.send(msg)
+                
+                // Refresh AppViewModel data in background so the list gets the latest preview message.
+                await viewModel.refreshFromService()
+            } catch {
+                print("Failed to send message: \(error)")
+            }
+        }
     }
 }
 
 #Preview {
-
     ChatView(
         conversation: BorrowerConversation(
+            id: UUID(),
+            applicationID: nil,
             borrowerName: "Preview User",
             borrowerInitials: "PU",
             lastMessage: "",
@@ -164,4 +214,13 @@ struct ChatView: View {
         )
     )
     .environment(AppViewModel())
+    .environment(SessionStore(
+        currentUser: User(
+            id: UUID(),
+            fullName: "Sarah Mehta",
+            email: "sarah.mehta@example.com",
+            phone: "+91 99887 76543",
+            role: .loanOfficer
+        )
+    ))
 }

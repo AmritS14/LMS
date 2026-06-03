@@ -18,6 +18,9 @@ struct DashboardView: View {
                 // MARK: KPI Overview
                 KPIOverviewSection()
 
+                // MARK: Recovery Section
+                RecoveryVerificationView()
+
                 Spacer(minLength: 40)
             }
             .padding(.bottom, 20)

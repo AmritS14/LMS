@@ -34,22 +34,21 @@ struct RecoveryVerificationView: View {
 
     var body: some View {
 
-        ScrollView(.vertical, showsIndicators: false) {
+        VStack(spacing: 20) {
 
-            VStack(spacing: 20) {
+            LOSectionHeader(
+                title: "Recovery",
+                subtitle: "Collection performance and overdue alerts"
+            )
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
 
-                collectionEfficiencyOverview
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
+            collectionEfficiencyOverview
+                .padding(.horizontal, 16)
 
-                overdueBorrowersList
-                    .padding(.horizontal, 16)
-            }
-            .padding(.bottom, 32)
+            overdueBorrowersList
+                .padding(.horizontal, 16)
         }
-        .background(Color(.systemGroupedBackground))
-        .navigationTitle("Recovery")
-        .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showCallLogSheet) {
             callLogSheetContent
         }
@@ -256,8 +255,7 @@ extension RecoveryVerificationView {
 
             LOSectionHeader(
                 title: "Overdue Borrowers",
-                subtitle: "\(viewModel.overdueBorrowers.count) accounts",
-                icon: "person.crop.circle.badge.exclamationmark.fill"
+                subtitle: "\(viewModel.overdueBorrowers.count) accounts"
             )
 
             ForEach(viewModel.overdueBorrowers) { borrower in
