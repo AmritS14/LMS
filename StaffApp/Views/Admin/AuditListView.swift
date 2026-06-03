@@ -64,25 +64,68 @@ struct AuditListView: View {
     @Environment(\.appEnvironment) private var env
     
     @State private var searchText = ""
-    @State private var selectedRole: String = "All Roles"
+    
+    // Filter State
+    @State private var selectedEntityType: String = "All Types"
+    @State private var selectedActorRole: String = "All Roles"
+    @State private var selectedActionType: String = "All Activities"
+    @State private var selectedDateRange: String = "Today"
+    @State private var customStartDate = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+    @State private var customEndDate = Date()
     
     @State private var exportURL: URL?
     @State private var showExportSheet = false
+    @State private var showFilterSheet = false
     
+    // Filter Options
+    private let entityTypes = ["All Types", "Application", "User", "Loan", "EMI", "Document", "Configuration"]
     private let roles = ["All Roles", "Admin", "Manager", "Loan Officer", "Borrower"]
+    private let actionTypes = ["All Activities", "Application Submitted", "Application Assigned", "Document Uploaded", "Document Verified", "EMI Paid", "Loan Approved", "Loan Rejected", "User Created", "User Updated", "Configuration Updated"]
+    private let dateRanges = ["Today", "Last 7 Days", "Last 30 Days", "Custom Date Range"]
     
     private var filteredEntries: [AuditEntry] {
         viewModel.entries.filter { entry in
             var matches = true
             
-            if selectedRole != "All Roles" && entry.actorRole.displayName != selectedRole {
+            // Actor Role
+            if selectedActorRole != "All Roles" && entry.actorRole.displayName != selectedActorRole {
                 matches = false
             }
             
+            // Entity Type (matching substring since DB might use 'LoanApplication', 'User', etc.)
+            if selectedEntityType != "All Types" && !entry.entityType.localizedCaseInsensitiveContains(selectedEntityType.replacingOccurrences(of: " ", with: "")) {
+                matches = false
+            }
+            
+            // Action Type
+            if selectedActionType != "All Activities" && entry.action != selectedActionType {
+                matches = false
+            }
+            
+            // Date Filter
+            let calendar = Calendar.current
+            let startOfDay = calendar.startOfDay(for: Date())
+            switch selectedDateRange {
+            case "Today":
+                if !calendar.isDateInToday(entry.timestamp) { matches = false }
+            case "Last 7 Days":
+                if let days = calendar.dateComponents([.day], from: entry.timestamp, to: startOfDay).day, days > 7 { matches = false }
+            case "Last 30 Days":
+                if let days = calendar.dateComponents([.day], from: entry.timestamp, to: startOfDay).day, days > 30 { matches = false }
+            case "Custom Date Range":
+                if entry.timestamp < customStartDate || entry.timestamp > customEndDate { matches = false }
+            default: break
+            }
+            
+            // Advanced Search
             if !searchText.isEmpty {
                 let search = searchText.lowercased()
-                if !entry.action.lowercased().contains(search) &&
-                   !entry.entityType.lowercased().contains(search) {
+                let actorMatch = entry.actorID.uuidString.lowercased().contains(search)
+                let entityMatch = entry.entityID.uuidString.lowercased().contains(search)
+                let actionMatch = entry.action.lowercased().contains(search)
+                let metaMatch = entry.metadata.values.contains { $0.lowercased().contains(search) }
+                
+                if !actorMatch && !entityMatch && !actionMatch && !metaMatch {
                     matches = false
                 }
             }
@@ -105,21 +148,21 @@ struct AuditListView: View {
                     VStack(alignment: .leading, spacing: Spacing.xs) {
                         HStack {
                             Text(entry.action)
-                                .font(.lmsHeadline)
+                                .font(.adminCardTitle)
                                 .foregroundStyle(.primary)
                             Spacer()
                             Text(entry.timestamp.formatted(date: .abbreviated, time: .shortened))
-                                .font(.lmsCaption)
+                                .font(.adminCaption)
                                 .foregroundStyle(.secondary)
                         }
                         
                         Text("\(entry.actorRole.displayName) • \(entry.entityType)")
-                            .font(.lmsSubheadline)
+                            .font(.adminSecondary)
                             .foregroundStyle(.secondary)
                             
                         if let details = entry.metadata.first {
                             Text("\(details.key.capitalized): \(details.value)")
-                                .font(.lmsCaption)
+                                .font(.adminCaption)
                                 .foregroundStyle(.secondary)
                                 .padding(.top, 2)
                         }
@@ -128,9 +171,13 @@ struct AuditListView: View {
                 }
             }
         }
-        .navigationTitle("All Audit Logs")
+        .navigationTitle("Audit Activity")
         .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $searchText, prompt: "Search actions or entities")
+        .searchable(
+            text: $searchText,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: "Search Audit Activity"
+        )
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 16) {
@@ -143,15 +190,11 @@ struct AuditListView: View {
                         Image(systemName: "square.and.arrow.up")
                     }
                     
-                    Menu {
-                        Picker("Role", selection: $selectedRole) {
-                            ForEach(roles, id: \.self) { role in
-                                Text(role).tag(role)
-                            }
-                        }
+                    Button {
+                        showFilterSheet = true
                     } label: {
                         Image(systemName: "line.3.horizontal.decrease.circle")
-                            .foregroundStyle(selectedRole == "All Roles" ? .primary : Color.lmsInfo)
+                            .foregroundStyle((selectedRoleIsActive || selectedEntityIsActive || selectedActionIsActive || selectedDateIsActive) ? Color.lmsInfo : .primary)
                     }
                 }
             }
@@ -165,7 +208,71 @@ struct AuditListView: View {
                 ShareSheet(activityItems: [url])
             }
         }
+        .sheet(isPresented: $showFilterSheet) {
+            NavigationStack {
+                Form {
+                    Section("Entity Type") {
+                        Picker("Entity", selection: $selectedEntityType) {
+                            ForEach(entityTypes, id: \.self) { Text($0).tag($0) }
+                        }
+                        .pickerStyle(.menu)
+                    }
+                    
+                    Section("Actor Role") {
+                        Picker("Role", selection: $selectedActorRole) {
+                            ForEach(roles, id: \.self) { Text($0).tag($0) }
+                        }
+                        .pickerStyle(.menu)
+                    }
+                    
+                    Section("Action Type") {
+                        Picker("Action", selection: $selectedActionType) {
+                            ForEach(actionTypes, id: \.self) { Text($0).tag($0) }
+                        }
+                        .pickerStyle(.menu)
+                    }
+                    
+                    Section("Date Range") {
+                        Picker("Range", selection: $selectedDateRange) {
+                            ForEach(dateRanges, id: \.self) { Text($0).tag($0) }
+                        }
+                        .pickerStyle(.menu)
+                        
+                        if selectedDateRange == "Custom Date Range" {
+                            DatePicker("Start Date", selection: $customStartDate, displayedComponents: .date)
+                            DatePicker("End Date", selection: $customEndDate, displayedComponents: .date)
+                        }
+                    }
+                }
+                .navigationTitle("Filter Logs")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Reset") {
+                            selectedEntityType = "All Types"
+                            selectedActorRole = "All Roles"
+                            selectedActionType = "All Activities"
+                            selectedDateRange = "Today"
+                            customStartDate = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+                            customEndDate = Date()
+                        }
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Apply") {
+                            showFilterSheet = false
+                        }
+                        .fontWeight(.bold)
+                    }
+                }
+            }
+            .presentationDetents([.medium, .large])
+        }
     }
+    
+    private var selectedRoleIsActive: Bool { selectedActorRole != "All Roles" }
+    private var selectedEntityIsActive: Bool { selectedEntityType != "All Types" }
+    private var selectedActionIsActive: Bool { selectedActionType != "All Activities" }
+    private var selectedDateIsActive: Bool { selectedDateRange != "Today" }
 }
 
 #Preview {

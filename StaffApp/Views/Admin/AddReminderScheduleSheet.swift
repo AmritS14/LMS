@@ -104,11 +104,15 @@ struct AddReminderScheduleSheet: View {
                     
                     if isTitleEmpty {
                         Text("Title is required")
-                            .font(.caption)
+                            .font(.adminCaption)
                             .foregroundStyle(.red)
                     }
                 } header: {
                     Text("Reminder Info")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
                 
                 // Section 2: Trigger Timing Builder
@@ -141,6 +145,10 @@ struct AddReminderScheduleSheet: View {
                     }
                 } header: {
                     Text("Trigger Schedule")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
                 
                 // Section 3: Delivery Channels
@@ -151,18 +159,22 @@ struct AddReminderScheduleSheet: View {
                     
                     if isNoChannelSelected {
                         Text("At least one delivery channel must be selected")
-                            .font(.caption)
+                            .font(.adminCaption)
                             .foregroundStyle(.red)
                     }
                 } header: {
                     Text("Delivery Channels")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
                 
                 // Section 4: Template Editor
                 Section {
                     TextEditor(text: $templateBody)
                         .frame(minHeight: 120)
-                        .font(.system(.body, design: .monospaced))
+                        .font(.adminFormInput.monospacedDigit())
                         .onChange(of: templateBody) { _, _ in hasEdits = true }
                     
                     // Placeholders Help Panel
@@ -175,11 +187,15 @@ struct AddReminderScheduleSheet: View {
                         .padding(.top, 4)
                     } label: {
                         Label("Available Tokens", systemImage: "curlybraces")
-                            .font(.caption)
+                            .font(.adminCaption)
                             .foregroundStyle(.secondary)
                     }
                 } header: {
                     Text("Message Template")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
                 
                 // Section 5: Live Placeholders Preview
@@ -187,25 +203,29 @@ struct AddReminderScheduleSheet: View {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Label("Reminder Preview", systemImage: "eye.fill")
-                                .font(.caption)
+                                .font(.adminCaption)
                                 .fontWeight(.bold)
                                 .foregroundStyle(.blue)
                             Spacer()
                             Text("Simulated Borrower View")
-                                .font(.system(size: 9))
+                                .font(.adminCaption)
                                 .foregroundStyle(.secondary)
                         }
                         
                         Divider()
                         
                         Text(previewResolvedText)
-                            .font(.subheadline)
+                            .font(.adminSecondary)
                             .foregroundStyle(.primary)
                             .padding(.vertical, 4)
                     }
                     .padding(.vertical, 4)
                 } header: {
                     Text("Live Preview")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
             }
             .navigationTitle(editingSchedule == nil ? "New Reminder" : "Edit Reminder")
@@ -258,11 +278,11 @@ struct AddReminderScheduleSheet: View {
     private func placeholderRow(token: String, label: String) -> some View {
         HStack {
             Text(token)
-                .font(.system(.caption2, design: .monospaced))
+                .font(.adminCaption.monospacedDigit())
                 .foregroundStyle(.blue)
             Spacer()
             Text(label)
-                .font(.caption2)
+                .font(.adminCaption)
                 .foregroundStyle(.secondary)
         }
     }

@@ -45,6 +45,10 @@ struct AddTemplateSheet: View {
                     TextField("Template Title (e.g. Approved Notification)", text: $title)
                 } header: {
                     Text("Template Title")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
 
                 // Section 3: Delivery Channels
@@ -67,18 +71,26 @@ struct AddTemplateSheet: View {
                     }
                 } header: {
                     Text("Delivery Channels")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
 
                 // Section 4: Message Body Text Editor
                 Section {
                     TextEditor(text: $bodyText)
-                        .font(.system(.body, design: .monospaced))
+                        .font(.adminFormInput.monospacedDigit())
                         .frame(minHeight: 180)
 
                     // Placeholder tokens reference
                     placeholderHint
                 } header: {
                     Text("Message Body")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
             }
             .navigationTitle("New Template")
@@ -160,7 +172,7 @@ struct AddTemplateSheet: View {
             }
         } label: {
             Label("Available Placeholders", systemImage: "curlybraces")
-                .font(.caption)
+                .font(.adminCaption)
                 .foregroundStyle(.secondary)
         }
     }
@@ -168,11 +180,11 @@ struct AddTemplateSheet: View {
     private func placeholderToken(_ token: String, description: String) -> some View {
         HStack {
             Text(token)
-                .font(.system(.caption, design: .monospaced))
+                .font(.adminCaption.monospacedDigit())
                 .foregroundStyle(AdminColor.accent)
             Spacer()
             Text(description)
-                .font(.caption2)
+                .font(.adminCaption)
                 .foregroundStyle(.tertiary)
         }
     }

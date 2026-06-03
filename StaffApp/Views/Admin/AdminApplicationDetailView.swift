@@ -26,6 +26,18 @@ struct AdminApplicationDetailView: View {
         .background(AdminColor.background)
         .navigationTitle("Application Details")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Color.blue)
+                }
+            }
+        }
         .task {
             viewModel.configure(environment: env)
             await viewModel.loadDetails()
@@ -84,54 +96,108 @@ struct AdminApplicationDetailView: View {
     }
 
     private func detailContent(_ app: LoanApplication) -> some View {
-        List {
-            // Overview Section
-            Section {
-                overviewRow(title: "Applicant Name", value: viewModel.borrower?.fullName ?? "—")
-                overviewRow(title: "Application ID", value: "APP-\(app.id.uuidString.prefix(8).uppercased())")
-                overviewRow(title: "Loan Type", value: app.loanType.rawValue.capitalized)
-                overviewRow(title: "Requested Amount", value: Formatting.currency(app.requestedAmount))
-                overviewRow(title: "Application Date", value: Formatting.date(app.createdAt))
-                
-                HStack {
-                    Text("Current Status")
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    StatusBadge(
-                        app.status.rawValue.capitalized,
-                        tone: app.status == .approved || app.status == .disbursed ? .success : (app.status == .rejected ? .danger : .warning)
-                    )
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                // Application Overview Section
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Application Overview")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
+                    
+                    VStack(spacing: 14) {
+                        overviewRow(title: "Applicant Name", value: viewModel.borrower?.fullName ?? "—")
+                        Divider()
+                        overviewRow(title: "Application ID", value: "APP-\(app.id.uuidString.prefix(8).uppercased())")
+                        Divider()
+                        overviewRow(title: "Loan Type", value: app.loanType.rawValue.capitalized)
+                        Divider()
+                        overviewRow(title: "Requested Amount", value: Formatting.currency(app.requestedAmount))
+                        Divider()
+                        overviewRow(title: "Application Date", value: Formatting.date(app.createdAt))
+                        Divider()
+                        
+                        HStack {
+                            Text("Current Status")
+                                .font(.adminSecondary)
+                                .foregroundStyle(Color.secondary)
+                            Spacer()
+                            customStatusBadge(for: app.status)
+                        }
+                    }
+                    .padding(22)
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    .shadow(color: Color.black.opacity(0.02), radius: 10, x: 0, y: 5)
                 }
-            } header: {
-                Text("Application Overview")
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.primary)
-                    .textCase(nil)
+                
+                // Loan Processing Tracking Section
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Loan Processing Tracking")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
+                    
+                    ProcessingTimelineView(stages: computeStages(app))
+                        .padding(22)
+                        .background(Color(.secondarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                        .shadow(color: Color.black.opacity(0.02), radius: 10, x: 0, y: 5)
+                }
             }
-
-            // Loan Processing Tracking Timeline
-            Section {
-                ProcessingTimelineView(stages: computeStages(app))
-                    .padding(.vertical, Spacing.s)
-            } header: {
-                Text("Loan Processing Tracking")
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.primary)
-                    .textCase(nil)
-            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 16)
         }
-        .listStyle(.insetGrouped)
+        .background(Color(.systemGroupedBackground))
+    }
+
+    @ViewBuilder
+    private func customStatusBadge(for status: ApplicationStatus) -> some View {
+        let (text, color) = badgeInfo(for: status)
+        Text(text)
+            .font(.adminStatus)
+            .foregroundStyle(color)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(color.opacity(0.12), in: Capsule())
+    }
+
+    private func badgeInfo(for status: ApplicationStatus) -> (String, Color) {
+        switch status {
+        case .draft:
+            return ("Draft", .gray)
+        case .submitted:
+            return ("Submitted", .blue)
+        case .underReview:
+            return ("Under Review", .orange)
+        case .escalated:
+            return ("Escalated", .orange)
+        case .additionalInfoRequired:
+            return ("Docs Needed", .purple)
+        case .recommended:
+            return ("Recommended", .blue)
+        case .approved:
+            return ("Approved", .green)
+        case .rejected:
+            return ("Rejected", .red)
+        case .disbursed:
+            return ("Disbursed", .green)
+        case .closed:
+            return ("Closed", .secondary)
+        }
     }
 
     private func overviewRow(title: String, value: String) -> some View {
         HStack {
             Text(title)
+                .font(.adminSecondary)
                 .foregroundStyle(.secondary)
             Spacer()
             Text(value)
-                .fontWeight(.medium)
+                .font(.adminSecondary)
+                .fontWeight(.semibold)
                 .foregroundStyle(.primary)
         }
     }
@@ -253,45 +319,53 @@ struct ProcessingTimelineView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ForEach(stages.indices, id: \.self) { index in
+            ForEach(0..<stages.count, id: \.self) { index in
+                let stage = stages[index]
+                let isLast = index == stages.count - 1
+                
                 HStack(alignment: .top, spacing: 16) {
-                    // Left Timeline bar / Node
-                    VStack(spacing: 0) {
-                        nodeCircle(for: stages[index].status)
-                        
-                        if index < stages.count - 1 {
-                            Rectangle()
-                                .fill(lineColor(from: stages[index].status, to: stages[index + 1].status))
-                                .frame(width: 2)
-                                .frame(minHeight: 36)
-                        }
-                    }
-                    .frame(width: 24)
+                    // Left Timeline Node Circle
+                    nodeCircle(for: stage.status)
+                        .frame(width: 24, height: 24)
                     
                     // Right Content details
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(stages[index].title)
-                            .font(.subheadline)
-                            .fontWeight(.bold)
-                            .foregroundStyle(stages[index].status == .pending ? .secondary : .primary)
+                        Text(stage.title)
+                            .font(.adminCardTitle)
+                            .foregroundStyle(stage.status == .pending ? Color.secondary : Color.primary)
                         
-                        if let subtitle = stages[index].subtitle {
+                        if let subtitle = stage.subtitle {
                             Text(subtitle)
-                                .font(.footnote)
-                                .foregroundStyle(stages[index].status == .pending ? .tertiary : .secondary)
+                                .font(.adminSecondary)
+                                .foregroundStyle(stage.status == .pending ? Color.secondary.opacity(0.7) : Color.secondary)
                         }
                         
-                        if let date = stages[index].date {
+                        if let date = stage.date {
                             Text(date)
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
+                                .font(.adminCaption)
+                                .foregroundStyle(Color.secondary.opacity(0.6))
                                 .padding(.top, 2)
                         }
                     }
-                    .padding(.bottom, 16)
+                    .padding(.bottom, 24)
+                    
+                    Spacer()
                 }
+                .background(
+                    GeometryReader { geo in
+                        if !isLast {
+                            Path { path in
+                                // Center of circle is at x: 12, y: 12
+                                path.move(to: CGPoint(x: 12, y: 12))
+                                path.addLine(to: CGPoint(x: 12, y: geo.size.height + 12))
+                            }
+                            .stroke(lineColor(from: stage.status, to: stages[index + 1].status), lineWidth: 2)
+                        }
+                    }
+                )
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder

@@ -13,7 +13,7 @@ struct AdminDashboardView: View {
     @Bindable var viewModel: DashboardViewModel
     @Bindable var userVM: UserManagementViewModel
     @Environment(\.appEnvironment) private var env
-    @State private var showDetails: Bool = false
+    @State private var showAddStaff = false
 
 
     var body: some View {
@@ -37,25 +37,22 @@ struct AdminDashboardView: View {
                 }
             }
 
-            // Total Distribution Card
             distributionCard
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    showDetails = true
-                }
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets())
                 .padding(.bottom, Spacing.m)
 
 
 
-            // Recent Applications List
-            recentApplicationsList
+            auditActivitySection
         }
         .listStyle(.insetGrouped)
-        .navigationTitle("Overview")
-        .navigationDestination(isPresented: $showDetails) {
-            DistributionDetailsView(viewModel: viewModel, userVM: userVM)
+        .navigationTitle("Dashboard")
+        .navigationDestination(for: UserManagementViewModel.Filter.self) { filter in
+            UserListView(viewModel: userVM)
+                .onAppear {
+                    userVM.currentFilter = filter
+                }
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -74,60 +71,42 @@ struct AdminDashboardView: View {
             viewModel.subscribeToRealtimeChanges()
         }
         .onAppear {
-            viewModel.isAmountVisible = false
+            // Amount visibility was removed
         }
         .onDisappear {
             viewModel.unsubscribeFromRealtime()
+        }
+        .sheet(isPresented: $showAddStaff) {
+            AddStaffSheet(viewModel: userVM)
         }
     }
 
     // MARK: - Subviews
 
-    /// Card for Total Distribution
+    /// Card for Total Distribution Stats
     private var distributionCard: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("TOTAL DISTRIBUTION")
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.8))
-                    Text(viewModel.isAmountVisible ? Formatting.compactIndianRupee(viewModel.rawTotalAmount) : "₹••••••")
-                        .font(.system(size: 34, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-                }
-                
-                Spacer()
-                
-                Image(systemName: viewModel.isAmountVisible ? "eye" : "eye.slash")
-                    .font(.title2)
-                    .foregroundStyle(.white)
-                    .padding(8)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                            viewModel.isAmountVisible.toggle()
-                        }
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel(viewModel.isAmountVisible ? "Hide amount" : "Show amount")
-                    .accessibilityAddTraits(.isButton)
-            }
+        HStack(spacing: 0) {
+            statColumn(title: "Total Borrowers", value: "\(viewModel.snapshot.stats.totalUser)")
             
-            HStack(spacing: 0) {
-                statColumn(title: "Total user", value: "\(viewModel.snapshot.stats.totalUser)")
-                Divider()
-                    .frame(height: 40)
-                    .background(Color.white.opacity(0.25))
-                statColumn(title: "Active Loans", value: "\(viewModel.snapshot.stats.activeLoans)")
-                Divider()
-                    .frame(height: 40)
-                    .background(Color.white.opacity(0.25))
-                statColumn(title: "Application", value: "\(viewModel.snapshot.stats.applications)")
-            }
+            Rectangle()
+                .fill(Color.white.opacity(0.3))
+                .frame(width: 1, height: 40)
+                
+            statColumn(title: "Active Loans", value: "\(viewModel.snapshot.stats.activeLoans)")
+            
+            Rectangle()
+                .fill(Color.white.opacity(0.3))
+                .frame(width: 1, height: 40)
+                
+            statColumn(title: "Application", value: "\(viewModel.snapshot.stats.applications)")
         }
-        .padding(20)
+        .padding(.vertical, 24)
         .background(
-            AdminColor.accentGradient,
+            LinearGradient(
+                colors: [Color(red: 0.1, green: 0.55, blue: 1.0), Color.blue],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
             in: RoundedRectangle(cornerRadius: 24, style: .continuous)
         )
     }
@@ -146,62 +125,63 @@ struct AdminDashboardView: View {
     }
 
 
-    /// List of separate Recent Application cards
-    private var recentApplicationsList: some View {
+
+    private var auditActivitySection: some View {
         Section {
-            if viewModel.isLoading && viewModel.snapshot.recentApplications.isEmpty {
-                HStack {
-                    Spacer()
-                    ProgressView("Loading applications...")
-                    Spacer()
-                }
-                .listRowBackground(Color.clear)
-                .padding(.vertical, 20)
-            } else if viewModel.snapshot.recentApplications.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "tray")
-                        .font(.largeTitle)
-                        .foregroundStyle(.secondary)
-                    Text("No Recent Applications")
-                        .font(.lmsHeadline)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 24)
-                .listRowBackground(Color.clear)
+            if viewModel.recentAuditLogs.isEmpty {
+                Text("No recent audit activity.")
+                    .font(.adminSecondary)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, Spacing.s)
             } else {
-                ForEach(viewModel.snapshot.recentApplications) { app in
-                    NavigationLink(destination: AdminApplicationDetailView(applicationID: app.id)) {
-                        HStack(alignment: .center) {
-                            VStack(alignment: .leading, spacing: Spacing.xs) {
-                                Text(app.name)
-                                    .font(.lmsHeadline)
-                                    .foregroundStyle(.primary)
-                                Text("\(app.loanType.rawValue.capitalized) • \(app.amount)")
-                                    .font(.lmsCaption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            
+                ForEach(viewModel.recentAuditLogs, id: \.id) { entry in
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        HStack {
+                            Text(entry.action)
+                                .font(.adminCardTitle)
+                                .foregroundStyle(.primary)
                             Spacer()
-                            
-                            VStack(alignment: .trailing, spacing: Spacing.xs) {
-                                StatusBadge(
-                                    app.status.displayLabel.capitalized,
-                                    tone: app.status == .approved ? .success : .warning
-                                )
-                                
-                                Text(app.date)
-                                    .font(.lmsCaption)
-                                    .foregroundStyle(.secondary)
-                            }
+                            Text(entry.timestamp, format: .relative(presentation: .named))
+                                .font(.adminCaption)
+                                .foregroundStyle(.secondary)
                         }
+                        Text("\(entry.actorRole.displayName) • \(entry.entityType)")
+                            .font(.adminSecondary)
+                            .foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.plain)
+                    .padding(.vertical, Spacing.xs)
                 }
             }
         } header: {
-            Text("Recent Applications").font(.title3).fontWeight(.bold).foregroundStyle(.primary).textCase(nil)
+            HStack {
+                Text("AUDIT ACTIVITY")
+                    .font(.adminSectionHeader)
+                    .foregroundStyle(Color.secondary)
+                Spacer()
+                NavigationLink(destination: AuditListView()) {
+                    Text("See All")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.blue)
+                }
+            }
+            .padding(.leading, 8)
+            .padding(.bottom, 4)
+            .textCase(.uppercase)
         }
+    }
+
+}
+
+#Preview {
+    NavigationStack {
+        AdminDashboardView(viewModel: DashboardViewModel(), userVM: UserManagementViewModel())
+    }
+}
+
+#Preview {
+    NavigationStack {
+        AdminDashboardView(viewModel: DashboardViewModel(), userVM: UserManagementViewModel())
     }
 }
 

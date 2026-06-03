@@ -226,7 +226,11 @@ struct ArchiveListView: View {
         }
         .navigationTitle("Loan Archives")
         .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $searchText, prompt: "Search Borrower, ID or Type...")
+        .searchable(
+            text: $searchText,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: "Search Borrower, ID or Type..."
+        )
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -342,16 +346,16 @@ struct ArchiveListView: View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             HStack {
                 Text(loan.loanIDString)
-                    .font(.lmsHeadline)
+                    .font(.adminCardTitle)
                     .foregroundStyle(.primary)
                 Spacer()
                 if loan.isArchived {
                     Label("Archived", systemImage: "lock.fill")
-                        .font(.lmsCaption)
+                        .font(.adminCaption)
                         .foregroundStyle(.orange)
                 } else {
                     Text(loan.status.rawValue.capitalized)
-                        .font(.lmsCaption)
+                        .font(.adminCaption)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(loan.status == .settled ? Color.lmsSuccess.opacity(0.12) : Color.lmsInfo.opacity(0.12), in: Capsule())
@@ -360,20 +364,20 @@ struct ArchiveListView: View {
             }
             
             Text(loan.borrowerName)
-                .font(.lmsSubheadline)
+                .font(.adminSecondary)
                 .foregroundStyle(.primary)
             
             Text("\(loan.loanType.rawValue.capitalized) • \(Formatting.currency(loan.principal))")
-                .font(.lmsCaption)
+                .font(.adminCaption)
                 .foregroundStyle(.secondary)
             
             Text("Closed: \(loan.closedDate.formatted(date: .abbreviated, time: .omitted))")
-                .font(.lmsCaption)
+                .font(.adminCaption)
                 .foregroundStyle(.secondary)
                 
             if !loan.isArchived && !loan.isEligible {
                 Text("Only completed loans can be archived.")
-                    .font(.caption)
+                    .font(.adminCaption)
                     .foregroundStyle(Color.lmsWarning)
                     .padding(.top, 4)
             }

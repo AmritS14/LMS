@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ReportsDashboardView: View {
+    var preselectedBorrowerName: String? = nil
     @State private var viewModel = ReportsViewModel()
     
     @State private var selectedBranch: String? = nil
@@ -31,6 +32,7 @@ struct ReportsDashboardView: View {
     // MARK: - Computed Properties
     private var filteredData: [ReportsViewModel.ReportItem] {
         viewModel.items.filter { item in
+            if let preselected = preselectedBorrowerName, item.borrowerName != preselected { return false }
             if let branch = selectedBranch, item.branch != branch { return false }
             if let type = selectedType, item.loanType != type { return false }
             if let status = selectedStatus, item.status != status { return false }
@@ -59,22 +61,6 @@ struct ReportsDashboardView: View {
                             .padding()
                     }
                 } else {
-                    // Modern Premium Metric KPI Cards Header
-                    Section {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 12) {
-                                KPICard(title: "Total Disbursed", value: Formatting.currency(viewModel.totalDisbursed), icon: "arrow.up.right.circle.fill", color: .blue)
-                                KPICard(title: "Outstanding", value: Formatting.currency(viewModel.outstandingPrincipal), icon: "hourglass.badge.plus", color: .orange)
-                                KPICard(title: "Collection Eff.", value: String(format: "%.1f%%", viewModel.collectionEfficiency), icon: "checkmark.circle.fill", color: .green)
-                                KPICard(title: "Active Loans", value: "\(viewModel.activeLoansCount)", icon: "doc.text.fill", color: .purple)
-                            }
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 4)
-                        }
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
-
                     // Detailed Breakdown Section
                     if filteredData.isEmpty {
                         ContentUnavailableView("No Reports Found", systemImage: "doc.text.magnifyingglass", description: Text("No matching database records for the selected filters."))
@@ -85,6 +71,10 @@ struct ReportsDashboardView: View {
                             }
                         } header: {
                             Text("Detailed Breakdown (\(filteredData.count) Records)")
+                                .font(.adminSectionHeader)
+                                .foregroundStyle(Color.secondary)
+                                .textCase(.uppercase)
+                                .padding(.leading, 8)
                         }
                     }
                 }
@@ -367,44 +357,6 @@ struct ReportsDashboardView: View {
                 .padding(.bottom, 4)
             }
         }
-    }
-}
-
-// MARK: - Modern KPI Card Helper View
-private struct KPICard: View {
-    let title: String
-    let value: String
-    let icon: String
-    let color: Color
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundStyle(color)
-                Spacer()
-            }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .fontWeight(.bold)
-                    .textCase(.uppercase)
-                Text(value)
-                    .font(.subheadline)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-        }
-        .padding(12)
-        .frame(width: 130, height: 95)
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
     }
 }
 

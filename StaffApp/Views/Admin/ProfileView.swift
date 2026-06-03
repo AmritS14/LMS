@@ -73,11 +73,11 @@ struct ProfileView: View {
 
             VStack(spacing: 6) {
                 Text("Sarah Jenkins")
-                    .font(.title2)
+                    .font(.adminScreenTitle)
                     .fontWeight(.bold)
                 
                 Text("SYSTEM ADMIN")
-                    .font(.caption)
+                    .font(.adminCaption)
                     .fontWeight(.bold)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 5)
@@ -93,10 +93,7 @@ struct ProfileView: View {
             NavigationLink("Personal Information", destination: PersonalInfoView())
         } header: {
             Text("Account")
-                .font(.title3)
-                .fontWeight(.bold)
-                .foregroundStyle(.primary)
-                .textCase(nil)
+                .font(.adminSectionHeader).foregroundStyle(Color.secondary).textCase(.uppercase).padding(.leading, 8)
         }
     }
 
@@ -109,10 +106,7 @@ struct ProfileView: View {
                 .tint(.blue)
         } header: {
             Text("Security")
-                .font(.title3)
-                .fontWeight(.bold)
-                .foregroundStyle(.primary)
-                .textCase(nil)
+                .font(.adminSectionHeader).foregroundStyle(Color.secondary).textCase(.uppercase).padding(.leading, 8)
         }
     }
 
@@ -128,10 +122,7 @@ struct ProfileView: View {
             }
         } header: {
             Text("Preferences")
-                .font(.title3)
-                .fontWeight(.bold)
-                .foregroundStyle(.primary)
-                .textCase(nil)
+                .font(.adminSectionHeader).foregroundStyle(Color.secondary).textCase(.uppercase).padding(.leading, 8)
         }
     }
 
@@ -167,21 +158,21 @@ struct PersonalInfoView: View {
                 detailRow(title: "Department", value: "Administration")
                 detailRow(title: "Office Location", value: "Mumbai Corporate HQ")
             } header: {
-                Text("Staff Details").font(.title3).fontWeight(.bold).foregroundStyle(.primary).textCase(nil)
+                Text("Staff Details").font(.adminSectionHeader).foregroundStyle(Color.secondary).textCase(.uppercase).padding(.leading, 8)
             }
             
             Section {
                 if isEditing {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Full Name").font(.caption).foregroundStyle(.secondary)
+                        Text("Full Name").font(.adminCaption).foregroundStyle(.secondary)
                         TextField("Full Name", text: $name).textFieldStyle(.roundedBorder)
                     }
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Email Address").font(.caption).foregroundStyle(.secondary)
+                        Text("Email Address").font(.adminCaption).foregroundStyle(.secondary)
                         TextField("Email Address", text: $email).textFieldStyle(.roundedBorder).keyboardType(.emailAddress).autocorrectionDisabled().textInputAutocapitalization(.never)
                     }
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Phone Number").font(.caption).foregroundStyle(.secondary)
+                        Text("Phone Number").font(.adminCaption).foregroundStyle(.secondary)
                         TextField("Phone Number", text: $phone).textFieldStyle(.roundedBorder).keyboardType(.phonePad)
                     }
                 } else {
@@ -190,7 +181,7 @@ struct PersonalInfoView: View {
                     detailRow(title: "Phone Number", value: phone)
                 }
             } header: {
-                Text("Contact Details").font(.title3).fontWeight(.bold).foregroundStyle(.primary).textCase(nil)
+                Text("Contact Details").font(.adminSectionHeader).foregroundStyle(Color.secondary).textCase(.uppercase).padding(.leading, 8)
             }
             
             if isEditing {
@@ -297,7 +288,7 @@ struct ChangePasswordView: View {
                 SecureField("Enter new password (min. 8 chars)", text: $newPassword)
                 SecureField("Confirm new password", text: $confirmPassword)
             } header: {
-                Text("Update Password").font(.title3).fontWeight(.bold).foregroundStyle(.primary).textCase(nil)
+                Text("Update Password").font(.adminSectionHeader).foregroundStyle(Color.secondary).textCase(.uppercase).padding(.leading, 8)
             }
             
             Section {
@@ -388,7 +379,7 @@ struct NotificationSettingsDetailedView: View {
                 Toggle("In-App Push Alerts", isOn: $inAppApproved).tint(.blue)
                 Toggle("SMS Notifications", isOn: $smsApproved).tint(.blue)
             } header: {
-                Text("Loan Approval Alerts").font(.title3).fontWeight(.bold).foregroundStyle(.primary).textCase(nil)
+                Text("Loan Approval Alerts").font(.adminSectionHeader).foregroundStyle(Color.secondary).textCase(.uppercase).padding(.leading, 8)
             }
             
             Section {
@@ -396,7 +387,7 @@ struct NotificationSettingsDetailedView: View {
                 Toggle("In-App Push Alerts", isOn: $inAppDue).tint(.blue)
                 Toggle("SMS Notifications", isOn: $smsDue).tint(.blue)
             } header: {
-                Text("Payment Due Reminders").font(.title3).fontWeight(.bold).foregroundStyle(.primary).textCase(nil)
+                Text("Payment Due Reminders").font(.adminSectionHeader).foregroundStyle(Color.secondary).textCase(.uppercase).padding(.leading, 8)
             }
             
             Section {
@@ -404,7 +395,7 @@ struct NotificationSettingsDetailedView: View {
                 Toggle("In-App Push Alerts", isOn: $inAppOverdue).tint(.blue)
                 Toggle("SMS Notifications", isOn: $smsOverdue).tint(.blue)
             } header: {
-                Text("Overdue Alerts").font(.title3).fontWeight(.bold).foregroundStyle(.primary).textCase(nil)
+                Text("Overdue Alerts").font(.adminSectionHeader).foregroundStyle(Color.secondary).textCase(.uppercase).padding(.leading, 8)
             }
             
             Section {
@@ -476,7 +467,7 @@ struct SupportDetailedView: View {
                 contactRow(title: "Toll Free Helpline", value: "1800-419-5959", systemImage: "phone.bubble.fill")
                 contactRow(title: "Support Email", value: "support@lms.com", systemImage: "envelope.fill")
             } header: {
-                Text("Contact Desk").font(.title3).fontWeight(.bold).foregroundStyle(.primary).textCase(nil)
+                Text("Contact Desk").font(.adminSectionHeader).foregroundStyle(Color.secondary).textCase(.uppercase).padding(.leading, 8)
             }
             
             Section {
@@ -488,7 +479,7 @@ struct SupportDetailedView: View {
                 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Description")
-                        .font(.caption)
+                        .font(.adminCaption)
                         .foregroundStyle(.secondary)
                     TextEditor(text: $ticketMessage)
                         .frame(height: 120)
@@ -500,7 +491,7 @@ struct SupportDetailedView: View {
                 }
                 .disabled(ticketMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             } header: {
-                Text("Submit a Ticket").font(.title3).fontWeight(.bold).foregroundStyle(.primary).textCase(nil)
+                Text("Submit a Ticket").font(.adminSectionHeader).foregroundStyle(Color.secondary).textCase(.uppercase).padding(.leading, 8)
             }
         }
         .listStyle(.insetGrouped)
@@ -522,10 +513,10 @@ struct SupportDetailedView: View {
                 .foregroundStyle(AdminColor.accent)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.caption)
+                    .font(.adminCaption)
                     .foregroundStyle(.secondary)
                 Text(value)
-                    .font(.body)
+                    .font(.adminBody)
                     .fontWeight(.semibold)
             }
             Spacer()
@@ -548,7 +539,7 @@ private struct SystemProfileBadge: View {
                 .frame(width: 84, height: 84)
 
             Image(systemName: "person.crop.circle.fill")
-                .font(.system(size: 40, weight: .regular))
+                .font(.adminLargeTitle)
                 .foregroundStyle(.white.opacity(0.95))
         }
     }

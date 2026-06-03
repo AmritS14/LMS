@@ -89,7 +89,7 @@ struct AdminTabView: View {
 
     var body: some View {
         TabView {
-            Tab("Overview", systemImage: "rectangle.grid.2x2.fill") {
+            Tab("Dashboard", systemImage: "rectangle.grid.2x2.fill") {
                 NavigationStack {
                     AdminDashboardView(viewModel: dashboardViewModel, userVM: userManagementViewModel)
                 }

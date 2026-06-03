@@ -39,7 +39,11 @@ struct LoanConfigFormView: View {
                         }
                     }
                 } header: {
-                    Text(category.rawValue).font(.title3).fontWeight(.bold).foregroundStyle(.primary).textCase(nil)
+                    Text(category.rawValue)
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
             }
         }

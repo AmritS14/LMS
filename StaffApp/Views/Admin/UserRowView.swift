@@ -20,21 +20,21 @@ struct UserRowView: View {
 
             VStack(alignment: .leading, spacing: Spacing.xxs) {
                 Text(user.fullName)
-                    .font(.lmsHeadline)
+                    .font(.adminCardTitle)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
                 Text(user.email)
-                    .font(.lmsCaption)
+                    .font(.adminCaption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
 
                 if isResetPending {
                     HStack(spacing: Spacing.xs) {
                         Image(systemName: "key.fill")
-                            .font(.system(size: 9))
+                            .font(.adminCaption)
                         Text("Password Reset Pending")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.adminStatus)
                     }
                     .foregroundStyle(Color.lmsWarning)
                     .padding(.horizontal, Spacing.s)
@@ -48,7 +48,7 @@ struct UserRowView: View {
 
             VStack(alignment: .trailing, spacing: Spacing.xxs) {
                 Text(user.uniqueID)
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .font(.adminCaption.monospacedDigit())
                     .foregroundStyle(.tertiary)
 
                 roleBadge
@@ -71,7 +71,7 @@ struct UserRowView: View {
             .joined()
 
         return Text(initials)
-            .font(.system(.callout, design: .rounded, weight: .bold))
+            .font(.adminCardTitle)
             .foregroundStyle(.white)
             .frame(width: 44, height: 44)
             .background(avatarGradient, in: Circle())
@@ -80,7 +80,7 @@ struct UserRowView: View {
 
     private var roleBadge: some View {
         Text(user.role.displayName)
-            .font(.system(size: 9, weight: .bold))
+            .font(.adminStatus)
             .foregroundStyle(avatarColor)
             .padding(.horizontal, Spacing.s)
             .padding(.vertical, 2)
@@ -228,7 +228,7 @@ struct UserDetailsView: View {
                     Image(systemName: currentUser.isActive ? "checkmark.circle.fill" : "xmark.circle.fill")
                         .foregroundStyle(currentUser.isActive ? Color.lmsSuccess : Color.lmsDanger)
                     Text("Account Status")
-                        .font(.lmsBody)
+                        .font(.adminBody)
                 }
                 Spacer()
                 Toggle("", isOn: Binding(
@@ -249,7 +249,7 @@ struct UserDetailsView: View {
                     Image(systemName: "person.badge.shield.checkmark.fill")
                         .foregroundStyle(Color.lmsInfo)
                     Text("System Role")
-                        .font(.lmsBody)
+                        .font(.adminBody)
                 }
                 Spacer()
                 Picker("Role", selection: Binding(
@@ -275,7 +275,7 @@ struct UserDetailsView: View {
                         Image(systemName: "key.fill")
                             .foregroundStyle(Color.lmsWarning)
                         Text("Reset Password")
-                            .font(.lmsBody)
+                            .font(.adminBody)
                     }
                     Spacer()
                     if isResetting {
@@ -285,7 +285,7 @@ struct UserDetailsView: View {
                         Button(viewModel.usersPendingReset.contains(currentUser.id) ? "Reset Again" : "Reset") {
                             showResetConfirmation = true
                         }
-                        .font(.lmsSubheadline)
+                        .font(.adminSecondary)
                         .fontWeight(.semibold)
                         .foregroundStyle(.white)
                         .padding(.horizontal, Spacing.sm)
@@ -297,10 +297,10 @@ struct UserDetailsView: View {
                 if viewModel.usersPendingReset.contains(currentUser.id) {
                     HStack(spacing: Spacing.xs_s) {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.caption2)
+                            .font(.adminCaption)
                             .foregroundStyle(Color.lmsWarning)
                         Text("Password change required at next login")
-                            .font(.lmsCaption)
+                            .font(.adminCaption)
                             .foregroundStyle(.secondary)
                     }
                     .padding(.horizontal, Spacing.sm)
@@ -319,7 +319,11 @@ struct UserDetailsView: View {
                 }
             }
         } header: {
-            Text("Manage Account").font(.lmsTitle3).foregroundStyle(.primary).textCase(nil)
+            Text("Manage Account")
+                .font(.adminSectionHeader)
+                .foregroundStyle(Color.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, 8)
         }
     }
 
@@ -332,7 +336,11 @@ struct UserDetailsView: View {
             accountDetailRow(icon: "envelope.fill", label: "Email", value: currentUser.email)
             accountDetailRow(icon: "phone.fill", label: "Phone", value: currentUser.phone)
         } header: {
-            Text("Account Details").font(.lmsTitle3).foregroundStyle(.primary).textCase(nil)
+            Text("Account Details")
+                .font(.adminSectionHeader)
+                .foregroundStyle(Color.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, 8)
         }
 
         Section {
@@ -348,7 +356,11 @@ struct UserDetailsView: View {
                 KeyValueRow(key: "Manager", value: "None")
             }
         } header: {
-            Text("Assigned Staff").font(.lmsTitle3).foregroundStyle(.primary).textCase(nil)
+            Text("Assigned Staff")
+                .font(.adminSectionHeader)
+                .foregroundStyle(Color.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, 8)
         }
 
         let history = viewModel.getLoanHistory(for: currentUser.id)
@@ -356,7 +368,30 @@ struct UserDetailsView: View {
             accountDetailRow(icon: "doc.text.fill", label: "Total Loans", value: "\(history.count)")
             accountDetailRow(icon: "chart.line.uptrend.xyaxis", label: "Active Loans", value: "\(history.filter { $0.outstandingBalance > 0 }.count)")
         } header: {
-            Text("Loan Summary").font(.lmsTitle3).foregroundStyle(.primary).textCase(nil)
+            Text("Loan Summary")
+                .font(.adminSectionHeader)
+                .foregroundStyle(Color.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, 8)
+        }
+
+        Section {
+            NavigationLink(destination: ReportsDashboardView(preselectedBorrowerName: currentUser.fullName)) {
+                HStack(spacing: Spacing.s) {
+                    Text("Borrower Report")
+                        .font(.lmsSubheadline)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Image(systemName: "doc.text.magnifyingglass")
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } header: {
+            Text("Report")
+                .font(.adminSectionHeader)
+                .foregroundStyle(Color.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, 8)
         }
 
         if !history.isEmpty {
@@ -364,7 +399,7 @@ struct UserDetailsView: View {
                 Section {
                     HStack {
                         Text(loan.disbursementDate.formatted(date: .abbreviated, time: .omitted))
-                            .font(.lmsHeadline)
+                            .font(.adminCardTitle)
                         Spacer()
                         StatusBadge(
                             loan.outstandingBalance == 0 ? "Fully Paid" : "Active",
@@ -378,16 +413,20 @@ struct UserDetailsView: View {
                     ForEach(loan.emiSchedule) { emi in
                         HStack {
                             Text("Installment \(emi.installmentNumber)")
-                                .font(.lmsSubheadline)
+                                .font(.adminSecondary)
                             Spacer()
                             Text(emi.status == .paid ? "Paid" : "Overdue")
-                                .font(.lmsCaption)
+                                .font(.adminCaption)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(emi.status == .paid ? Color.lmsSuccess : Color.lmsDanger)
                         }
                     }
                 } header: {
-                    Text("Loan Record").font(.subheadline).fontWeight(.semibold).foregroundStyle(.secondary).textCase(nil)
+                    Text("Loan Record")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
             }
         }
@@ -402,37 +441,45 @@ struct UserDetailsView: View {
             accountDetailRow(icon: "envelope.fill", label: "Email", value: currentUser.email)
             accountDetailRow(icon: "phone.fill", label: "Phone", value: currentUser.phone)
         } header: {
-            Text("Account Details").font(.lmsTitle3).foregroundStyle(.primary).textCase(nil)
+            Text("Account Details")
+                .font(.adminSectionHeader)
+                .foregroundStyle(Color.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, 8)
         }
 
         let borrowers = viewModel.getBorrowers(for: currentUser.id)
         Section {
             if borrowers.isEmpty {
                 Text("No borrowers assigned to this officer.")
-                    .font(.lmsSubheadline)
+                    .font(.adminSecondary)
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(borrowers) { borrower in
-                    NavigationLink(destination: UserDetailsView(viewModel: viewModel, user: borrower)) {
+                    NavigationLink(destination: SimpleUserDetailsView(user: borrower)) {
                         HStack {
                             VStack(alignment: .leading, spacing: Spacing.xxs) {
                                 Text(borrower.fullName)
-                                    .font(.lmsHeadline)
+                                    .font(.adminCardTitle)
                                     .foregroundStyle(.primary)
                                 Text(borrower.uniqueID)
-                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                    .font(.adminCaption.monospacedDigit())
                                     .foregroundStyle(.tertiary)
                             }
                             Spacer()
                             Text(borrower.email)
-                                .font(.lmsCaption)
+                                .font(.adminCaption)
                                 .foregroundStyle(.secondary)
                         }
                     }
                 }
             }
         } header: {
-            Text("Assigned Borrowers (\(borrowers.count))").font(.lmsTitle3).foregroundStyle(.primary).textCase(nil)
+            Text("Assigned Borrowers (\(borrowers.count))")
+                .font(.adminSectionHeader)
+                .foregroundStyle(Color.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, 8)
         }
 
         Section {
@@ -442,7 +489,11 @@ struct UserDetailsView: View {
                 KeyValueRow(key: "Reports To", value: "No Manager Assigned")
             }
         } header: {
-            Text("Supervisor").font(.lmsTitle3).foregroundStyle(.primary).textCase(nil)
+            Text("Supervisor")
+                .font(.adminSectionHeader)
+                .foregroundStyle(Color.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, 8)
         }
 
         manageAccountSection
@@ -457,49 +508,61 @@ struct UserDetailsView: View {
             accountDetailRow(icon: "envelope.fill", label: "Email", value: currentUser.email)
             accountDetailRow(icon: "phone.fill", label: "Phone", value: currentUser.phone)
         } header: {
-            Text("Manager Details").font(.lmsTitle3).foregroundStyle(.primary).textCase(nil)
+            Text("Manager Details")
+                .font(.adminSectionHeader)
+                .foregroundStyle(Color.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, 8)
         }
 
         let officers = viewModel.getLoanOfficers(for: currentUser.id)
         Section {
             if officers.isEmpty {
                 Text("No officers reporting to this manager.")
-                    .font(.lmsSubheadline)
+                    .font(.adminSecondary)
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(officers) { officer in
-                    NavigationLink(destination: UserDetailsView(viewModel: viewModel, user: officer)) {
+                    NavigationLink(destination: SimpleUserDetailsView(user: officer)) {
                         HStack {
                             VStack(alignment: .leading, spacing: Spacing.xxs) {
                                 Text(officer.fullName)
-                                    .font(.lmsHeadline)
+                                    .font(.adminCardTitle)
                                     .foregroundStyle(.primary)
                                 Text(officer.uniqueID)
-                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                    .font(.adminCaption.monospacedDigit())
                                     .foregroundStyle(.tertiary)
                             }
                             Spacer()
                             Text(officer.email)
-                                .font(.lmsCaption)
+                                .font(.adminCaption)
                                 .foregroundStyle(.secondary)
                         }
                     }
                 }
             }
         } header: {
-            Text("Supervised Officers (\(officers.count))").font(.lmsTitle3).foregroundStyle(.primary).textCase(nil)
+            Text("Supervised Officers (\(officers.count))")
+                .font(.adminSectionHeader)
+                .foregroundStyle(Color.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, 8)
         }
 
         Section {
             ForEach(Permission.allCases) { permission in
                 Toggle(isOn: permissionBinding(for: permission)) {
                     Text(permission.rawValue)
-                        .font(.lmsBody)
+                        .font(.adminBody)
                 }
                 .tint(.lmsInfo)
             }
         } header: {
-            Text("Permissions").font(.lmsTitle3).foregroundStyle(.primary).textCase(nil)
+            Text("Permissions")
+                .font(.adminSectionHeader)
+                .foregroundStyle(Color.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, 8)
         }
 
         manageAccountSection
@@ -514,7 +577,11 @@ struct UserDetailsView: View {
             accountDetailRow(icon: "envelope.fill", label: "Email", value: currentUser.email)
             accountDetailRow(icon: "phone.fill", label: "Phone", value: currentUser.phone)
         } header: {
-            Text("Admin Account Details").font(.lmsTitle3).foregroundStyle(.primary).textCase(nil)
+            Text("Admin Account Details")
+                .font(.adminSectionHeader)
+                .foregroundStyle(Color.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, 8)
         }
     }
 
@@ -523,15 +590,15 @@ struct UserDetailsView: View {
     private func accountDetailRow(icon: String, label: String, value: String) -> some View {
         HStack(spacing: Spacing.sm) {
             Image(systemName: icon)
-                .font(.caption)
+                .font(.adminCaption)
                 .foregroundStyle(Color.lmsInfo)
                 .frame(width: 20)
             Text(label)
-                .font(.lmsSubheadline)
+                .font(.adminSecondary)
                 .foregroundStyle(.secondary)
             Spacer()
             Text(value)
-                .font(.lmsSubheadline)
+                .font(.adminSecondary)
                 .fontWeight(.medium)
                 .foregroundStyle(.primary)
                 .textSelection(.enabled)
@@ -565,11 +632,11 @@ struct KeyValueRow: View {
     var body: some View {
         HStack {
             Text(key)
-                .font(.lmsSubheadline)
+                .font(.adminSecondary)
                 .foregroundStyle(.secondary)
             Spacer()
             Text(value)
-                .font(.lmsSubheadline)
+                .font(.adminSecondary)
                 .fontWeight(.medium)
                 .foregroundStyle(.primary)
         }
@@ -584,14 +651,14 @@ struct NavigationKeyValueRow: View {
     @Bindable var viewModel: UserManagementViewModel
 
     var body: some View {
-        NavigationLink(destination: UserDetailsView(viewModel: viewModel, user: destinationUser)) {
+        NavigationLink(destination: SimpleUserDetailsView(user: destinationUser)) {
             HStack {
                 Text(key)
-                    .font(.lmsSubheadline)
+                    .font(.adminSecondary)
                     .foregroundStyle(.secondary)
                 Spacer()
                 Text(value)
-                    .font(.lmsSubheadline)
+                    .font(.adminSecondary)
                     .fontWeight(.semibold)
                     .foregroundStyle(Color.lmsInfo)
             }
@@ -615,16 +682,16 @@ struct PasswordResetSuccessSheet: View {
                         .fill(Color.lmsSuccess.opacity(0.1))
                         .frame(width: 88, height: 88)
                     Image(systemName: "checkmark.shield.fill")
-                        .font(.system(size: 40))
+                        .font(.adminLargeTitle)
                         .foregroundStyle(Color.lmsSuccess)
                 }
                 .padding(.top, Spacing.l)
 
                 Text("Password Reset Complete")
-                    .font(.lmsTitle2)
+                    .font(.adminScreenTitle)
 
                 Text("Temporary password generated for \(userName)")
-                    .font(.lmsSubheadline)
+                    .font(.adminSecondary)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
@@ -632,13 +699,13 @@ struct PasswordResetSuccessSheet: View {
             // Password Display Card
             VStack(spacing: Spacing.sm) {
                 Text("TEMPORARY PASSWORD")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.adminCaption)
                     .foregroundStyle(.secondary)
                     .tracking(0.5)
 
                 HStack {
                     Text(temporaryPassword)
-                        .font(.system(.title3, design: .monospaced, weight: .bold))
+                        .font(.adminScreenTitle.monospacedDigit())
                         .foregroundStyle(.primary)
                         .textSelection(.enabled)
 
@@ -657,7 +724,7 @@ struct PasswordResetSuccessSheet: View {
                             Image(systemName: isCopied ? "checkmark" : "doc.on.doc.fill")
                             Text(isCopied ? "Copied" : "Copy")
                         }
-                        .font(.lmsCaption)
+                        .font(.adminCaption)
                         .fontWeight(.semibold)
                         .foregroundStyle(isCopied ? Color.lmsSuccess : Color.lmsInfo)
                         .padding(.horizontal, Spacing.sm)
@@ -673,14 +740,14 @@ struct PasswordResetSuccessSheet: View {
             // Warning Banner
             HStack(spacing: Spacing.sm) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.headline)
+                    .font(.adminCardTitle)
                     .foregroundStyle(Color.lmsWarning)
                 VStack(alignment: .leading, spacing: Spacing.xxs) {
                     Text("Next Login Required")
-                        .font(.lmsSubheadline)
+                        .font(.adminSecondary)
                         .fontWeight(.semibold)
                     Text("The user must change this password during their next sign-in.")
-                        .font(.lmsCaption)
+                        .font(.adminCaption)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -694,7 +761,7 @@ struct PasswordResetSuccessSheet: View {
                 dismiss()
             } label: {
                 Text("Done")
-                    .font(.lmsHeadline)
+                    .font(.adminCardTitle)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, Spacing.sm)
             }
@@ -704,5 +771,63 @@ struct PasswordResetSuccessSheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+    }
+}
+
+// MARK: - Simple User Details View
+struct SimpleUserDetailsView: View {
+    let user: User
+    
+    var body: some View {
+        List {
+            Section {
+                accountDetailRow(icon: "person.text.rectangle", label: "Name", value: user.fullName)
+                accountDetailRow(icon: "briefcase.fill", label: "Role", value: user.role.displayName)
+                accountDetailRow(icon: "envelope.fill", label: "Email", value: user.email)
+                accountDetailRow(icon: "phone.fill", label: "Phone", value: user.phone)
+                accountDetailRow(icon: "number", label: "Employee ID", value: user.uniqueID)
+                
+                HStack {
+                    HStack(spacing: Spacing.s) {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(user.isActive ? Color.lmsSuccess : Color.lmsDanger)
+                        Text("Status")
+                            .font(.adminBody)
+                    }
+                    Spacer()
+                    Text(user.isActive ? "Active" : "Inactive")
+                        .font(.adminSecondary)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(user.isActive ? Color.lmsSuccess : Color.lmsDanger)
+                }
+            } header: {
+                Text("User Details")
+                    .font(.adminSectionHeader)
+                    .foregroundStyle(Color.secondary)
+                    .textCase(.uppercase)
+                    .padding(.leading, 8)
+            }
+        }
+        .listStyle(.insetGrouped)
+        .navigationTitle(user.fullName)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+    
+    private func accountDetailRow(icon: String, label: String, value: String) -> some View {
+        HStack {
+            HStack(spacing: Spacing.s) {
+                Image(systemName: icon)
+                    .foregroundStyle(Color.lmsInfo)
+                    .frame(width: 24)
+                Text(label)
+                    .font(.adminBody)
+            }
+            Spacer()
+            Text(value)
+                .font(.adminSecondary)
+                .fontWeight(.semibold)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.trailing)
+        }
     }
 }

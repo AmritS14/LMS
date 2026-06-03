@@ -6,6 +6,8 @@ struct StaffLoginView: View {
 
     @State private var email: String = ""
     @State private var password: String = ""
+    @State private var isPasswordVisible: Bool = false
+    @State private var rememberMe: Bool = false
     @State private var isBusy: Bool = false
     @State private var errorMessage: String?
     @FocusState private var focusedField: Field?
@@ -20,39 +22,204 @@ struct StaffLoginView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: Spacing.l) {
-                Text("LMS Staff Portal").font(.lmsTitle)
-                SectionCard {
-                    TextField("Work Email", text: $email)
-                        .textFieldStyle(.roundedBorder)
-                        .textContentType(.emailAddress)
-                        .keyboardType(.emailAddress)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                        .submitLabel(.next)
-                        .focused($focusedField, equals: .email)
-                        .onSubmit { focusedField = .password }
-                    SecureField("Password", text: $password)
-                        .textFieldStyle(.roundedBorder)
-                        .textContentType(.password)
-                        .submitLabel(.go)
-                        .focused($focusedField, equals: .password)
-                        .onSubmit(submit)
-
-                    if let errorMessage {
-                        Label(errorMessage, systemImage: "exclamationmark.circle.fill")
-                            .font(.footnote)
-                            .foregroundStyle(Color.lmsDanger)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+            ZStack {
+                // Subtle light gradient background with decorative shapes
+                LinearGradient(
+                    colors: [Color(.systemBackground), Color.blue.opacity(0.04), Color.blue.opacity(0.08)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                // Decorative Background Circles
+                VStack {
+                    HStack {
+                        Spacer()
+                        Circle()
+                            .fill(Color.blue.opacity(0.03))
+                            .frame(width: 250, height: 250)
+                            .offset(x: 100, y: -50)
                     }
-
-                    PrimaryButton("Sign In", isLoading: isBusy, action: submit)
-                        .disabled(!isSignInEnabled)
+                    Spacer()
                 }
-                Spacer()
+                .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 24) {
+                        Spacer()
+                            .frame(height: 40)
+                        
+                        // Header Section
+                        VStack(spacing: 16) {
+                            // Logo (scaled and centered)
+                            Image("AdminLogo")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 90, height: 90)
+                                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                                .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+                            
+                            VStack(spacing: 6) {
+                                Text("Welcome Back, Admin")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(Color(.label))
+                                
+                                Text("Sign in to access the administration dashboard")
+                                    .font(.subheadline)
+                                    .foregroundStyle(Color.secondary)
+                                    .multilineTextAlignment(.center)
+                            }
+                        }
+                        .padding(.bottom, 12)
+                        
+                        // Login Card
+                        VStack(alignment: .leading, spacing: 20) {
+                            // Email Field
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Email Address")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(Color.secondary)
+                                
+                                HStack(spacing: 12) {
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                            .fill(Color.blue.opacity(0.1))
+                                            .frame(width: 32, height: 32)
+                                        Image(systemName: "envelope.fill")
+                                            .font(.system(size: 14))
+                                            .foregroundStyle(Color.blue)
+                                    }
+                                    
+                                    TextField("Enter your email address", text: $email)
+                                        .textContentType(.emailAddress)
+                                        .keyboardType(.emailAddress)
+                                        .autocorrectionDisabled()
+                                        .textInputAutocapitalization(.never)
+                                        .submitLabel(.next)
+                                        .focused($focusedField, equals: .email)
+                                        .onSubmit { focusedField = .password }
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .background(Color(.secondarySystemBackground))
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            }
+                            
+                            // Password Field
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Password")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(Color.secondary)
+                                
+                                HStack(spacing: 12) {
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                            .fill(Color.blue.opacity(0.1))
+                                            .frame(width: 32, height: 32)
+                                        Image(systemName: "lock.fill")
+                                            .font(.system(size: 14))
+                                            .foregroundStyle(Color.blue)
+                                    }
+                                    
+                                    if isPasswordVisible {
+                                        TextField("Enter your password", text: $password)
+                                            .textContentType(.password)
+                                            .submitLabel(.go)
+                                            .focused($focusedField, equals: .password)
+                                            .onSubmit(submit)
+                                    } else {
+                                        SecureField("Enter your password", text: $password)
+                                            .textContentType(.password)
+                                            .submitLabel(.go)
+                                            .focused($focusedField, equals: .password)
+                                            .onSubmit(submit)
+                                    }
+                                    
+                                    Button {
+                                        isPasswordVisible.toggle()
+                                    } label: {
+                                        Image(systemName: isPasswordVisible ? "eye.fill" : "eye.slash.fill")
+                                            .font(.system(size: 16))
+                                            .foregroundStyle(Color.secondary)
+                                    }
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .background(Color(.secondarySystemBackground))
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            }
+                            
+                            // Remember Me
+                            Button {
+                                withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
+                                    rememberMe.toggle()
+                                }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: rememberMe ? "checkmark.square.fill" : "square")
+                                        .font(.system(size: 18))
+                                        .foregroundStyle(rememberMe ? Color.blue : Color.secondary)
+                                    
+                                    Text("Remember Me")
+                                        .font(.subheadline)
+                                        .foregroundStyle(Color.secondary)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.top, 4)
+                            
+                            // Error Message
+                            if let errorMessage {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "exclamationmark.circle.fill")
+                                        .foregroundStyle(Color.red)
+                                    Text(errorMessage)
+                                        .font(.footnote)
+                                        .foregroundStyle(Color.red)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.top, 4)
+                            }
+                            
+                            // Login Button
+                            Button(action: submit) {
+                                HStack {
+                                    Spacer()
+                                    if isBusy {
+                                        ProgressView()
+                                            .tint(.white)
+                                    } else {
+                                        Text("Sign In")
+                                            .font(.headline)
+                                            .fontWeight(.bold)
+                                            .foregroundStyle(.white)
+                                    }
+                                    Spacer()
+                                }
+                                .padding(.vertical, 14)
+                                .background(
+                                    isSignInEnabled ?
+                                    LinearGradient(colors: [Color.blue, Color.blue.opacity(0.85)], startPoint: .topLeading, endPoint: .bottomTrailing) :
+                                    LinearGradient(colors: [Color.gray.opacity(0.4), Color.gray.opacity(0.3)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            }
+                            .disabled(!isSignInEnabled)
+                            .padding(.top, 8)
+                        }
+                        .padding(24)
+                        .background(Color(.systemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                        .shadow(color: Color.black.opacity(0.04), radius: 15, x: 0, y: 8)
+                        
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                }
             }
-            .padding(Spacing.m)
-            .navigationTitle("Sign in")
         }
     }
 

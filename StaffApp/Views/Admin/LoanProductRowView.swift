@@ -21,8 +21,7 @@ struct LoanProductRowView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     // Title
                     Text(product.name)
-                        .font(.body)
-                        .fontWeight(.semibold)
+                        .font(.adminCardTitle)
                         .foregroundStyle(.primary)
 
                     // Rate and Tenure summary
@@ -33,7 +32,7 @@ struct LoanProductRowView: View {
                         Text("\(product.maxTenure) \(product.tenureUnit.rawValue.lowercased())")
                             .foregroundStyle(.secondary)
                     }
-                    .font(.subheadline)
+                    .font(.adminSecondary)
                 }
 
                 Spacer()
@@ -82,6 +81,10 @@ struct LoanProductEditorSheet: View {
                     TextField("Name", text: $draftProduct.name)
                 } header: {
                     Text("Loan Name")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
                 
                 // Section: Amounts
@@ -102,6 +105,10 @@ struct LoanProductEditorSheet: View {
                     }
                 } header: {
                     Text("Amounts (₹)")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
 
                 // Section: Interest Rate
@@ -115,6 +122,10 @@ struct LoanProductEditorSheet: View {
                     Slider(value: $draftProduct.interestRate, in: 1...30, step: 0.25)
                 } header: {
                     Text("Interest Rate")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
 
                 // Section: Tenure
@@ -135,6 +146,10 @@ struct LoanProductEditorSheet: View {
                     .pickerStyle(.segmented)
                 } header: {
                     Text("Tenure")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
             }
             .navigationTitle("Edit Product")

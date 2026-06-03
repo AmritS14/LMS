@@ -290,7 +290,7 @@ final class DashboardViewModel {
         stats: DashboardStats(totalAmount: "—", totalUser: 0, activeLoans: 0, applications: 0),
         recentApplications: []
     )
-    var isAmountVisible: Bool = false
+    var recentAuditLogs: [AuditEntry] = []
     var rawTotalAmount: Decimal = 0
     var isLoading: Bool = false
     var error: String? = nil
@@ -385,6 +385,14 @@ final class DashboardViewModel {
             ),
             recentApplications: recent
         )
+
+        let admin = environment.admin
+        do {
+            let logs = try await admin.fetchAuditLogs()
+            self.recentAuditLogs = Array(logs.prefix(10))
+        } catch {
+            print("Failed to fetch dashboard audit logs: \(error)")
+        }
     }
 
     func subscribeToRealtimeChanges() {
@@ -580,7 +588,7 @@ final class AdminApplicationDetailViewModel {
 @MainActor
 @Observable
 final class UserManagementViewModel {
-    enum Filter: Equatable {
+    enum Filter: Equatable, Hashable {
         case all
         case role(UserRole)
     }
