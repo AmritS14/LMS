@@ -2,6 +2,8 @@ import SwiftUI
 
 struct LoanOfficerProfileView: View {
     @Environment(AppViewModel.self) var viewModel
+    @Environment(\.appEnvironment) private var env
+    @Environment(SessionStore.self) private var session
     
     // Settings state
     @State private var enableNotifications = true
@@ -15,6 +17,7 @@ struct LoanOfficerProfileView: View {
     @State private var currentLine = [CGPoint]()
     @State private var lines = [[CGPoint]]()
     @State private var isSignatureSaved = false
+    @State private var showLogoutConfirmation = false
     
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -42,6 +45,22 @@ struct LoanOfficerProfileView: View {
                     isSignatureSaved: $isSignatureSaved
                 )
                 
+                // Sign Out Button
+                Button(role: .destructive) {
+                    showLogoutConfirmation = true
+                } label: {
+                    HStack {
+                        Spacer()
+                        Text("Sign Out")
+                            .font(.headline)
+                        Spacer()
+                    }
+                    .padding()
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .cornerRadius(12)
+                }
+                .padding(.horizontal)
+                
                 Spacer(minLength: 40)
             }
             .padding(.bottom, 20)
@@ -49,6 +68,18 @@ struct LoanOfficerProfileView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Officer Profile")
         .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog("Sign Out", isPresented: $showLogoutConfirmation, titleVisibility: .visible) {
+            Button("Sign Out", role: .destructive) {
+                Task {
+                    try? await env?.auth.signOut()
+                    session.currentUser = nil
+                    session.staffProfile = nil
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Are you sure you want to sign out?")
+        }
     }
 }
 

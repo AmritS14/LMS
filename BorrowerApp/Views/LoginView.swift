@@ -311,13 +311,20 @@ struct OTPVerificationView: View {
     }
 
     private func resendCode() {
+        guard let auth = env?.auth else { return }
         resetTimer()
         otpDigits = Array(repeating: "", count: 6)
         viewModel.otp = ""
         viewModel.errorMessage = nil
         focusedIndex = 0
-        // Task { await viewModel.signUp(authService: auth, ...) } // Need password/name to resend via signUp, or Supabase has resend function.
-        // For now just leave as empty since resend requires separate Supabase API.
+        Task {
+            do {
+                // Re-trigger the signup flow which resends the OTP confirmation email
+                try await auth.requestOTP(identifier: viewModel.identifier)
+            } catch {
+                viewModel.errorMessage = "Failed to resend code: \(error.localizedDescription)"
+            }
+        }
     }
 
     // MARK: - Timer logic

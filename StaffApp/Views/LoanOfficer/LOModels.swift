@@ -597,7 +597,7 @@ struct LOLoanApplication: Identifiable, Hashable {
             case .pending:
                 issues.append(ValidationIssue(message: "Pending verification: \(doc.name)", isBlocker: true))
             case .needsReview:
-                issues.append(ValidationIssue(message: "Needs manual review: \(doc.name)", isBlocker: true))
+                issues.append(ValidationIssue(message: "Needs manual review: \(doc.name)", isBlocker: false))
             case .rejected:
                 issues.append(ValidationIssue(message: "Rejected document: \(doc.name)", isBlocker: true))
             case .verified:
@@ -627,7 +627,7 @@ extension LOLoanStatus {
         case .escalated:
             return .escalated
         case .disbursed:
-            return .approved
+            return .disbursed
         }
     }
 }
@@ -643,12 +643,12 @@ extension ApplicationStatus {
             return .escalated
         case .additionalInfoRequired:
             return .underReview
-        case .recommended, .approved, .disbursed:
+        case .recommended, .approved:
             return .approved
+        case .disbursed, .closed:
+            return .disbursed
         case .rejected:
             return .rejected
-        case .closed:
-            return .disbursed
         }
     }
 }

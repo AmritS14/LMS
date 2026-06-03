@@ -9,14 +9,8 @@ struct ApplicationReviewView: View {
     @State private var activeSheet: ApplicationActionType?
     @State private var pendingResult: ApplicationActionType?
     @State private var completed: ApplicationActionType?
-    @State private var verifiedDocs: Set<String> = Set(Self.documents)
-
-    private static let documents = ["Government ID", "Income Proof", "Collateral Proof"]
-    private static let documentIcons = [
-        "Government ID": "person.text.rectangle",
-        "Income Proof": "doc.text",
-        "Collateral Proof": "building.columns"
-    ]
+    @State private var verifiedDocs: Set<UUID> = []
+    @State private var documents: [LoanDocument] = []
 
     private var app: ManagerApplication? { store.application(id: applicationID) }
 
@@ -59,6 +53,13 @@ struct ApplicationReviewView: View {
                 officer: app.officerName,
                 onFinish: { dismiss() }
             )
+        }
+        .task {
+            documents = (try? await store.fetchDocuments(for: applicationID)) ?? []
+            // Auto-verify those marked as verified in DB
+            for doc in documents where doc.status == .verified {
+                verifiedDocs.insert(doc.id)
+            }
         }
     }
 
@@ -192,16 +193,23 @@ struct ApplicationReviewView: View {
     private var documentsSection: some View {
         SectionCard(title: "Verified Documents",
                     footer: "Tap a document to toggle verification.") {
-            HStack {
-                Text("Verification")
-                    .font(.subheadline.weight(.semibold))
-                Spacer()
-                StatusBadge("\(verifiedDocs.count) of \(Self.documents.count) Verified",
-                            tone: verifiedDocs.count == Self.documents.count ? .success : .warning,
-                            size: .small)
-            }
-            ForEach(Self.documents, id: \.self) { doc in
-                documentRow(doc)
+            if documents.isEmpty {
+                Text("No documents attached.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, Spacing.sm)
+            } else {
+                HStack {
+                    Text("Verification")
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    StatusBadge("\(verifiedDocs.count) of \(documents.count) Verified",
+                                tone: verifiedDocs.count == documents.count ? .success : .warning,
+                                size: .small)
+                }
+                ForEach(documents) { doc in
+                    documentRow(doc)
+                }
             }
         }
     }
@@ -294,18 +302,18 @@ struct ApplicationReviewView: View {
         .background(Color.lmsBackground, in: RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous))
     }
 
-    private func documentRow(_ doc: String) -> some View {
-        let verified = verifiedDocs.contains(doc)
+    private func documentRow(_ doc: LoanDocument) -> some View {
+        let verified = verifiedDocs.contains(doc.id)
         return Button {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                if verified { verifiedDocs.remove(doc) } else { verifiedDocs.insert(doc) }
+                if verified { verifiedDocs.remove(doc.id) } else { verifiedDocs.insert(doc.id) }
             }
         } label: {
             HStack(spacing: Spacing.sm) {
-                Image(systemName: Self.documentIcons[doc] ?? "doc")
+                Image(systemName: "doc.text.fill")
                     .foregroundStyle(Color.lmsAccent)
                     .frame(width: 24)
-                Text(doc).font(.subheadline).foregroundStyle(.primary)
+                Text(doc.kind.rawValue.capitalized).font(.subheadline).foregroundStyle(.primary)
                 Spacer()
                 Image(systemName: verified ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
