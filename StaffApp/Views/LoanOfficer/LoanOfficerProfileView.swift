@@ -153,7 +153,7 @@ struct PerformanceGridView: View {
                     value: String(format: "%.1f%%", viewModel.officerProfile.approvalRate),
                     icon: "chart.line.uptrend.xyaxis",
                     color: .blue,
-                    subtitle: "Industry avg: 65%"
+                    subtitle: "Approval rate"
                 )
                 
                 // Active Tasks
@@ -168,10 +168,10 @@ struct PerformanceGridView: View {
                 // Disbursed Volume
                 MetricCard(
                     title: "Disbursed Value",
-                    value: "₹45.8 Cr",
+                    value: "—",
                     icon: "indianrupeesign.circle.fill",
                     color: .purple,
-                    subtitle: "FY 2025-26"
+                    subtitle: "Not available"
                 )
             }
             .padding(.horizontal, 20)
@@ -246,7 +246,7 @@ struct BranchDetailsSection: View {
                         Text("Branch Details")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(.primary)
-                        Text("Mumbai Central office information")
+                        Text("Branch information")
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)
                     }
@@ -267,15 +267,15 @@ struct BranchDetailsSection: View {
             
             if isExpanded {
                 VStack(spacing: 0) {
-                    LODetailRow(icon: "tag.fill", title: "Branch Code", value: "BR-MUM-01")
+                    LODetailRow(icon: "tag.fill", title: "Branch Code", value: "—")
                     Divider().padding(.vertical, 8)
-                    LODetailRow(icon: "globe.asia.australia.fill", title: "Region", value: "Western India")
+                    LODetailRow(icon: "globe.asia.australia.fill", title: "Region", value: "—")
                     Divider().padding(.vertical, 8)
-                    LODetailRow(icon: "person.badge.key.fill", title: "Branch Manager", value: "Anil Deshmukh")
+                    LODetailRow(icon: "person.badge.key.fill", title: "Branch Manager", value: "—")
                     Divider().padding(.vertical, 8)
-                    LODetailRow(icon: "phone.fill", title: "Contact Desk", value: "+91 22 6678 9100")
+                    LODetailRow(icon: "phone.fill", title: "Contact Desk", value: "—")
                     Divider().padding(.vertical, 8)
-                    LODetailRow(icon: "mappin.and.ellipse", title: "Address", value: "BKC Capital Towers, G Block, Bandra East, Mumbai, 400051")
+                    LODetailRow(icon: "mappin.and.ellipse", title: "Address", value: "—")
                 }
                 .padding(16)
                 .background(Color(.secondarySystemGroupedBackground))

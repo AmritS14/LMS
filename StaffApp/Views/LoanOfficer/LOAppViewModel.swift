@@ -249,6 +249,7 @@ private extension Array {
                         let unread = msgs.filter { $0.readAt == nil && $0.senderID != user.id }.count
                         
                         newConvos.append(BorrowerConversation(
+                            threadID: thread.id,
                             borrowerName: bName,
                             borrowerInitials: bInitials,
                             lastMessage: thread.lastMessagePreview ?? "",
@@ -347,8 +348,8 @@ private extension Array {
             employer: "—",
             monthlyIncome: monthlyIncome,
             existingLiabilities: 0,
-            eligibilityScore: creditScore > 700 ? 85 : 50,
-            emiAmount: amount / Double(max(app.tenureMonths, 1)),
+            eligibilityScore: Self.computeEligibilityScore(creditScore: creditScore, monthlyIncome: monthlyIncome, loanAmount: amount),
+            emiAmount: Self.computeEMI(principal: amount, annualRate: app.interestRate, tenureMonths: app.tenureMonths),
             phoneNumber: app.borrowerPhone ?? "—",
             email: app.borrowerEmail ?? "—",
             address: [borrowerProfile?.address?.line1, borrowerProfile?.address?.city, borrowerProfile?.address?.state].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", "),
@@ -414,6 +415,39 @@ private extension Array {
         case "loan_disbursed": return "Loan Disbursed"
         default: return rawType.replacingOccurrences(of: "_", with: " ").capitalized
         }
+    }
+
+    /// Reducing-balance EMI: P × r × (1+r)^n / ((1+r)^n − 1)
+    private static func computeEMI(principal: Double, annualRate: Double, tenureMonths: Int) -> Double {
+        let n = max(tenureMonths, 1)
+        guard annualRate > 0 else { return principal / Double(n) }
+        let r = (annualRate / 100.0) / 12.0
+        let factor = pow(1 + r, Double(n))
+        return principal * r * factor / (factor - 1)
+    }
+
+    /// Basic eligibility score derived from credit score and debt-to-income ratio.
+    private static func computeEligibilityScore(creditScore: Int, monthlyIncome: Double, loanAmount: Double) -> Int {
+        var score = 0
+        switch creditScore {
+        case 750...:  score += 50
+        case 700..<750: score += 40
+        case 650..<700: score += 25
+        default:      score += 10
+        }
+        if monthlyIncome > 0 {
+            let emi = loanAmount / 60.0
+            let dti = emi / monthlyIncome
+            switch dti {
+            case ..<0.3:  score += 50
+            case 0.3..<0.5: score += 35
+            case 0.5..<0.7: score += 15
+            default:      score += 0
+            }
+        } else {
+            score += 25
+        }
+        return min(score, 100)
     }
 
     private func recalculateKPIs() {
@@ -889,5 +923,30 @@ private extension Array {
         if hour < 12 { return "Good Morning" }
         if hour < 17 { return "Good Afternoon" }
         return "Good Evening"
+    }
+
+    // MARK: - Send officer message
+
+    /// Appends the message locally and persists it via the messaging backend.
+    func sendOfficerMessage(_ text: String, to conversation: BorrowerConversation) async {
+        let trimmed = text.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+
+        let newMsg = LOChatMessage(
+            text: trimmed,
+            sender: .officer,
+            timestamp: Date(),
+            isRead: true
+        )
+
+        if let idx = conversations.firstIndex(of: conversation) {
+            conversations[idx].messages.append(newMsg)
+            conversations[idx].lastMessage = trimmed
+            conversations[idx].lastMessageTime = Date()
+        }
+
+        guard let threadID = conversation.threadID else { return }
+        let message = ChatMessage(threadID: threadID, senderID: officerProfile.id, body: trimmed)
+        try? await environment?.messaging.send(message)
     }
 }

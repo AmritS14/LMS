@@ -72,11 +72,11 @@ struct ProfileView: View {
             SystemProfileBadge()
 
             VStack(spacing: 6) {
-                Text("Sarah Jenkins")
+                Text(session.currentUser?.fullName ?? "Admin")
                     .font(.title2)
                     .fontWeight(.bold)
-                
-                Text("SYSTEM ADMIN")
+
+                Text(session.role?.displayName.uppercased() ?? "SYSTEM ADMIN")
                     .font(.caption)
                     .fontWeight(.bold)
                     .padding(.horizontal, 12)
@@ -143,29 +143,30 @@ struct ProfileView: View {
 // 1. Personal Information View
 struct PersonalInfoView: View {
     @Environment(\.dismiss) private var dismiss
-    
-    @State private var name = "Sarah Jenkins"
-    @State private var email = "sarah.jenkins@lms.com"
-    @State private var phone = "+91 98765 43210"
-    
+    @Environment(SessionStore.self) private var session
+
+    @State private var name = ""
+    @State private var email = ""
+    @State private var phone = ""
+
     @State private var isEditing = false
     @State private var showCancelConfirmation = false
     @State private var showSaveSuccess = false
-    
-    @State private var originalName = "Sarah Jenkins"
-    @State private var originalEmail = "sarah.jenkins@lms.com"
-    @State private var originalPhone = "+91 98765 43210"
-    
+
+    @State private var originalName = ""
+    @State private var originalEmail = ""
+    @State private var originalPhone = ""
+
     private var isDirty: Bool {
         name != originalName || email != originalEmail || phone != originalPhone
     }
-    
+
     var body: some View {
         List {
             Section {
-                detailRow(title: "Employee ID", value: "EMP-00123")
-                detailRow(title: "Department", value: "Administration")
-                detailRow(title: "Office Location", value: "Mumbai Corporate HQ")
+                detailRow(title: "Employee ID", value: session.staffProfile?.employeeID ?? "—")
+                detailRow(title: "Department", value: session.staffProfile?.department ?? "—")
+                detailRow(title: "Office Location", value: "—")
             } header: {
                 Text("Staff Details").font(.title3).fontWeight(.bold).foregroundStyle(.primary).textCase(nil)
             }
@@ -207,6 +208,14 @@ struct PersonalInfoView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .onAppear {
+            let fullName = session.currentUser?.fullName ?? ""
+            let emailVal = session.currentUser?.email ?? ""
+            let phoneVal = session.currentUser?.phone ?? ""
+            name = fullName; originalName = fullName
+            email = emailVal; originalEmail = emailVal
+            phone = phoneVal; originalPhone = phoneVal
+        }
         .navigationTitle("Personal Info")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(isEditing && isDirty)

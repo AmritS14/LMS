@@ -139,14 +139,12 @@ struct ChatView: View {
     // MARK: - Send Message
 
     private func sendMessage() {
-
-        guard !messageText.trimmingCharacters(in: .whitespaces).isEmpty else {
-            return
-        }
-
-        print("Message Sent: \(messageText)")
-
+        let text = messageText.trimmingCharacters(in: .whitespaces)
+        guard !text.isEmpty else { return }
         messageText = ""
+        Task {
+            await viewModel.sendOfficerMessage(text, to: conversation)
+        }
     }
 }
 

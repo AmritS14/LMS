@@ -340,7 +340,9 @@ struct ChatDetailView: View {
                 documents: MockDocumentService(),
                 notifications: MockNotificationService(),
                 messaging: MockMessagingService(),
-                keychain: MockKeychainService()
+                keychain: MockKeychainService(),
+            admin: MockAdminService(),
+            aadhaarKYC: MockAadhaarKYCService()
             ))
     }
 }

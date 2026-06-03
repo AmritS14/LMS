@@ -766,6 +766,7 @@ struct LOChatMessage: Identifiable, Hashable, Equatable {
 struct BorrowerConversation: Identifiable, Hashable, Equatable {
     let id = UUID()
 
+    var threadID: UUID?
     var borrowerName: String
     var borrowerInitials: String
 

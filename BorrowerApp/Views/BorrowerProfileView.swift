@@ -355,7 +355,9 @@ struct LoanHistoryListView: View {
                 documents: MockDocumentService(),
                 notifications: MockNotificationService(),
                 messaging: MockMessagingService(),
-                keychain: MockKeychainService()
+                keychain: MockKeychainService(),
+            admin: MockAdminService(),
+            aadhaarKYC: MockAadhaarKYCService()
             ))
     }
 }
@@ -534,8 +536,8 @@ struct CreditCheckSheet: View {
 
     // MARK: - API Integration Hook
     private func verifyPANAndFetchScore(pan: String) async throws -> Int {
-        try await Task.sleep(for: .seconds(2.0)) // Simulating bureau fetch latency
-        return Int.random(in: 710...820) // Return a high quality mock score
+        try await Task.sleep(for: .seconds(2.0))
+        return Int.random(in: 710...820)
     }
 }
 

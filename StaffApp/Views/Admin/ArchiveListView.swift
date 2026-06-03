@@ -205,14 +205,14 @@ struct ArchiveListView: View {
     
     var body: some View {
         Group {
-            if isLoading {
+            if viewModel.isLoading {
                 VStack {
                     Spacer()
                     ProgressView("Loading Archives...")
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if hasError {
+            } else if viewModel.error != nil {
                 ContentUnavailableView("Data Error", systemImage: "exclamationmark.triangle", description: Text("Failed to load loan archives."))
             } else if filteredLoans.isEmpty {
                 ContentUnavailableView("No Archives", systemImage: "archivebox", description: Text("No records match your filters."))
@@ -223,6 +223,13 @@ struct ArchiveListView: View {
                     }
                 }
             }
+        }
+        .task {
+            viewModel.configure(environment: env)
+            await viewModel.load()
+        }
+        .refreshable {
+            await viewModel.load()
         }
         .navigationTitle("Loan Archives")
         .navigationBarTitleDisplayMode(.inline)

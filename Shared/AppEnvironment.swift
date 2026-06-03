@@ -19,8 +19,8 @@ struct AppEnvironment: Sendable {
         notifications: any NotificationService,
         messaging: any MessagingService,
         keychain: any KeychainService,
-        admin: any AdminService = MockAdminService(),
-        aadhaarKYC: any AadhaarKYCService = MockAadhaarKYCService()
+        admin: any AdminService,
+        aadhaarKYC: any AadhaarKYCService
     ) {
         self.auth = auth
         self.loans = loans

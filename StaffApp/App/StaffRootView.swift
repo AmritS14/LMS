@@ -22,7 +22,6 @@ struct StaffRootView: View {
                 ManagerTabView()
                     .environment(managerStore)
                     .task {
-                        print("[DEBUG] manager .task fired, env=\(appEnvironment == nil ? "nil" : "set")")
                         if let appEnvironment {
                             managerStore.configure(environment: appEnvironment, session: session)
                         }

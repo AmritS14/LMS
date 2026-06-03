@@ -13,9 +13,6 @@ struct RootView: View {
                     .task {
                         if let env {
                             _ = try? await env.notifications.requestAuthorization()
-                            if let deviceToken = "mock_device_token".data(using: .utf8) {
-                                try? await env.notifications.registerDeviceToken(deviceToken)
-                            }
                         }
                     }
                     .transition(.opacity)
@@ -77,6 +74,8 @@ struct BorrowerTabView: View {
             documents: MockDocumentService(),
             notifications: MockNotificationService(),
             messaging: MockMessagingService(),
-            keychain: MockKeychainService()
+            keychain: MockKeychainService(),
+            admin: MockAdminService(),
+            aadhaarKYC: MockAadhaarKYCService()
         ))
 }

@@ -369,25 +369,59 @@ actor SupabaseLoanService: LoanService {
 
     func fetchActiveLoans(borrowerID: UUID) async throws -> [Loan] {
         try await ensureProductCache()
-        let response = try await client
+        let loansResponse = try await client
             .from("loans")
             .select()
             .eq("borrower_id", value: borrowerID)
             .execute()
-            
-        let dbLoans = try SupabaseManager.shared.decoder.decode([DBLoan].self, from: response.data)
-        
-        // Fetch EMIs for each loan
-        var loans: [Loan] = []
-        for dbLoan in dbLoans {
-            let emis = try await fetchEMISchedule(loanID: dbLoan.id)
-            // Determine loan type from the application's product
-            let loanType = await loanTypeForApplication(dbLoan.application_id)
-            loans.append(Loan(
+
+        let dbLoans = try SupabaseManager.shared.decoder.decode([DBLoan].self, from: loansResponse.data)
+        guard !dbLoans.isEmpty else { return [] }
+
+        // Batch fetch all EMIs for all loans in a single query
+        let loanIDStrings = dbLoans.map { $0.id.uuidString }
+        let emisResponse = try await client
+            .from("emis")
+            .select()
+            .in("loan_id", values: loanIDStrings)
+            .order("installment_number", ascending: true)
+            .execute()
+        let allDBEmis = try SupabaseManager.shared.decoder.decode([DBEMI].self, from: emisResponse.data)
+        let emisByLoanID = Dictionary(grouping: allDBEmis, by: { $0.loan_id })
+
+        // Batch fetch loan_product_id for all application IDs in a single query
+        let appIDStrings = dbLoans.map { $0.application_id.uuidString }
+        struct AppProduct: Decodable { let id: UUID; let loan_product_id: UUID? }
+        let appsResponse = try await client
+            .from("loan_applications")
+            .select("id, loan_product_id")
+            .in("id", values: appIDStrings)
+            .execute()
+        let appProducts = try SupabaseManager.shared.decoder.decode([AppProduct].self, from: appsResponse.data)
+        let loanTypeByAppID: [UUID: LoanType] = Dictionary(
+            uniqueKeysWithValues: appProducts.map { ap in
+                (ap.id, ap.loan_product_id.flatMap { productCache[$0] } ?? .personal)
+            }
+        )
+
+        return dbLoans.map { dbLoan in
+            let emis = (emisByLoanID[dbLoan.id] ?? []).map { dbEmi in
+                EMI(
+                    id: dbEmi.id,
+                    installmentNumber: dbEmi.installment_number,
+                    dueDate: dbEmi.due_date,
+                    principalComponent: dbEmi.principal_component,
+                    interestComponent: dbEmi.interest_component,
+                    totalAmount: dbEmi.total_amount,
+                    status: mapEMIStatus(dbEmi.status),
+                    paidAt: dbEmi.paid_at
+                )
+            }
+            return Loan(
                 id: dbLoan.id,
                 applicationID: dbLoan.application_id,
                 borrowerID: dbLoan.borrower_id,
-                loanType: loanType,
+                loanType: loanTypeByAppID[dbLoan.application_id] ?? .personal,
                 principal: dbLoan.principal,
                 interestRate: dbLoan.interest_rate,
                 tenureMonths: dbLoan.tenure_months,
@@ -395,9 +429,8 @@ actor SupabaseLoanService: LoanService {
                 outstandingBalance: dbLoan.outstanding_balance,
                 emiSchedule: emis,
                 status: mapLoanStatus(dbLoan.status)
-            ))
+            )
         }
-        return loans
     }
 
     private func loanTypeForApplication(_ applicationID: UUID) async -> LoanType {

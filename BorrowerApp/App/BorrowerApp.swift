@@ -12,9 +12,10 @@ struct BorrowerApp: App {
         auth: SupabaseAuthService(),
         loans: SupabaseLoanService(client: SupabaseManager.shared.client),
         documents: SupabaseDocumentService(client: SupabaseManager.shared.client),
-        notifications: MockNotificationService(),
+        notifications: NoOpNotificationService(),
         messaging: SupabaseMessagingService(client: SupabaseManager.shared.client),
         keychain: SecureKeychainService(),
+        admin: SupabaseAdminService(client: SupabaseManager.shared.client),
         aadhaarKYC: SupabaseAadhaarKYCService(client: SupabaseManager.shared.client)
     )
 

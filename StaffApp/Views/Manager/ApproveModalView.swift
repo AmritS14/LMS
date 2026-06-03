@@ -5,7 +5,7 @@ struct ApproveModalView: View {
     var onComplete: (String?) async throws -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var remarks = "Excellent credit profile, approved for full amount."
+    @State private var remarks = ""
     @State private var notifyBorrower = true
     @State private var isSubmitting = false
     @State private var errorMessage: String? = nil

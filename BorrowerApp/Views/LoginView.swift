@@ -206,10 +206,7 @@ struct OTPVerificationView: View {
                     .tint(isExpired ? .lmsDanger : .accentColor)
                     .padding(.top, Spacing.xs)
 
-                    Text("Demo OTP: 123456")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                        .padding(.top, Spacing.m)
+
                 }
             }
             .padding(.bottom, Spacing.xl)
@@ -426,13 +423,15 @@ struct OTPDigitBox: View {
             documents: MockDocumentService(),
             notifications: MockNotificationService(),
             messaging: MockMessagingService(),
-            keychain: MockKeychainService()
+            keychain: MockKeychainService(),
+            admin: MockAdminService(),
+            aadhaarKYC: MockAadhaarKYCService()
         ))
 }
 
 #Preview("OTP Screen") {
     let vm = AuthViewModel()
-    return NavigationStack {
+    NavigationStack {
         OTPVerificationView(viewModel: vm)
     }
     .environment(SessionStore())
@@ -442,6 +441,8 @@ struct OTPDigitBox: View {
         documents: MockDocumentService(),
         notifications: MockNotificationService(),
         messaging: MockMessagingService(),
-        keychain: MockKeychainService()
+        keychain: MockKeychainService(),
+        admin: MockAdminService(),
+        aadhaarKYC: MockAadhaarKYCService()
     ))
 }

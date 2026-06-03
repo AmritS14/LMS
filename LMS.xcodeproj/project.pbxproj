@@ -81,6 +81,8 @@
 		AA00KYC000000001FF03 /* AadhaarKYCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00KYC000000001FF01 /* AadhaarKYCService.swift */; };
 		AA00KYC000000002FF02 /* SupabaseAadhaarKYCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00KYC000000002FF01 /* SupabaseAadhaarKYCService.swift */; };
 		AA00KYC000000002FF03 /* SupabaseAadhaarKYCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00KYC000000002FF01 /* SupabaseAadhaarKYCService.swift */; };
+		AA00NOP000000001FF02 /* NoOpNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00NOP000000001FF01 /* NoOpNotificationService.swift */; };
+		AA00NOP000000001FF03 /* NoOpNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00NOP000000001FF01 /* NoOpNotificationService.swift */; };
 		AA00KYC000000003FF02 /* AadhaarKYCView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00KYC000000003FF01 /* AadhaarKYCView.swift */; };
 		AAFC609E76A4CEC4B45C1C19 /* ProductComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ECA8C941966C60EAD82892 /* ProductComparisonView.swift */; };
 		AEC46A6B6FC8863AC7B09AEE /* LoanApplicationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67CE1BB7A83A622F16249215 /* LoanApplicationViewModel.swift */; };
@@ -176,6 +178,7 @@
 		AA001122334455667788AA00 /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
 		AA00KYC000000001FF01 /* AadhaarKYCService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AadhaarKYCService.swift; sourceTree = "<group>"; };
 		AA00KYC000000002FF01 /* SupabaseAadhaarKYCService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseAadhaarKYCService.swift; path = Supabase/SupabaseAadhaarKYCService.swift; sourceTree = "<group>"; };
+		AA00NOP000000001FF01 /* NoOpNotificationService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = NoOpNotificationService.swift; path = Supabase/NoOpNotificationService.swift; sourceTree = "<group>"; };
 		AA00KYC000000003FF01 /* AadhaarKYCView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AadhaarKYCView.swift; sourceTree = "<group>"; };
 		B07AD9174280E67995096E93 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		B1F43612DC9CA160255FFC33 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
@@ -333,6 +336,7 @@
 				19A749024376B4E1C30F4B83 /* SupabaseDocumentService.swift */,
 				F3F99DE09F9F0CC21967249D /* SupabaseAdminService.swift */,
 				AA00KYC000000002FF01 /* SupabaseAadhaarKYCService.swift */,
+				AA00NOP000000001FF01 /* NoOpNotificationService.swift */,
 				F1F6DD3D2E576E52740D421F /* Mocks */,
 				7030245C7B6F750C833D33EA /* SecureKeychainService.swift */,
 			);
@@ -573,6 +577,7 @@
 				AA00KYC000000003FF02 /* AadhaarKYCView.swift in Sources */,
 				AA00KYC000000001FF02 /* AadhaarKYCService.swift in Sources */,
 				AA00KYC000000002FF02 /* SupabaseAadhaarKYCService.swift in Sources */,
+				AA00NOP000000001FF02 /* NoOpNotificationService.swift in Sources */,
 				5B900C06FEC98C16A1BCC79D /* SupabaseAuthService.swift in Sources */,
 				B5736CA276F2155E52E5FF29 /* SupabaseManager.swift in Sources */,
 				D1A96A5D5B9276150793483D /* SupabaseLoanService.swift in Sources */,
@@ -655,6 +660,7 @@
 				14709A63F344F7FD1D8264FF /* MockSupportServices.swift in Sources */,
 				AA00KYC000000001FF03 /* AadhaarKYCService.swift in Sources */,
 				AA00KYC000000002FF03 /* SupabaseAadhaarKYCService.swift in Sources */,
+				AA00NOP000000001FF03 /* NoOpNotificationService.swift in Sources */,
 				66143A3B9FE6F60EA68A1A8F /* SupabaseAuthService.swift in Sources */,
 				9ACB3979801AABEA63E8250F /* SupabaseManager.swift in Sources */,
 				7CF9B0770FFCAFE017674DFC /* SupabaseLoanService.swift in Sources */,

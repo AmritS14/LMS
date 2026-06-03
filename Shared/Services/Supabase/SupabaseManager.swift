@@ -44,11 +44,27 @@ public struct SupabaseManager: Sendable {
         )
     }
 
-    func logAuditEvent(action: String, entityType: String, entityID: UUID, metadata: [String: AnyJSON]) async {
+    func logAuditEvent(action: String, entityType: String, entityID: UUID, metadata: [String: AnyJSON], actorRole: String? = nil) async {
         do {
+            let userID = try await client.auth.session.user.id.uuidString
+            let role: String
+            if let actorRole {
+                role = actorRole
+            } else {
+                // Fall back to looking up the role from the users table
+                struct RoleRow: Decodable { let role: String }
+                let rows: [RoleRow] = try await client
+                    .from("users")
+                    .select("role")
+                    .eq("id", value: userID)
+                    .limit(1)
+                    .execute()
+                    .value
+                role = rows.first?.role ?? "unknown"
+            }
             let insertData: [String: AnyJSON] = [
-                "actor_id": .string(try await client.auth.session.user.id.uuidString),
-                "actor_role": .string("admin"),
+                "actor_id": .string(userID),
+                "actor_role": .string(role),
                 "action": .string(action),
                 "entity_type": .string(entityType),
                 "entity_id": .string(entityID.uuidString),

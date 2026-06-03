@@ -3,6 +3,8 @@ import Supabase
 
 struct UpdatePasswordView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.appEnvironment) private var env
+    @Environment(SessionStore.self) private var session
     
     @State private var password = ""
     @State private var confirmPassword = ""
@@ -81,12 +83,17 @@ struct UpdatePasswordView: View {
         Task {
             do {
                 _ = try await SupabaseManager.shared.client.auth.update(user: UserAttributes(password: password))
-                isSubmitting = false
-                showSuccess = true
-                try await SupabaseManager.shared.client.auth.signOut()
+                try? await env?.auth.signOut()
+                await MainActor.run {
+                    session.currentUser = nil
+                    isSubmitting = false
+                    showSuccess = true
+                }
             } catch {
-                isSubmitting = false
-                errorMessage = error.localizedDescription
+                await MainActor.run {
+                    isSubmitting = false
+                    errorMessage = error.localizedDescription
+                }
             }
         }
     }

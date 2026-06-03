@@ -166,7 +166,8 @@ actor SupabaseAdminService: AdminService {
             action: "Updated User Role to \(role.displayName)",
             entityType: "user",
             entityID: userID,
-            metadata: ["new_role": .string(backendRole(role))]
+            metadata: ["new_role": .string(backendRole(role))],
+            actorRole: "admin"
         )
     }
     
@@ -181,7 +182,8 @@ actor SupabaseAdminService: AdminService {
             action: isActive ? "Activated User" : "Deactivated User",
             entityType: "user",
             entityID: userID,
-            metadata: ["is_active": .bool(isActive)]
+            metadata: ["is_active": .bool(isActive)],
+            actorRole: "admin"
         )
     }
 
@@ -196,7 +198,8 @@ actor SupabaseAdminService: AdminService {
             action: "Archived Loan",
             entityType: "loan",
             entityID: id,
-            metadata: [:]
+            metadata: [:],
+            actorRole: "admin"
         )
     }
 
@@ -211,7 +214,8 @@ actor SupabaseAdminService: AdminService {
             action: "Restored Loan",
             entityType: "loan",
             entityID: id,
-            metadata: [:]
+            metadata: [:],
+            actorRole: "admin"
         )
     }
     
