@@ -61,7 +61,7 @@ struct RepaymentDashboardView: View {
                 await viewModel.payEMI(emi)
                 return viewModel.paymentSuccess
             }
-            .presentationDetents([.medium])
+            .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showForeclosureSheet) {

@@ -304,7 +304,7 @@ struct ProcessingTimelineView: View {
             switch status {
             case .completed:
                 Image(systemName: "checkmark")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(.white)
             case .current:
                 Circle()
@@ -312,7 +312,7 @@ struct ProcessingTimelineView: View {
                     .frame(width: 8, height: 8)
             case .failed:
                 Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(.white)
             case .pending:
                 Circle()

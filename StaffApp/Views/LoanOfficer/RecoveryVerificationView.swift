@@ -572,9 +572,7 @@ extension RecoveryVerificationView {
                 ToolbarItem(
                     placement: .cancellationAction
                 ) {
-                    Button("Cancel") {
-                        showCallLogSheet = false
-                    }
+                    Button(action: { showCallLogSheet = false }) { Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(.primary).padding(8).background(Color(uiColor: .systemGray5), in: Circle()) }
                 }
                 ToolbarItem(
                     placement: .confirmationAction
@@ -645,9 +643,7 @@ extension RecoveryVerificationView {
                 ToolbarItem(
                     placement: .cancellationAction
                 ) {
-                    Button("Cancel") {
-                        showFollowUpSheet = false
-                    }
+                    Button(action: { showFollowUpSheet = false }) { Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(.primary).padding(8).background(Color(uiColor: .systemGray5), in: Circle()) }
                 }
                 ToolbarItem(
                     placement: .confirmationAction

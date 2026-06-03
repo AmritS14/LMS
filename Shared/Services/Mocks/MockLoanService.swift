@@ -264,7 +264,15 @@ actor MockLoanService: LoanService {
 
     func fetchActiveLoans(borrowerID: UUID) async throws -> [Loan] {
         try await Task.sleep(for: .milliseconds(200))
-                        return loans
+        return loans.map { loan in
+            let isAllPaid = !loan.emiSchedule.isEmpty && loan.emiSchedule.allSatisfy { $0.status == .paid }
+            if loan.outstandingBalance <= 0 || isAllPaid {
+                var updated = loan
+                updated.status = .settled
+                return updated
+            }
+            return loan
+        }
     }
 
     func fetchEMISchedule(loanID: UUID) async throws -> [EMI] {

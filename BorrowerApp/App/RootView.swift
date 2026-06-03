@@ -43,7 +43,7 @@ struct RootView: View {
         }
         .sheet(isPresented: $showUpdatePassword) {
             UpdatePasswordView()
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
     }

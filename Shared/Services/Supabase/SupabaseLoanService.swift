@@ -383,6 +383,15 @@ actor SupabaseLoanService: LoanService {
             let emis = try await fetchEMISchedule(loanID: dbLoan.id)
             // Determine loan type from the application's product
             let loanType = await loanTypeForApplication(dbLoan.application_id)
+            let outstanding = dbLoan.outstanding_balance
+            let isAllPaid = !emis.isEmpty && emis.allSatisfy { $0.status == .paid }
+            let loanStatus: LoanStatus
+            if outstanding <= 0 || isAllPaid {
+                loanStatus = .settled
+            } else {
+                loanStatus = mapLoanStatus(dbLoan.status)
+            }
+            
             loans.append(Loan(
                 id: dbLoan.id,
                 applicationID: dbLoan.application_id,
@@ -392,9 +401,9 @@ actor SupabaseLoanService: LoanService {
                 interestRate: dbLoan.interest_rate,
                 tenureMonths: dbLoan.tenure_months,
                 disbursementDate: dbLoan.disbursement_date,
-                outstandingBalance: dbLoan.outstanding_balance,
+                outstandingBalance: outstanding,
                 emiSchedule: emis,
-                status: mapLoanStatus(dbLoan.status)
+                status: loanStatus
             ))
         }
         return loans

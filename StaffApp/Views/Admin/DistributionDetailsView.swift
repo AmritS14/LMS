@@ -85,7 +85,7 @@ struct DistributionDetailsView: View {
                     .annotation(position: .top, alignment: .center) {
                         VStack(spacing: 2) {
                             Text(item.amountStr)
-                                .font(.system(size: 11, weight: .bold))
+                                .font(.system(size: 12, weight: .bold))
                                 .foregroundStyle(.primary)
                             Text(String(format: "%.1f%%", item.percentage * 100))
                                 .font(.system(size: 10, weight: .semibold))

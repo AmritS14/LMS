@@ -47,7 +47,7 @@ struct BorrowerProfileView: View {
                 Button {
                     showEmploymentSheet = true
                 } label: {
-                    HStack {
+                    HStack(spacing: Spacing.sm) {
                         iconBadge(icon: "briefcase.fill", color: .purple)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Employment Details")
@@ -155,7 +155,7 @@ struct BorrowerProfileView: View {
                     Task { await loadData() }
                 }
             )
-            .presentationDetents([.medium])
+            .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showEmploymentSheet) {
@@ -535,7 +535,7 @@ struct CreditCheckSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Cancel") { dismiss() }
+                    Button(action: { dismiss() }) { Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(.primary).padding(8).background(Color(uiColor: .systemGray5), in: Circle()) }
                 }
             }
         }
@@ -589,7 +589,7 @@ struct EmploymentDetailsSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button(action: { dismiss() }) { Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(.primary).padding(8).background(Color(uiColor: .systemGray5), in: Circle()) }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if isSaving {
