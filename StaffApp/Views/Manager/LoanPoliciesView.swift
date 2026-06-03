@@ -39,8 +39,7 @@ struct LoanPoliciesView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $editingPolicy) { policy in
             LoanPolicyEditSheet(policy: policy) { updated in
-                store.updatePolicy(updated)
-                editingPolicy = nil
+                try await store.updatePolicy(updated)
             }
         }
     }

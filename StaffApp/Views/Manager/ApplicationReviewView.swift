@@ -319,25 +319,49 @@ struct ApplicationReviewView: View {
 
     // MARK: Action bar
 
+    @State private var isDisbursing = false
+    @State private var disburseError: String? = nil
+
     @ViewBuilder
     private func actionBar(_ app: ManagerApplication) -> some View {
         if app.status == .disbursed || app.status == .rejected || app.status == .closed {
             EmptyView()
         } else if app.status == .approved {
             VStack(spacing: Spacing.s) {
+                if let disburseError {
+                    Text(disburseError)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+                
                 Button {
-                    store.disburseLoan(application: app)
-                    dismiss()
+                    Task {
+                        isDisbursing = true
+                        disburseError = nil
+                        do {
+                            try await store.disburseLoan(application: app)
+                            dismiss()
+                        } catch {
+                            disburseError = error.localizedDescription
+                        }
+                        isDisbursing = false
+                    }
                 } label: {
-                    Label("Disburse Loan", systemImage: "banknote.fill")
-                        .frame(maxWidth: .infinity)
+                    if isDisbursing {
+                        ProgressView().tint(.white)
+                    } else {
+                        Label("Disburse Loan", systemImage: "banknote.fill")
+                            .frame(maxWidth: .infinity)
+                    }
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .tint(.blue)
+                .disabled(isDisbursing)
             }
             .padding(Spacing.m)
             .background(.bar)
+
         } else {
             VStack(spacing: Spacing.s) {
                 HStack(spacing: Spacing.s) {
@@ -370,8 +394,8 @@ struct ApplicationReviewView: View {
 
     @ViewBuilder
     private func decisionSheet(_ action: ApplicationActionType, app: ManagerApplication) -> some View {
-        let onComplete: (String?) -> Void = { remarks in
-            store.decide(action, on: app, remarks: remarks)
+        let onComplete: (String?) async throws -> Void = { remarks in
+            try await store.decide(action, on: app, remarks: remarks)
             pendingResult = action
         }
         switch action {

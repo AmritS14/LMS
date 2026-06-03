@@ -14,6 +14,7 @@ struct RegisterView: View {
     @State private var confirmPassword = ""
 
     @State private var showSuccess = false
+    @State private var errorMessage: String?
 
     @FocusState private var focusedField: Field?
 
@@ -80,7 +81,7 @@ struct RegisterView: View {
                 passwordRequirements
             }
 
-            if let errorMessage = viewModel.errorMessage ?? (password != confirmPassword && !password.isEmpty && !confirmPassword.isEmpty ? "Passwords do not match." : nil) {
+            if let errorMessage = errorMessage ?? viewModel.errorMessage ?? (password != confirmPassword && !password.isEmpty && !confirmPassword.isEmpty ? "Passwords do not match." : nil) {
                 Section {
                     Label(errorMessage, systemImage: "exclamationmark.circle.fill")
                         .foregroundStyle(Color.lmsDanger)
@@ -103,6 +104,7 @@ struct RegisterView: View {
         }
     }
 
+
     // MARK: - Password Requirements
     private var passwordRequirements: some View {
         VStack(alignment: .leading, spacing: Spacing.xs_s) {
@@ -122,13 +124,32 @@ struct RegisterView: View {
     }
 
     private func submit() {
-        guard isFormValid, let auth = env?.auth else { return }
+        guard isFormValid else {
+            errorMessage = password != confirmPassword
+                ? "Passwords do not match."
+                : "Please fill in all fields correctly."
+            return
+        }
+        guard let auth = env?.auth else {
+            errorMessage = "App is not configured. Please try again."
+            return
+        }
+        errorMessage = nil
         focusedField = nil
-        viewModel.identifier = email
+        // Set the identifier on the shared view model so OTPVerificationView can use it
+        viewModel.identifier = email.trimmingCharacters(in: .whitespacesAndNewlines)
         Task {
-            let success = await viewModel.signUp(authService: auth, password: password, fullName: fullName, phone: phone)
+            let success = await viewModel.signUp(
+                authService: auth,
+                password: password,
+                fullName: fullName.trimmingCharacters(in: .whitespacesAndNewlines),
+                phone: phone.trimmingCharacters(in: .whitespacesAndNewlines)
+            )
             if success {
+                // Navigate to OTP verification screen
                 navigateToOTP = true
+            } else {
+                errorMessage = viewModel.errorMessage ?? "Registration failed. Please try again."
             }
         }
     }

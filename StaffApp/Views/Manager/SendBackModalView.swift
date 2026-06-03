@@ -2,11 +2,13 @@ import SwiftUI
 
 struct SendBackModalView: View {
     let app: ManagerApplication
-    var onComplete: (String?) -> Void
+    var onComplete: (String?) async throws -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var selectedReasons: Set<String> = []
     @State private var remarks = ""
+    @State private var isSubmitting = false
+    @State private var errorMessage: String? = nil
 
     private let reasons = [
         "Missing Documents",
@@ -63,19 +65,38 @@ struct SendBackModalView: View {
                             }
                     }
 
+                    if let errorMessage {
+                        Text(errorMessage)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+
                     Button {
-                        onComplete(sendBackSummary)
-                        dismiss()
+                        Task {
+                            isSubmitting = true
+                            errorMessage = nil
+                            do {
+                                try await onComplete(sendBackSummary)
+                                dismiss()
+                            } catch {
+                                errorMessage = error.localizedDescription
+                            }
+                            isSubmitting = false
+                        }
                     } label: {
-                        Label("Send Back to Officer", systemImage: "paperplane.fill")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity, minHeight: 28)
+                        if isSubmitting {
+                            ProgressView().tint(.white)
+                        } else {
+                            Label("Send Back to Officer", systemImage: "paperplane.fill")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity, minHeight: 28)
+                        }
                     }
                     .buttonStyle(.borderedProminent)
                     .buttonBorderShape(.roundedRectangle(radius: CornerRadius.button))
                     .controlSize(.large)
                     .tint(.lmsWarning)
-                    .disabled(selectedReasons.isEmpty)
+                    .disabled(selectedReasons.isEmpty || isSubmitting)
                 }
                 .padding(Spacing.m)
             }
