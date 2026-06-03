@@ -146,13 +146,24 @@ private extension Array {
 
             // Build real officer rows
             var rows: [LOLoanApplication] = []
-            for app in sharedApplications {
-                let events = (try? await environment.loans.fetchApplicationEvents(applicationID: app.id)) ?? []
-                let docs = (try? await environment.documents.documents(forApplication: app.id)) ?? []
-                let profile = profilesMap[app.borrowerID]
-                rows.append(Self.makeOfficerApplication(from: app, events: events, documents: docs, borrowerProfile: profile))
+            await withTaskGroup(of: (LoanApplication, [ApplicationEvent], [LoanDocument], BorrowerProfile?).self) { group in
+                for app in sharedApplications {
+                    let profile = profilesMap[app.borrowerID]
+                    group.addTask {
+                        async let eventsReq = (try? await environment.loans.fetchApplicationEvents(applicationID: app.id)) ?? []
+                        async let docsReq = (try? await environment.documents.documents(forApplication: app.id)) ?? []
+                        
+                        let events = await eventsReq
+                        let docs = await docsReq
+                        
+                        return (app, events, docs, profile)
+                    }
+                }
+                for await (app, events, docs, profile) in group {
+                    rows.append(Self.makeOfficerApplication(from: app, events: events, documents: docs, borrowerProfile: profile))
+                }
             }
-            self.recentApplications = rows
+            self.recentApplications = rows.sorted { $0.applicationDate > $1.applicationDate }
 
             
             // Build Activity Feed
@@ -336,7 +347,7 @@ private extension Array {
             employer: "—",
             monthlyIncome: monthlyIncome,
             existingLiabilities: 0,
-            eligibilityScore: 0,
+            eligibilityScore: creditScore > 700 ? 85 : 50,
             emiAmount: amount / Double(max(app.tenureMonths, 1)),
             phoneNumber: app.borrowerPhone ?? "—",
             email: app.borrowerEmail ?? "—",

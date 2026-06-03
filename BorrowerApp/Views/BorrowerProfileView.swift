@@ -81,25 +81,15 @@ struct BorrowerProfileView: View {
             // Verification
             Section("Verification") {
                 NavigationLink {
-                    AadhaarKYCView()
+                    KYCOptionsView()
                 } label: {
                     let isVerified = session.borrowerProfile?.kycStatus == .verified
+                    let isRejected = session.borrowerProfile?.kycStatus == .rejected
                     iconLabelRow(
-                        icon: isVerified ? "checkmark.seal.fill" : "person.text.rectangle.fill",
-                        iconColor: isVerified ? .teal : .blue,
-                        title: "Official Aadhaar KYC",
-                        detail: isVerified ? "Verified via UIDAI" : "Required for Loan Approval"
-                    )
-                }
-                
-                NavigationLink {
-                    KYCView()
-                } label: {
-                    iconLabelRow(
-                        icon: "testtube.2",
-                        iconColor: .purple,
-                        title: "Mock KYC Simulator",
-                        detail: "Testing purposes only"
+                        icon: isVerified ? "checkmark.seal.fill" : (isRejected ? "xmark.seal.fill" : "person.text.rectangle.fill"),
+                        iconColor: isVerified ? .teal : (isRejected ? .red : .blue),
+                        title: "KYC Status",
+                        detail: kycStatusText
                     )
                 }
             }
@@ -639,5 +629,95 @@ struct EmploymentDetailsSheet: View {
                 isSaving = false
             }
         }
+    }
+}
+
+struct KYCOptionsView: View {
+    @Environment(SessionStore.self) private var session
+    
+    var body: some View {
+        List {
+            if session.borrowerProfile?.kycStatus == .verified {
+                Section {
+                    VStack(alignment: .center, spacing: 12) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: 60))
+                            .foregroundStyle(.teal)
+                        Text("KYC Verified")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                        Text("Your identity has been successfully verified.")
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Spacing.m)
+                    .listRowBackground(Color.clear)
+                }
+            } else {
+                Section {
+                    VStack(alignment: .center, spacing: 12) {
+                        Image(systemName: session.borrowerProfile?.kycStatus == .rejected ? "xmark.seal.fill" : "person.text.rectangle.fill")
+                            .font(.system(size: 60))
+                            .foregroundStyle(session.borrowerProfile?.kycStatus == .rejected ? .red : .blue)
+                        Text(session.borrowerProfile?.kycStatus == .rejected ? "KYC Rejected" : "KYC Pending")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                        Text("Please complete your KYC to apply for loans.")
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Spacing.m)
+                    .listRowBackground(Color.clear)
+                }
+                
+                Section("Verification Options") {
+                    NavigationLink {
+                        AadhaarKYCView()
+                    } label: {
+                        HStack(spacing: 16) {
+                            Image(systemName: "shield.checkered")
+                                .font(.title2)
+                                .foregroundStyle(.teal)
+                                .frame(width: 32)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Official Aadhaar KYC")
+                                    .font(.body)
+                                    .fontWeight(.medium)
+                                Text("Verified via UIDAI (Recommended)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    
+                    NavigationLink {
+                        KYCView()
+                    } label: {
+                        HStack(spacing: 16) {
+                            Image(systemName: "testtube.2")
+                                .font(.title2)
+                                .foregroundStyle(.purple)
+                                .frame(width: 32)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Mock KYC Simulator")
+                                    .font(.body)
+                                    .fontWeight(.medium)
+                                Text("Testing purposes only")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+        }
+        .navigationTitle("KYC Status")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

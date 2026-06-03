@@ -314,22 +314,15 @@ actor SupabaseLoanService: LoanService {
     }
 
     func fetchAssignedApplications(officerID: UUID) async throws -> [LoanApplication] {
-        guard let session = try? await client.auth.session else {
-            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
-        }
-
-        let url = URL(string: "\(apiBase)/applications/assigned")!
-        var request = URLRequest(url: url)
-        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
-
-        let (data, httpResponse) = try await URLSession.shared.data(for: request)
-        if let httpRes = httpResponse as? HTTPURLResponse, !(200...299).contains(httpRes.statusCode) {
-            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
-            throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: errorStr])
-        }
-
         try await ensureProductCache()
-        let dbApps = try SupabaseManager.shared.decoder.decode([DBEnrichedApplication].self, from: data)
+        let response = try await client
+            .from("loan_applications")
+            .select("id, borrower_id, assigned_officer_id, loan_product_id, requested_amount, tenure_months, interest_rate, status, created_at, updated_at, borrower:users!loan_applications_borrower_id_fkey(id, email, full_name, phone), assigned_officer:users!loan_applications_assigned_officer_id_fkey(id, email, full_name), loan_products(id, name)")
+            .eq("assigned_officer_id", value: officerID)
+            .order("created_at", ascending: false)
+            .execute()
+
+        let dbApps = try SupabaseManager.shared.decoder.decode([DBEnrichedApplication].self, from: response.data)
         return dbApps.map(toDomainEnriched)
     }
 
