@@ -61,7 +61,7 @@ actor MockAuthService: AuthService {
     }
 
     func verifyOTP(identifier: String, code: String) async throws -> User {
-        try await Task.sleep(for: .milliseconds(400))
+        try await Task.sleep(for: .milliseconds(300))
         guard code == "123456" else {
             throw NSError(domain: "Auth", code: 401,
                           userInfo: [NSLocalizedDescriptionKey: "Invalid OTP. Use 123456."])

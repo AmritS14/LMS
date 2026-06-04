@@ -59,8 +59,18 @@ actor SupabaseAuthService: AuthService {
     }
     
     func verifyOTP(identifier: String, code: String) async throws -> User {
-        // Not used in email/password flow
-        throw NSError(domain: "Auth", code: 501, userInfo: [NSLocalizedDescriptionKey: "Use verifyEmailOTP instead."])
+        let session = try await client.auth.verifyOTP(
+            email: identifier,
+            token: code,
+            type: .magiclink
+        )
+        let user = try await mapSupabaseUserToLocalUser(session.user)
+        guard user.isActive else {
+            try? await client.auth.signOut()
+            throw NSError(domain: "AuthError", code: 403, userInfo: [NSLocalizedDescriptionKey: "Your account has been deactivated. Please contact support."])
+        }
+        await SupabaseManager.shared.logAuditEvent(action: "User Login", entityType: "auth", entityID: user.id, metadata: [:])
+        return user
     }
     
     func updatePassword(password: String) async throws -> User {
