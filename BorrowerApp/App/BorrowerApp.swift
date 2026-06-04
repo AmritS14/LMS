@@ -7,6 +7,7 @@ struct BorrowerApp: App {
 //        currentUser: MockAuthService.seedBorrower,
 //        borrowerProfile: MockAuthService.seedBorrowerProfile
     )
+    @State private var unreadStore = UnreadMessageStore()
 
     private let appEnvironment = AppEnvironment(
         auth: SupabaseAuthService(),
@@ -28,6 +29,7 @@ struct BorrowerApp: App {
             RootView()
                 .environment(session)
                 .environment(\.appEnvironment, appEnvironment)
+                .environment(unreadStore)
         }
     }
 }

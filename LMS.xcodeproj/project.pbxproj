@@ -91,6 +91,8 @@
 		BD88E8A63210E735B61FF0DB /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = C7836194A7CF255B8DAD9CD4 /* Supabase */; };
 		BE28FEE792EA8A0F91A8089C /* Endpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16751F7EF73D594F9FAEA39E /* Endpoints.swift */; };
 		C7EC73AA5008E5C5A111E157 /* MessagingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D006F72DB84815CA65BE6A7 /* MessagingService.swift */; };
+		AA00UMS000000001FF02 /* UnreadMessageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00UMS000000001FF01 /* UnreadMessageStore.swift */; };
+		AA00UMS000000001FF03 /* UnreadMessageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00UMS000000001FF01 /* UnreadMessageStore.swift */; };
 		C91CFCBE3339A03C9B9CA822 /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E9312F55475E7E88D99F512 /* Formatting.swift */; };
 		D0F0B59BB72652B77FC50780 /* SectionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B906761D8C52A50034E4A58 /* SectionCard.swift */; };
 		D1A96A5D5B9276150793483D /* SupabaseLoanService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 914A1BB4F51D4F5C31806EFD /* SupabaseLoanService.swift */; };
@@ -141,6 +143,7 @@
 		31E5097AB0790F850016BE59 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		378FE18EBDE8ED6EAC15B43F /* ApplicationTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationTrackingView.swift; sourceTree = "<group>"; };
 		38E3BA31DFDF4BBB9114F3C4 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
+		AA00UMS000000001FF01 /* UnreadMessageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnreadMessageStore.swift; sourceTree = "<group>"; };
 		3D006F72DB84815CA65BE6A7 /* MessagingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagingService.swift; sourceTree = "<group>"; };
 		51E121B25741BC258047859E /* PrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrimaryButton.swift; sourceTree = "<group>"; };
 		5311FB36A8266E69CFD93D54 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
@@ -324,6 +327,7 @@
 				75FAA397F17964650F366348 /* KeychainService.swift */,
 				A661E2C59635EFD0C144B906 /* LoanService.swift */,
 				3D006F72DB84815CA65BE6A7 /* MessagingService.swift */,
+				AA00UMS000000001FF01 /* UnreadMessageStore.swift */,
 				780758255E8A8257BB032094 /* NotificationService.swift */,
 				AA00KYC000000001FF01 /* AadhaarKYCService.swift */,
 				98E0B31BAE1F58E40563D25B /* SupabaseManager.swift */,
@@ -584,6 +588,7 @@
 				E1C6AB0F72DFE85EB39A11AC /* LoanService.swift in Sources */,
 				7C83F99369F687AF28C499CB /* LoginView.swift in Sources */,
 				C7EC73AA5008E5C5A111E157 /* MessagingService.swift in Sources */,
+				AA00UMS000000001FF02 /* UnreadMessageStore.swift in Sources */,
 				FE5E0902A300F4E68D4F8455 /* Models.swift in Sources */,
 				8642A177D6B5354C27D85CC2 /* NewLoanApplicationView.swift in Sources */,
 				8BB48099C15507DD6F5777EF /* NotificationService.swift in Sources */,
@@ -633,6 +638,7 @@
 				DDD8561F79EEFCD1BB8A2718 /* LoanService.swift in Sources */,
 				F040CB052FC430DF00A9E2F9 /* EmptyStateView.swift in Sources */,
 				EA91AB60DA8481BDF1D1B490 /* MessagingService.swift in Sources */,
+				AA00UMS000000001FF03 /* UnreadMessageStore.swift in Sources */,
 				2D63D95EF39AE253A451F75B /* Models.swift in Sources */,
 				2DE187DC6F82C95B62374384 /* NotificationService.swift in Sources */,
 				7013632107F88127B67DF7C6 /* PersistenceController.swift in Sources */,

@@ -3,6 +3,7 @@ import SwiftUI
 struct BorrowerMessagingView: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.appEnvironment) private var env
+    @Environment(UnreadMessageStore.self) private var unreadStore
 
     @State private var viewModel = MessagingViewModel()
     @State private var applications: [LoanApplication] = []
@@ -43,7 +44,8 @@ struct BorrowerMessagingView: View {
                             icon: icon(for: thread),
                             iconColor: iconColor(for: thread),
                             principal: principal(for: thread),
-                            tenure: tenure(for: thread)
+                            tenure: tenure(for: thread),
+                            unreadCount: unreadStore.unreadCounts[thread.id.uuidString] ?? 0
                         )
                     }
                 }
@@ -122,6 +124,8 @@ struct BorrowerMessagingView: View {
         if let apps = try? await env.loans.fetchApplications(for: userID) {
             applications = apps
         }
+        // Refresh badge counts whenever thread list is reloaded
+        await unreadStore.refresh(messagingService: env.messaging, currentUserID: userID)
     }
 }
 
@@ -135,22 +139,37 @@ private struct ThreadRow: View {
     let iconColor: Color
     let principal: String?
     let tenure: String?
+    var unreadCount: Int = 0
 
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.sm) {
-            ZStack {
-                Circle()
-                    .fill(iconColor.opacity(0.15))
-                    .frame(width: 44, height: 44)
-                Image(systemName: icon)
-                    .foregroundStyle(iconColor)
-                    .font(.title3)
+            // Icon with optional unread badge overlay
+            ZStack(alignment: .topTrailing) {
+                ZStack {
+                    Circle()
+                        .fill(iconColor.opacity(0.15))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: icon)
+                        .foregroundStyle(iconColor)
+                        .font(.title3)
+                }
+
+                if unreadCount > 0 {
+                    Text(unreadCount < 100 ? "\(unreadCount)" : "99+")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 2)
+                        .background(Color.red, in: Capsule())
+                        .offset(x: 4, y: -4)
+                        .transition(.scale.combined(with: .opacity))
+                }
             }
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(title)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.subheadline.weight(unreadCount > 0 ? .bold : .semibold))
                     Spacer()
                     Text(relativeTime)
                         .font(.caption2)
@@ -181,12 +200,14 @@ private struct ThreadRow: View {
 
                 Text(preview)
                     .font(.subheadline)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(unreadCount > 0 ? .primary : .secondary)
+                    .fontWeight(unreadCount > 0 ? .medium : .regular)
                     .lineLimit(2)
                     .padding(.top, 2)
             }
         }
         .padding(.vertical, Spacing.xs)
+        .animation(.easeInOut(duration: 0.2), value: unreadCount)
     }
 
     private var relativeTime: String {
@@ -201,6 +222,7 @@ struct ChatDetailView: View {
 
     @Environment(SessionStore.self) private var session
     @Environment(\.appEnvironment) private var env
+    @Environment(UnreadMessageStore.self) private var unreadStore
 
     @State private var viewModel = MessagingViewModel()
     @FocusState private var composerFocused: Bool
@@ -221,7 +243,16 @@ struct ChatDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             guard let env else { return }
+            // Tell the store this thread is active so polling skips it
+            unreadStore.setActiveThread(thread.id)
+            // Load messages (also calls markRead on the service)
             await viewModel.selectThread(thread, messagingService: env.messaging)
+            // Zero the badge for this thread immediately
+            await unreadStore.markRead(threadID: thread.id, messagingService: env.messaging)
+        }
+        .onDisappear {
+            // Clear active thread so polling resumes counting it if new messages arrive
+            unreadStore.setActiveThread(nil)
         }
     }
 
