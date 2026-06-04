@@ -21,6 +21,7 @@ struct NewLoanApplicationView: View {
     }
     @State private var flowStep: FlowStep = .form
     @State private var showProductComparison = false
+    @State private var showAssistant = false
 
     // Amount input
     @State private var amountText: String = ""
@@ -74,6 +75,16 @@ struct NewLoanApplicationView: View {
             }
         }
         .toolbar { keyboardToolbar }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: { showAssistant = true }) {
+                    Image(systemName: "sparkles")
+                }
+            }
+        }
+        .sheet(isPresented: $showAssistant) {
+            LoanAssistantView(borrowerId: "current-user-id")
+        }
         .sheet(isPresented: $showProductComparison) {
             ProductComparisonView(
                 products: viewModel.loanProducts,
