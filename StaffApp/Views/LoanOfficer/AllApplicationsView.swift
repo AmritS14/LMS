@@ -47,8 +47,6 @@ struct AllApplicationsView: View {
 
                 searchSection
 
-                filterSection
-
                 applicationsSection
             }
             .padding(.horizontal, 16)
@@ -58,6 +56,34 @@ struct AllApplicationsView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Applications")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button(action: { selectedFilter = nil }) {
+                        HStack {
+                            Text("All")
+                            if selectedFilter == nil {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                    
+                    ForEach(LOLoanStatus.allCases, id: \.self) { status in
+                        Button(action: { selectedFilter = status }) {
+                            HStack {
+                                Text(status.rawValue)
+                                if selectedFilter == status {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    Image(systemName: selectedFilter == nil ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                }
+            }
+        }
     }
 }
 
@@ -98,76 +124,6 @@ extension AllApplicationsView {
             RoundedRectangle(cornerRadius: 14)
                 .fill(Color(.secondarySystemGroupedBackground))
         )
-    }
-}
-
-// MARK: - Filter Section
-
-extension AllApplicationsView {
-
-    private var filterSection: some View {
-
-        ScrollView(.horizontal, showsIndicators: false) {
-
-            HStack(spacing: 10) {
-
-                filterChip(
-                    title: "All",
-                    isSelected: selectedFilter == nil
-                ) {
-
-                    selectedFilter = nil
-                }
-
-                ForEach(LOLoanStatus.allCases, id: \.self) { status in
-
-                    filterChip(
-                        title: status.rawValue,
-                        isSelected: selectedFilter == status
-                    ) {
-
-                        selectedFilter = status
-                    }
-                }
-            }
-        }
-    }
-
-    private func filterChip(
-        title: String,
-        isSelected: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-
-        Button {
-                action()
-
-        } label: {
-
-            Text(title)
-                .font(
-                    .system(
-                        size: 13,
-                        weight: .semibold
-                    )
-                )
-                .foregroundStyle(
-                    isSelected
-                    ? .white
-                    : .primary
-                )
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(
-                    Capsule()
-                        .fill(
-                            isSelected
-                            ? Color.blue
-                            : Color(.tertiarySystemGroupedBackground)
-                        )
-                )
-        }
-        .buttonStyle(.plain)
     }
 }
 

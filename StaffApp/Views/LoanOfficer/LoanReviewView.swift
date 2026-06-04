@@ -237,52 +237,13 @@ extension LoanReviewView {
 // MARK: - Segment Selector View
 extension LoanReviewView {
     private var segmentSelector: some View {
-        HStack(spacing: 4) {
+        Picker("Review Segment", selection: $selectedSegment) {
             ForEach(ReviewSegment.allCases, id: \.self) { segment in
-                Button {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                        selectedSegment = segment
-                    }
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: segment.icon)
-                            .font(.system(size: 13, weight: .semibold))
-                        Text(segment.rawValue)
-                            .font(.system(size: 14, weight: .semibold))
-                    }
-                    .foregroundColor(selectedSegment == segment ? .white : .secondary)
-                    .padding(.vertical, 10)
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        Group {
-                            if selectedSegment == segment {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [Color.blue, Color(red: 0.15, green: 0.4, blue: 0.95)],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                    )
-                                    .shadow(color: Color.blue.opacity(0.3), radius: 6, x: 0, y: 3)
-                            } else {
-                                Color.clear
-                            }
-                        }
-                    )
-                }
-                .buttonStyle(.plain)
+                Text(segment.rawValue)
+                    .tag(segment)
             }
         }
-        .padding(4)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(Color(.tertiarySystemGroupedBackground))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color(.separator).opacity(0.3), lineWidth: 0.5)
-        )
+        .pickerStyle(.segmented)
         .opacity(animateIn ? 1 : 0)
         .offset(y: animateIn ? 0 : 20)
     }
