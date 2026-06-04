@@ -199,6 +199,7 @@ private extension Array {
                                 let dpd = max(0, Calendar.current.dateComponents([.day], from: oldestOverdue, to: Date()).day ?? 0)
                                 
                                 overdue.append(OverdueBorrower(
+                                    borrowerID: borrowerID,
                                     borrowerName: app.borrowerName,
                                     borrowerInitials: app.borrowerInitials,
                                     loanId: "LN-\(sourceID.uuidString.prefix(6).uppercased())",
@@ -1186,10 +1187,28 @@ private extension Array {
         }
     }
 
-    func markBorrowerContacted(_ borrower: OverdueBorrower) {
+    func logRecoveryAction(for borrower: OverdueBorrower, actionType: String, outcome: String, notes: String?, scheduledDate: Date?) {
+        // Update local state
         if let index = overdueBorrowers.firstIndex(where: { $0.id == borrower.id }) {
             overdueBorrowers[index].lastContactDate = Date()
             overdueBorrowers[index].contactAttempts += 1
+        }
+        
+        // Log to backend
+        guard let environment, let borrowerID = borrower.borrowerID, let officerID = officerID else { return }
+        Task {
+            do {
+                try await environment.loans.logRecoveryAction(
+                    borrowerID: borrowerID,
+                    officerID: officerID,
+                    actionType: actionType,
+                    outcome: outcome,
+                    notes: notes,
+                    scheduledDate: scheduledDate
+                )
+            } catch {
+                print("Failed to log recovery action: \(error)")
+            }
         }
     }
 

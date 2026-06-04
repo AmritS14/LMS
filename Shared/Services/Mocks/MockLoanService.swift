@@ -369,4 +369,8 @@ actor MockLoanService: LoanService {
     func insertSanctionLetterIssuedEvent(applicationID: UUID, officerID: UUID, pdfPath: String) async throws {
         // No-op in mock
     }
+
+    func logRecoveryAction(borrowerID: UUID, officerID: UUID, actionType: String, outcome: String, notes: String?, scheduledDate: Date?) async throws {
+        // No-op in mock
+    }
 }
