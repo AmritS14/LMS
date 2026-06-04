@@ -27,16 +27,6 @@ struct LoanOfficerProfileView: View {
                 }
             }
             
-            // MARK: Preferences & Security
-            Section("Notification Preferences") {
-                Toggle("Push Alerts", isOn: $enableNotifications)
-                    .tint(Color.lmsAccent)
-                Toggle("Biometric Security", isOn: $enableBiometrics)
-                    .tint(Color.lmsAccent)
-                Toggle("Cellular Data Sync", isOn: $syncOnCellular)
-                    .tint(Color.lmsAccent)
-            }
-            
             // MARK: Personal Details
             Section("Personal Details") {
                 LabeledContent("Officer ID", value: viewModel.officerProfile.employeeId.isEmpty ? "—" : viewModel.officerProfile.employeeId)
