@@ -184,33 +184,17 @@ struct AuditListView: View {
         )
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 16) {
-                    Button {
-                        if let url = viewModel.generateCSV(from: filteredEntries) {
-                            exportURL = url
-                            showExportSheet = true
-                        }
-                    } label: {
-                        Image(systemName: "square.and.arrow.up")
-                    }
-                    
                     Button {
                         showFilterSheet = true
                     } label: {
                         Image(systemName: "line.3.horizontal.decrease.circle")
                             .foregroundStyle((selectedRoleIsActive || selectedEntityIsActive || selectedActionIsActive || selectedDateIsActive) ? Color.lmsInfo : .primary)
                     }
-                }
             }
         }
         .task {
             viewModel.configure(environment: env)
             await viewModel.loadLogs()
-        }
-        .sheet(isPresented: $showExportSheet) {
-            if let url = exportURL {
-                ShareSheet(activityItems: [url])
-            }
         }
         .sheet(isPresented: $showFilterSheet) {
             NavigationStack {
