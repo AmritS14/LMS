@@ -16,6 +16,7 @@ struct ManagerDocumentReviewSheet: View {
     @State private var isLoadingReport = false
     @State private var documentURL: URL? = nil
     @State private var isLoadingURL = false
+    @State private var urlFetchError: String? = nil
     @State private var errorMessage: String? = nil
     @State private var isSaving = false
 
@@ -84,18 +85,37 @@ struct ManagerDocumentReviewSheet: View {
                 }
             }
             .task {
-                guard let env else { return }
-                isLoadingURL = true
-                documentURL = try? await env.documents.signedURL(documentID: document.id)
-                isLoadingURL = false
+                await fetchDocumentURL()
                 
-                if document.kind == .identityProof {
+                if document.kind == .identityProof, let env {
                     isLoadingReport = true
                     kycReport = try? await env.aadhaarKYC.report(documentID: document.id)
                     isLoadingReport = false
                 }
             }
         }
+    }
+
+    @MainActor
+    private func fetchDocumentURL() async {
+        guard let env else {
+            // No live environment – fall back to the stored remote URL (preview / mock mode).
+            documentURL = document.remoteURL
+            return
+        }
+        isLoadingURL = true
+        urlFetchError = nil
+        do {
+            documentURL = try await env.documents.signedURL(documentID: document.id)
+        } catch {
+            // Fall back to the document's stored remote URL if the backend call fails.
+            if let fallback = document.remoteURL {
+                documentURL = fallback
+            } else {
+                urlFetchError = error.localizedDescription
+            }
+        }
+        isLoadingURL = false
     }
 
     private var documentPreviewSection: some View {
@@ -222,6 +242,26 @@ struct ManagerDocumentReviewSheet: View {
                                         .shadow(color: Color.blue.opacity(0.3), radius: 4, x: 0, y: 2)
                                     }
                                     .buttonStyle(.plain)
+                                    .padding(.horizontal, 8)
+                                } else if let urlFetchError {
+                                    VStack(spacing: 8) {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "exclamationmark.triangle.fill")
+                                                .foregroundColor(.orange)
+                                            Text(urlFetchError)
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                                .multilineTextAlignment(.center)
+                                        }
+                                        Button {
+                                            Task { await fetchDocumentURL() }
+                                        } label: {
+                                            Label("Retry", systemImage: "arrow.clockwise")
+                                                .font(.system(size: 13, weight: .semibold))
+                                                .foregroundColor(.blue)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
                                     .padding(.horizontal, 8)
                                 } else {
                                     Text("Unable to generate access link")
