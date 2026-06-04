@@ -1,4 +1,5 @@
 import SwiftUI
+import LocalAuthentication
 
 struct RootView: View {
     @Environment(SessionStore.self) private var session
@@ -7,10 +8,15 @@ struct RootView: View {
 
     @State private var showUpdatePassword = false
     @Environment(\.scenePhase) private var scenePhase
+    @State private var isAuthenticatingBiometrics = true
 
     var body: some View {
         Group {
-            if session.isAuthenticated {
+            if isAuthenticatingBiometrics {
+                ProgressView("Securing your session...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.lmsBackground)
+            } else if session.isAuthenticated {
                 BorrowerTabView()
                     .task {
                         if let env {
@@ -49,15 +55,45 @@ struct RootView: View {
         }
         .task {
             if let env = env {
-                if let user = await env.auth.currentUser {
-                    let profile = try? await env.auth.fetchBorrowerProfile(userID: user.id)
-                    withAnimation {
-                        session.currentUser = user
-                        session.borrowerProfile = profile
+                let storage = KeychainAuthStorage()
+                if let _ = try? storage.retrieve(key: "supabase.auth.token") {
+                    let context = LAContext()
+                    var error: NSError?
+                    if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
+                        do {
+                            let success = try await context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "Log in to your account")
+                            if success {
+                                if let user = await env.auth.currentUser {
+                                    let profile = try? await env.auth.fetchBorrowerProfile(userID: user.id)
+                                    withAnimation {
+                                        session.currentUser = user
+                                        session.borrowerProfile = profile
+                                    }
+                                    startPollingIfNeeded()
+                                } else {
+                                    try? await env.auth.signOut()
+                                }
+                            } else {
+                                try? await env.auth.signOut()
+                            }
+                        } catch {
+                            try? await env.auth.signOut()
+                        }
+                    } else {
+                        // Fallback if no biometrics, just log them in if valid session
+                        if let user = await env.auth.currentUser {
+                            let profile = try? await env.auth.fetchBorrowerProfile(userID: user.id)
+                            withAnimation {
+                                session.currentUser = user
+                                session.borrowerProfile = profile
+                            }
+                            startPollingIfNeeded()
+                        } else {
+                            try? await env.auth.signOut()
+                        }
                     }
-                    // Kick off initial badge load once the user is resolved
-                    startPollingIfNeeded()
                 }
+                withAnimation { isAuthenticatingBiometrics = false }
             }
         }
         .onOpenURL { url in

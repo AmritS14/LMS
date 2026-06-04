@@ -113,12 +113,8 @@ struct LoginView: View {
         guard let auth = env?.auth, isSignInEnabled else { return }
         focusedField = nil
         Task {
-            if let user = await viewModel.signIn(authService: auth, password: password) {
-                let profile = try? await auth.fetchBorrowerProfile(userID: user.id)
-                withAnimation(.easeInOut(duration: 0.4)) { 
-                    session.currentUser = user 
-                    session.borrowerProfile = profile
-                }
+            if await viewModel.signIn(authService: auth, password: password) {
+                navigateToOTP = true
             }
         }
     }
