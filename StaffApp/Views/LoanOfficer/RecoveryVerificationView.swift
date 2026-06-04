@@ -441,7 +441,13 @@ extension RecoveryVerificationView {
 
                     // MARK: Log Call Button
                     Button {
-                        viewModel.markBorrowerContacted(borrower)
+                        viewModel.logRecoveryAction(
+                            for: borrower,
+                            actionType: "quick_call",
+                            outcome: "Attempted",
+                            notes: "Quick call from list",
+                            scheduledDate: nil
+                        )
                     } label: {
                         Label("Log Call", systemImage: "phone.fill")
                             .font(.system(size: 13, weight: .semibold))
@@ -596,7 +602,13 @@ extension RecoveryVerificationView {
                 ) {
                     Button("Save") {
                         if let borrower = selectedBorrower {
-                            viewModel.markBorrowerContacted(borrower)
+                            viewModel.logRecoveryAction(
+                                for: borrower,
+                                actionType: "call_log",
+                                outcome: callLogOutcome.rawValue,
+                                notes: callLogNotes.isEmpty ? nil : callLogNotes,
+                                scheduledDate: nil
+                            )
                         }
                         showCallLogSheet = false
                     }
@@ -667,7 +679,13 @@ extension RecoveryVerificationView {
                 ) {
                     Button("Schedule") {
                         if let borrower = selectedBorrower {
-                            viewModel.markBorrowerContacted(borrower)
+                            viewModel.logRecoveryAction(
+                                for: borrower,
+                                actionType: "follow_up",
+                                outcome: followUpOutcome.rawValue,
+                                notes: followUpNotes.isEmpty ? nil : followUpNotes,
+                                scheduledDate: followUpDate
+                            )
                         }
                         showFollowUpSheet = false
                     }

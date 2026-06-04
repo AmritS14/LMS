@@ -687,6 +687,7 @@ struct CollateralInfo: Identifiable {
 
 struct OverdueBorrower: Identifiable {
     let id = UUID()
+    var borrowerID: UUID?
 
     var borrowerName: String
     var borrowerInitials: String

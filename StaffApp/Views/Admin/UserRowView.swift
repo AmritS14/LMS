@@ -549,22 +549,6 @@ struct UserDetailsView: View {
                 .padding(.leading, 8)
         }
 
-        Section {
-            ForEach(Permission.allCases) { permission in
-                Toggle(isOn: permissionBinding(for: permission)) {
-                    Text(permission.rawValue)
-                        .font(.adminBody)
-                }
-                .tint(.lmsInfo)
-            }
-        } header: {
-            Text("Permissions")
-                .font(.adminSectionHeader)
-                .foregroundStyle(Color.secondary)
-                .textCase(.uppercase)
-                .padding(.leading, 8)
-        }
-
         manageAccountSection
     }
 

@@ -786,4 +786,27 @@ actor SupabaseLoanService: LoanService {
             .insert(insertData)
             .execute()
     }
+
+    func logRecoveryAction(borrowerID: UUID, officerID: UUID, actionType: String, outcome: String, notes: String?, scheduledDate: Date?) async throws {
+        struct RecoveryLogInsert: Encodable {
+            let borrower_id: UUID
+            let officer_id: UUID
+            let action_type: String
+            let outcome: String
+            let notes: String?
+            let scheduled_date: Date?
+        }
+        let insertData = RecoveryLogInsert(
+            borrower_id: borrowerID,
+            officer_id: officerID,
+            action_type: actionType,
+            outcome: outcome,
+            notes: notes,
+            scheduled_date: scheduledDate
+        )
+        _ = try await client
+            .from("recovery_logs")
+            .insert(insertData)
+            .execute()
+    }
 }
