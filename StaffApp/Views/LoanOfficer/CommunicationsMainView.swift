@@ -18,27 +18,6 @@ struct CommunicationsMainView: View {
 
             VStack(spacing: 20) {
 
-                // MARK: Header
-
-                VStack(alignment: .leading, spacing: 4) {
-
-                    Text("Communications")
-                        .font(
-                            .system(
-                                size: 28,
-                                weight: .bold,
-                                design: .rounded
-                            )
-                        )
-
-                    Text("Borrower conversations & updates")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 20)
-                .padding(.top, 10)
-
                 // MARK: Conversations
 
                 VStack(spacing: 14) {
@@ -116,14 +95,15 @@ struct CommunicationsMainView: View {
                         .buttonStyle(.plain)
                     }
                 }
+                .padding(.top, 16)
 
                 Spacer(minLength: 40)
             }
             .padding(.bottom, 20)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("Communications")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Messages")
+        .toolbarTitleDisplayMode(.large)
         .refreshable { await viewModel.refreshAll() }
         .sheet(item: $bindableViewModel.selectedConversation) { conversation in
 

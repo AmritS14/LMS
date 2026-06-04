@@ -531,13 +531,6 @@ extension LoanReviewView {
                     value: currentApplication.monthlyIncome > 0 ? AppFormatters.formatCurrency(currentApplication.monthlyIncome) : "—",
                     valueColor: .green
                 )
-                
-                LODetailRow(
-                    icon: "star.fill",
-                    title: "Eligibility Score",
-                    value: currentApplication.eligibilityScore > 0 ? "\(currentApplication.eligibilityScore)/100" : "N/A",
-                    valueColor: currentApplication.eligibilityScore >= 70 ? .green : (currentApplication.eligibilityScore >= 50 ? .orange : .red)
-                )
 
                 Divider()
 

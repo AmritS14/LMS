@@ -35,15 +35,9 @@ struct RecoveryVerificationView: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 20) {
-                LOSectionHeader(
-                    title: "Recovery Management",
-                    subtitle: "Collection performance and overdue alerts"
-                )
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-
                 collectionEfficiencyOverview
                     .padding(.horizontal, 16)
+                    .padding(.top, 16)
 
                 overdueBorrowersList
                     .padding(.horizontal, 16)
@@ -54,7 +48,7 @@ struct RecoveryVerificationView: View {
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Recovery")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleDisplayMode(.large)
         .refreshable { await viewModel.refreshAll() }
         .task { await viewModel.refreshAll() }
         .sheet(isPresented: $showCallLogSheet) {
