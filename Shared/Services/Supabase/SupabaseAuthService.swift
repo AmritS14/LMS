@@ -55,8 +55,7 @@ actor SupabaseAuthService: AuthService {
     }
     
     func requestOTP(identifier: String) async throws {
-        // Not used in email/password flow
-        throw NSError(domain: "Auth", code: 501, userInfo: [NSLocalizedDescriptionKey: "Use email/password sign-in instead."])
+        try await client.auth.signInWithOTP(email: identifier)
     }
     
     func verifyOTP(identifier: String, code: String) async throws -> User {

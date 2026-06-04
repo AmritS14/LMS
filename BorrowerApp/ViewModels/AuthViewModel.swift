@@ -10,17 +10,18 @@ final class AuthViewModel {
     var errorMessage: String?
     var showOTPField: Bool = false
 
-    func signIn(authService: any AuthService, password: String) async -> User? {
+    func signIn(authService: any AuthService, password: String) async -> Bool {
         isBusy = true
         errorMessage = nil
         do {
-            let user = try await authService.signIn(email: identifier, password: password)
+            _ = try await authService.signIn(email: identifier, password: password)
+            try await authService.requestOTP(identifier: identifier)
             isBusy = false
-            return user
+            return true
         } catch {
             errorMessage = error.localizedDescription
             isBusy = false
-            return nil
+            return false
         }
     }
 
