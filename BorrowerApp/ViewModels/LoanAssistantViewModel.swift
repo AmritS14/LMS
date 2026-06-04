@@ -10,37 +10,42 @@ struct ChatMessage: Identifiable, Codable {
     }
 }
 
+struct ChatRequest: Codable {
+    let borrowerId: String
+    let chatHistory: [ChatMessage]
+}
+
+@MainActor
 class LoanAssistantViewModel: ObservableObject {
     @Published var chatHistory: [ChatMessage] = []
     @Published var isLoading = false
     @Published var inputText = ""
     
-    func sendMessage(borrowerId: String) {
+    func sendMessage(borrowerId: String) async {
         let userMessage = ChatMessage(role: "user", text: inputText)
         chatHistory.append(userMessage)
         inputText = ""
         isLoading = true
         
-        let payload: [String: Any] = [
-            "borrowerId": borrowerId,
-            "chatHistory": chatHistory.map { ["role": $0.role, "text": $0.text] }
-        ]
+        defer { isLoading = false }
+        
+        let payload = ChatRequest(borrowerId: borrowerId, chatHistory: chatHistory)
         
         guard let url = URL(string: "http://localhost:3000/ai/chat") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try? JSONSerialization.data(withJSONObject: payload)
+        request.httpBody = try? JSONEncoder().encode(payload)
         
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            DispatchQueue.main.async {
-                self.isLoading = false
-                if let data = data, let aiMessage = try? JSONDecoder().decode(ChatMessage.self, from: data) {
-                    self.chatHistory.append(aiMessage)
-                } else {
-                    self.chatHistory.append(ChatMessage(role: "model", text: "Unable to reach the assistant right now. Please try again."))
-                }
+        do {
+            let (data, _) = try await URLSession.shared.data(for: request)
+            if let aiMessage = try? JSONDecoder().decode(ChatMessage.self, from: data) {
+                chatHistory.append(aiMessage)
+            } else {
+                throw URLError(.cannotDecodeRawData)
             }
-        }.resume()
+        } catch {
+            chatHistory.append(ChatMessage(role: "model", text: "Unable to reach the assistant right now. Please try again."))
+        }
     }
 }
