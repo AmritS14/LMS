@@ -832,7 +832,6 @@ enum AppDestination: Hashable {
     case messages
     case communications
     case allapplications
-    case recoveryManagement
     case notifications
     case documents
     case profile

@@ -193,8 +193,8 @@ struct RecentApplicationsSection: View {
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.secondary)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 30)
+                    .padding(20)
+                    .frame(maxWidth: .infinity, alignment: .center)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
                             .fill(Color(.secondarySystemGroupedBackground))

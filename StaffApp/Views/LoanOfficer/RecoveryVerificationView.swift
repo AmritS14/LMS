@@ -77,13 +77,13 @@ extension RecoveryVerificationView {
             VStack(spacing: 16) {
 
                 HStack(spacing: 20) {
-
-                    LOCircularProgress(
-                        progress: overallCollectionEfficiency / 100.0,
-                        color: efficiencyColor,
-                        lineWidth: 8,
-                        size: 80
-                    )
+//
+//                    LOCircularProgress(
+//                        progress: overallCollectionEfficiency / 100.0,
+//                        color: efficiencyColor,
+//                        lineWidth: 8,
+//                        size: 80
+//                    )
 
                     VStack(alignment: .leading, spacing: 12) {
 
@@ -101,7 +101,7 @@ extension RecoveryVerificationView {
                             VStack(alignment: .leading, spacing: 2) {
 
                                 Text("Total Overdue")
-                                    .font(.system(size: 11, weight: .medium))
+                                    .font(.system(size: 14, weight: .medium))
                                     .foregroundStyle(.secondary)
 
                                 Text(
@@ -122,7 +122,7 @@ extension RecoveryVerificationView {
                             VStack(alignment: .leading, spacing: 2) {
 
                                 Text("Borrowers")
-                                    .font(.system(size: 11, weight: .medium))
+                                    .font(.system(size: 14, weight: .medium))
                                     .foregroundStyle(.secondary)
 
                                 Text("\(viewModel.overdueBorrowers.count)")
@@ -141,82 +141,82 @@ extension RecoveryVerificationView {
                     Spacer()
                 }
 
-                HStack(spacing: 0) {
-
-                    efficiencyMiniStat(
-                        label: "Urgent",
-                        count: viewModel.overdueBorrowers.filter {
-                            $0.priority == .urgent
-                        }.count,
-                        color: .red
-                    )
-
-                    Divider()
-                        .frame(height: 28)
-
-                    efficiencyMiniStat(
-                        label: "High",
-                        count: viewModel.overdueBorrowers.filter {
-                            $0.priority == .high
-                        }.count,
-                        color: .orange
-                    )
-
-                    Divider()
-                        .frame(height: 28)
-
-                    efficiencyMiniStat(
-                        label: "Normal",
-                        count: viewModel.overdueBorrowers.filter {
-                            $0.priority == .normal
-                        }.count,
-                        color: .blue
-                    )
-
-                    Divider()
-                        .frame(height: 28)
-
-                    efficiencyMiniStat(
-                        label: "Low",
-                        count: viewModel.overdueBorrowers.filter {
-                            $0.priority == .low
-                        }.count,
-                        color: .green
-                    )
-                }
-                .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.tertiarySystemGroupedBackground))
-                )
+//                HStack(spacing: 0) {
+//
+//                    efficiencyMiniStat(
+//                        label: "Urgent",
+//                        count: viewModel.overdueBorrowers.filter {
+//                            $0.priority == .urgent
+//                        }.count,
+//                        color: .red
+//                    )
+//
+//                    Divider()
+//                        .frame(height: 28)
+//
+//                    efficiencyMiniStat(
+//                        label: "High",
+//                        count: viewModel.overdueBorrowers.filter {
+//                            $0.priority == .high
+//                        }.count,
+//                        color: .orange
+//                    )
+//
+//                    Divider()
+//                        .frame(height: 28)
+//
+//                    efficiencyMiniStat(
+//                        label: "Normal",
+//                        count: viewModel.overdueBorrowers.filter {
+//                            $0.priority == .normal
+//                        }.count,
+//                        color: .blue
+//                    )
+//
+//                    Divider()
+//                        .frame(height: 28)
+//
+//                    efficiencyMiniStat(
+//                        label: "Low",
+//                        count: viewModel.overdueBorrowers.filter {
+//                            $0.priority == .low
+//                        }.count,
+//                        color: .green
+//                    )
+//                }
+//                .padding(.vertical, 8)
+//                .background(
+//                    RoundedRectangle(cornerRadius: 12)
+//                        .fill(Color(.tertiarySystemGroupedBackground))
+//                )
             }
         }
     }
 
-    private func efficiencyMiniStat(
-        label: String,
-        count: Int,
-        color: Color
-    ) -> some View {
-
-        VStack(spacing: 4) {
-
-            Text("\(count)")
-                .font(
-                    .system(
-                        size: 18,
-                        weight: .bold,
-                        design: .rounded
-                    )
-                )
-                .foregroundStyle(color)
-
-            Text(label)
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-    }
+//    private func efficiencyMiniStat(
+//        label: String,
+//        count: Int,
+//        color: Color
+//    ) -> some View {
+//
+//        VStack(spacing: 4) {
+//
+//            Text("\(count)")
+//                .font(
+//                    .system(
+//                        size: 18,
+//                        weight: .bold,
+//                        design: .rounded
+//                    )
+//                )
+//                .foregroundStyle(color)
+//
+//            Text(label)
+//                .font(.system(size: 10, weight: .medium))
+//                .foregroundStyle(.secondary)
+//        }
+//        .frame(maxWidth: .infinity)
+//    }
 
     // MARK: Computed Values
 

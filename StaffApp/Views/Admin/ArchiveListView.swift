@@ -44,7 +44,7 @@ final class ArchiveViewModel {
     }
 
     func load() async {
-        guard let env = environment else {
+        guard environment != nil else {
             // Previews
             self.loans = []
             return

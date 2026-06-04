@@ -48,8 +48,6 @@ struct OfficerNavigationStack<Root: View>: View {
             DocumentsView()
         case .communications:
             CommunicationsMainView()
-        case .recoveryManagement:
-            RecoveryManagementMainView()
         case .allapplications:
             AllApplicationsView()
         case .profile:

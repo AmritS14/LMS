@@ -212,22 +212,16 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F040CAA22FC4292C00A9E2F9 /* Admin */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = Admin;
 			sourceTree = "<group>";
 		};
 		F040CD642FC44BF300A9E2F9 /* LoanOfficer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = LoanOfficer;
 			sourceTree = "<group>";
 		};
 		F07247BE2FC4010D001A13BD /* Manager */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = Manager;
 			sourceTree = "<group>";
 		};
