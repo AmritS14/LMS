@@ -63,60 +63,56 @@ actor SupabaseSanctionLetterService: SanctionLetterService {
         )
 
         fallbackLetters[applicationID] = letter
-        
-        // Offload network and database operations to a background task so we return instantly
-        Task {
-            // 3. Upload to Supabase Storage (graceful fallback on failure)
-            do {
-                _ = try await client.storage
-                    .from("loan_documents")
-                    .upload(
-                        path: storagePath,
-                        file: pdfData,
-                        options: FileOptions(contentType: "application/pdf", upsert: true)
-                    )
-            } catch {
-                print("Supabase Storage upload failed: \(error)")
-            }
 
-            // 4. Save to Database (graceful fallback on failure)
-            do {
-                struct InsertSanctionLetter: Encodable {
-                    let id: UUID
-                    let loan_application_id: UUID
-                    let borrower_id: UUID
-                    let pdf_path: String
-                    let status: String
-                    let version: Int
-                    let is_accepted: Bool
-                }
-                let insertData = InsertSanctionLetter(
-                    id: letter.id,
-                    loan_application_id: applicationID,
-                    borrower_id: borrowerID,
-                    pdf_path: storagePath,
-                    status: "generated",
-                    version: 1,
-                    is_accepted: false
-                )
-                _ = try await client.from("sanction_letters").insert(insertData).execute()
-            } catch {
-                print("Database sanction letter save failed: \(error)")
-            }
-            
-            // Log Audit Event
-            do {
-                let auditData: [String: AnyJSON] = [
-                    "actor_id": .string(borrowerID.uuidString),
-                    "action": .string("Sanction Letter Generated"),
-                    "entity_type": .string("loan_application"),
-                    "entity_id": .string(applicationID.uuidString),
-                    "metadata": .object(["ref": .string(referenceCode)])
-                ]
-                _ = try await client.from("audit_entries").insert(auditData).execute()
-            } catch {
-                print("Audit event logging failed: \(error)")
-            }
+        // 3. Upload the PDF to Supabase Storage. This is the artifact the borrower
+        //    downloads, so a failure here MUST surface to the officer rather than
+        //    being silently swallowed — otherwise they think the letter was sent
+        //    when nothing actually landed in the bucket.
+        _ = try await client.storage
+            .from("loan_documents")
+            .upload(
+                path: storagePath,
+                file: pdfData,
+                options: FileOptions(contentType: "application/pdf", upsert: true)
+            )
+
+        // 4. Persist the database row (idempotent on loan_application_id) so the
+        //    borrower side can resolve the letter and its metadata.
+        struct UpsertSanctionLetter: Encodable {
+            let id: UUID
+            let loan_application_id: UUID
+            let borrower_id: UUID
+            let pdf_path: String
+            let status: String
+            let version: Int
+            let is_accepted: Bool
+        }
+        let upsertData = UpsertSanctionLetter(
+            id: letter.id,
+            loan_application_id: applicationID,
+            borrower_id: borrowerID,
+            pdf_path: storagePath,
+            status: "generated",
+            version: 1,
+            is_accepted: false
+        )
+        _ = try await client
+            .from("sanction_letters")
+            .upsert(upsertData, onConflict: "loan_application_id")
+            .execute()
+
+        // 5. Audit logging is best-effort and must not fail the generation flow.
+        do {
+            let auditData: [String: AnyJSON] = [
+                "actor_id": .string(borrowerID.uuidString),
+                "action": .string("Sanction Letter Generated"),
+                "entity_type": .string("loan_application"),
+                "entity_id": .string(applicationID.uuidString),
+                "metadata": .object(["ref": .string(referenceCode)])
+            ]
+            _ = try await client.from("audit_entries").insert(auditData).execute()
+        } catch {
+            print("Audit event logging failed: \(error)")
         }
 
         return letter
