@@ -3,28 +3,31 @@ import SwiftUI
 struct LoanAssistantView: View {
     @StateObject private var viewModel = LoanAssistantViewModel()
     let borrowerId: String
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) var dismiss
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack {
                 ScrollView {
-                    ForEach(viewModel.chatHistory) { message in
-                        HStack {
-                            if message.role == "user" { Spacer() }
-                            Text(message.text)
-                                .padding()
-                                .background(message.role == "user" ? Color.blue : Color.gray.opacity(0.2))
-                                .foregroundColor(message.role == "user" ? .white : .black)
-                                .cornerRadius(10)
-                            if message.role == "model" { Spacer() }
-                        }.padding(.horizontal)
-                    }
-                    if viewModel.isLoading {
-                        HStack {
-                            ProgressView()
-                            Spacer()
-                        }.padding()
+                    LazyVStack {
+                        ForEach(viewModel.chatHistory) { message in
+                            HStack {
+                                if message.role == "user" { Spacer() }
+                                Text(message.text)
+                                    .padding()
+                                    .background(message.role == "user" ? Color.blue : Color(UIColor.secondarySystemBackground))
+                                    .foregroundColor(message.role == "user" ? .white : .primary)
+                                    .cornerRadius(10)
+                                if message.role == "model" { Spacer() }
+                            }.padding(.horizontal)
+                        }
+                        if viewModel.isLoading {
+                            HStack {
+                                ProgressView()
+                                    .accessibilityLabel("AI is typing")
+                                Spacer()
+                            }.padding()
+                        }
                     }
                 }
                 
@@ -39,9 +42,11 @@ struct LoanAssistantView: View {
                 }.padding()
             }
             .navigationTitle("AI Assistant")
-            .navigationBarItems(trailing: Button("Close") {
-                presentationMode.wrappedValue.dismiss()
-            })
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Close") { dismiss() }
+                }
+            }
         }
     }
 }
