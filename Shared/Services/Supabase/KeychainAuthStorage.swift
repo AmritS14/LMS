@@ -2,12 +2,13 @@ import Foundation
 import Supabase
 
 struct KeychainAuthStorage: AuthLocalStorage {
-    let key = "supabase.auth.token"
+    // We prepend a prefix to ensure no conflicts with other keychain items
+    let prefix = "lms.supabase.auth."
     
     func store(key: String, value: Data) throws {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: self.key,
+            kSecAttrAccount as String: prefix + key,
             kSecValueData as String: value
         ]
         SecItemDelete(query as CFDictionary)
@@ -17,7 +18,7 @@ struct KeychainAuthStorage: AuthLocalStorage {
     func retrieve(key: String) throws -> Data? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: self.key,
+            kSecAttrAccount as String: prefix + key,
             kSecReturnData as String: kCFBooleanTrue!,
             kSecMatchLimit as String: kSecMatchLimitOne
         ]
@@ -31,7 +32,7 @@ struct KeychainAuthStorage: AuthLocalStorage {
     func remove(key: String) throws {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: self.key
+            kSecAttrAccount as String: prefix + key
         ]
         SecItemDelete(query as CFDictionary)
     }

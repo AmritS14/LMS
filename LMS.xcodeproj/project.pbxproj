@@ -780,6 +780,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEVELOPMENT_TEAM = F325HT97T8;
 				INFOPLIST_KEY_CFBundleDisplayName = "LMS Borrower";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "We use Face ID to quickly and securely log you into your account.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -947,6 +948,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEVELOPMENT_TEAM = F325HT97T8;
 				INFOPLIST_KEY_CFBundleDisplayName = "LMS Borrower";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "We use Face ID to quickly and securely log you into your account.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
