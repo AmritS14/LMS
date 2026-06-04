@@ -54,27 +54,29 @@ struct ApplicationTrackingView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("My Applications")
         .navigationBarTitleDisplayMode(.large)
-        .task {
-            if let env, let userID = session.currentUser?.id {
-                await viewModel.fetchDashboardData(loanService: env.loans, borrowerID: userID)
-            }
-        }
+        .refreshable { await loadData() }
+        .task { await loadData() }
+    }
+
+    private func loadData() async {
+        guard let env, let userID = session.currentUser?.id else { return }
+        await viewModel.fetchDashboardData(loanService: env.loans, borrowerID: userID)
     }
 
     private func statusBadge(for status: ApplicationStatus) -> some View {
         switch status {
         case .draft, .submitted:
-            return StatusBadge(status.rawValue.capitalized, tone: .neutral)
+            return StatusBadge(status.displayLabel, tone: .neutral)
         case .underReview, .additionalInfoRequired, .recommended:
-            return StatusBadge(status.rawValue.capitalized, tone: .warning)
+            return StatusBadge(status.displayLabel, tone: .warning)
         case .approved, .disbursed:
-            return StatusBadge(status.rawValue.capitalized, tone: .success)
+            return StatusBadge(status.displayLabel, tone: .success)
         case .rejected:
-            return StatusBadge(status.rawValue.capitalized, tone: .danger)
+            return StatusBadge(status.displayLabel, tone: .danger)
         case .closed:
-            return StatusBadge(status.rawValue.capitalized, tone: .neutral)
+            return StatusBadge(status.displayLabel, tone: .neutral)
         case .escalated:
-            return StatusBadge(status.rawValue.capitalized, tone: .warning)
+            return StatusBadge(status.displayLabel, tone: .warning)
         }
     }
 }

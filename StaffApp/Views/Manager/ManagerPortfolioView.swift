@@ -12,7 +12,6 @@ struct ManagerPortfolioView: View {
                 portfolioHealthSection
                 loanCategoriesSection
                 officerPerformanceSection
-                branchPerformanceSection
                 collectionSection
                 npaSection
             }
@@ -23,10 +22,18 @@ struct ManagerPortfolioView: View {
         .toolbarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink(value: ManagerRoute.profile) {
-                    Image(systemName: "person.crop.circle").font(.title3)
+                HStack(spacing: Spacing.m) {
+                    NavigationLink(value: ManagerRoute.notifications) {
+                        Image(systemName: "bell.fill").font(.title3)
+                    }
+                    .badge(store.unreadNotificationCount)
+                    .accessibilityLabel("Notifications")
+
+                    NavigationLink(value: ManagerRoute.profile) {
+                        Image(systemName: "person.crop.circle").font(.title3)
+                    }
+                    .accessibilityLabel("Profile")
                 }
-                .accessibilityLabel("Profile")
             }
         }
         .refreshable { await store.refreshAll() }
@@ -260,49 +267,13 @@ struct ManagerPortfolioView: View {
         .padding(.horizontal, Spacing.m)
     }
 
-    // MARK: Branch Performance
 
-    private var branchPerformanceSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.s) {
-            SectionHeader(title: "Branch Performance",
-                          actionTitle: "Officers") {
-                // navigation handled via route
-            }
-            .padding(.horizontal, Spacing.m)
-
-            ForEach(store.branchPerformanceItems) { branch in
-                HStack(spacing: Spacing.sm) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(branch.branchName)
-                            .font(.subheadline.weight(.medium))
-                        Text("\(branch.totalApplications) applications")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text(Formatting.percent(branch.approvalRate, fractionDigits: 0))
-                            .font(.subheadline.weight(.semibold))
-                        Text(branch.avgDecisionTime)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding(Spacing.m)
-                .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
-                .padding(.horizontal, Spacing.m)
-            }
-        }
-    }
 
     // MARK: Greeting
 
     private var greetingSection: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(store.greetingDateText)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
                 Text("Branch: \(store.branchName)")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
@@ -316,50 +287,54 @@ struct ManagerPortfolioView: View {
 
     private var officerPerformanceSection: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
-            SectionHeader(title: "Officer Performance",
-                          actionTitle: "See All") {
-                // "See All" navigates to the full list
+            HStack(alignment: .firstTextBaseline) {
+                Text("Officer Performance")
+                    .font(.lmsHeadline)
+                Spacer()
+                NavigationLink(value: ManagerRoute.officerPerformance) {
+                    Text("See All")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.lmsAccent)
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, Spacing.m)
 
             VStack(spacing: 0) {
-                ForEach(store.officerPerformance.prefix(3)) { officer in
+                ForEach(Array(store.officerPerformance.prefix(3).enumerated()), id: \.element.id) { index, officer in
                     NavigationLink(value: ManagerRoute.officerDetail(officer.name)) {
                         HStack(spacing: Spacing.sm) {
                             AvatarView(initials: officer.initials, size: 40)
 
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(officer.name)
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(.primary)
-                            }
+                            Text(officer.name)
+                                .font(.body)
+                                .foregroundStyle(.primary)
 
                             Spacer()
 
-                            VStack(alignment: .trailing, spacing: 2) {
+                            if officer.avgDecisionTime != "—" && officer.avgDecisionTime != "-" {
                                 Text(officer.avgDecisionTime)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.primary)
-                                Text("Avg time")
-                                    .font(.caption2)
-                                    .foregroundStyle(.tertiary)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
                             }
 
                             Image(systemName: "chevron.right")
                                 .font(.caption.weight(.semibold))
-                                .foregroundStyle(.tertiary)
+                                .foregroundStyle(Color(.tertiaryLabel))
                         }
-                        .padding(.vertical, Spacing.s)
+                        .padding(.horizontal, Spacing.m)
+                        .padding(.vertical, 12)
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
 
-                    if officer.id != store.officerPerformance.prefix(3).last?.id {
-                        Divider().padding(.leading, 56 + Spacing.m)
+                    if index < store.officerPerformance.prefix(3).count - 1 {
+                        Divider()
+                            .padding(.leading, 56 + Spacing.m)
                     }
                 }
             }
-            .padding(.vertical, Spacing.xs)
-            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             .padding(.horizontal, Spacing.m)
         }
     }
@@ -379,10 +354,10 @@ struct ManagerPortfolioView: View {
     private func loanTypeColor(_ type: LoanType) -> Color {
         switch type {
         case .home: .lmsAccent
-        case .personal: .lmsInfo
+        case .personal: .purple
         case .business: .lmsWarning
         case .vehicle: .lmsSuccess
-        case .education: .lmsDanger
+        case .education: .lmsInfo
         }
     }
 }

@@ -246,6 +246,28 @@ struct AadhaarKYCView: View {
                 applicationID: applicationID
             )
             result = report
+            
+            // Save to DB
+            var updatedProfile = session.borrowerProfile ?? BorrowerProfile(
+                id: session.currentUser?.id ?? UUID(),
+                dateOfBirth: Date()
+            )
+            updatedProfile.kycStatus = .verified
+            updatedProfile.aadhaarLast4 = String(report.referenceId.prefix(4))
+            
+            if let addressDict = report.demographics.address {
+                updatedProfile.address = PostalAddress(
+                    line1: [addressDict["house"], addressDict["street"], addressDict["locality"]].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", "),
+                    line2: addressDict["vtc"],
+                    city: addressDict["city"] ?? addressDict["district"] ?? "",
+                    state: addressDict["state"] ?? "",
+                    pinCode: Int(addressDict["pinCode"] ?? "") ?? 0,
+                    country: "India"
+                )
+            }
+            
+            try await env.auth.saveBorrowerProfile(updatedProfile)
+            session.borrowerProfile = updatedProfile
         } catch {
             let msg = error.localizedDescription
             if msg.contains("wrong_share_phrase") || msg.contains("Wrong share phrase") {

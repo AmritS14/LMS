@@ -76,7 +76,7 @@ struct BorrowerMessagingView: View {
 
     private func subtitle(for thread: MessageThread) -> String {
         if let app = application(for: thread) {
-            return "Application • \(app.status.rawValue.capitalized)"
+            return "Application • \(app.status.displayLabel)"
         }
         return "Customer care"
     }
@@ -237,6 +237,10 @@ struct ChatDetailView: View {
                 .padding(.vertical, Spacing.sm)
             }
             .scrollDismissesKeyboard(.interactively)
+            .refreshable {
+                guard let env else { return }
+                await viewModel.selectThread(thread, messagingService: env.messaging)
+            }
             .onChange(of: viewModel.activeThreadMessages.count) { _, _ in
                 scrollToBottom(proxy: proxy)
             }

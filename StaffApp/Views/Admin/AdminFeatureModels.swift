@@ -888,9 +888,52 @@ final class LoanConfigViewModel {
                 tenureUnit: .months,
                 isActive: p.isActive
             )
-            grouped[Self.category(for: p.loanType), default: []].append(admin)
+            // Prefer description-stored category (set on create/update) over name heuristic
+            let category: LoanCategory
+            if let desc = p.description, let cat = LoanCategory(rawValue: desc) {
+                category = cat
+            } else {
+                category = Self.category(for: p.loanType)
+            }
+            grouped[category, default: []].append(admin)
         }
         productsByCategory = grouped
+    }
+
+    func addProduct(_ product: AdminLoanProduct, category: LoanCategory) async throws {
+        guard let environment else {
+            throw NSError(domain: "Admin", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not connected to backend."])
+        }
+        let maxMonths = product.tenureUnit == .years ? product.maxTenure * 12 : product.maxTenure
+        let minMonths = min(maxMonths, product.tenureUnit == .years ? 12 : 6)
+
+        let domain = LoanProduct(
+            name: product.name,
+            description: category.rawValue,
+            minimumAmount: Decimal(product.minAmount),
+            maximumAmount: Decimal(product.maxAmount),
+            minimumTenureMonths: minMonths,
+            maximumTenureMonths: maxMonths,
+            minimumInterestRate: product.interestRate,
+            maximumInterestRate: product.interestRate,
+            isActive: true
+        )
+
+        isSaving = true
+        defer { isSaving = false }
+        let created = try await environment.loans.createLoanProduct(domain)
+
+        let adminProduct = AdminLoanProduct(
+            id: created.id,
+            name: created.name,
+            minAmount: NSDecimalNumber(decimal: created.minimumAmount).doubleValue,
+            maxAmount: NSDecimalNumber(decimal: created.maximumAmount).doubleValue,
+            interestRate: created.displayRate,
+            maxTenure: created.maximumTenureMonths,
+            tenureUnit: .months
+        )
+        productsByCategory[category, default: []].append(adminProduct)
+        showSaveAlert = true
     }
 
     private static func category(for type: LoanType) -> LoanCategory {

@@ -1,6 +1,13 @@
 import SwiftUI
 import Combine
 
+// Safe subscript for arrays
+private extension Array {
+    subscript(safe index: Index) -> Element? {
+        indices.contains(index) ? self[index] : nil
+    }
+}
+
 // MARK: - App View Model
 @MainActor
 @Observable class AppViewModel {
@@ -94,7 +101,7 @@ import Combine
 
     func configure(environment: AppEnvironment) {
         self.environment = environment
-        Task { await refreshFromService() }
+        Task { await refreshAll() }
     }
 
     func ensureThread(for application: LOLoanApplication) {
@@ -110,7 +117,7 @@ import Combine
         }
     }
 
-    private func refreshFromService() async {
+    func refreshAll() async {
         guard let environment else { return }
 
         if officerID == nil {
@@ -122,14 +129,42 @@ import Combine
                 officerID: officerID ?? MockOfficerData.officerUserID // fallback UUID for offline testing
             )
 
+            // Batch-fetch borrower profiles concurrently
+            let uniqueBorrowerIDs = Array(Set(sharedApplications.compactMap { $0.borrowerID }))
+            var profilesMap: [UUID: BorrowerProfile] = [:]
+            await withTaskGroup(of: (UUID, BorrowerProfile?).self) { group in
+                for id in uniqueBorrowerIDs {
+                    group.addTask {
+                        let profile = try? await environment.auth.fetchBorrowerProfile(userID: id)
+                        return (id, profile)
+                    }
+                }
+                for await (id, profile) in group {
+                    if let profile { profilesMap[id] = profile }
+                }
+            }
+
             // Build real officer rows
             var rows: [LOLoanApplication] = []
-            for app in sharedApplications {
-                let events = (try? await environment.loans.fetchApplicationEvents(applicationID: app.id)) ?? []
-                let docs = (try? await environment.documents.documents(forApplication: app.id)) ?? []
-                rows.append(Self.makeOfficerApplication(from: app, events: events, documents: docs))
+            await withTaskGroup(of: (LoanApplication, [ApplicationEvent], [LoanDocument], BorrowerProfile?).self) { group in
+                for app in sharedApplications {
+                    let profile = profilesMap[app.borrowerID]
+                    group.addTask {
+                        async let eventsReq = (try? await environment.loans.fetchApplicationEvents(applicationID: app.id)) ?? []
+                        async let docsReq = (try? await environment.documents.documents(forApplication: app.id)) ?? []
+                        
+                        let events = await eventsReq
+                        let docs = await docsReq
+                        
+                        return (app, events, docs, profile)
+                    }
+                }
+                for await (app, events, docs, profile) in group {
+                    rows.append(Self.makeOfficerApplication(from: app, events: events, documents: docs, borrowerProfile: profile))
+                }
             }
-            self.recentApplications = rows
+            self.recentApplications = rows.sorted { $0.applicationDate > $1.applicationDate }
+
             
             // Build Activity Feed
             var feed: [ActivityItem] = []
@@ -250,7 +285,8 @@ import Combine
     private static func makeOfficerApplication(
         from app: LoanApplication,
         events: [ApplicationEvent],
-        documents: [LoanDocument] = []
+        documents: [LoanDocument] = [],
+        borrowerProfile: BorrowerProfile? = nil
     ) -> LOLoanApplication {
         let name = app.borrowerName ?? "Borrower"
         let initials = name
@@ -287,12 +323,17 @@ import Combine
                 )
             }
 
+        // Use real borrower profile data when available
+        let creditScore = borrowerProfile?.creditScore ?? 720
+        let monthlyIncome = borrowerProfile?.monthlyIncome.map { NSDecimalNumber(decimal: $0).doubleValue } ?? 0.0
+        let employmentType = borrowerProfile?.employmentType?.rawValue.capitalized ?? "Not specified"
+
         return LOLoanApplication(
             sourceApplicationID: app.id,
             borrowerID: app.borrowerID,
             borrowerName: name,
             borrowerInitials: initials.isEmpty ? "?" : initials,
-            creditScore: 720,
+            creditScore: creditScore,
             loanAmount: amount,
             riskLevel: .low,
             kycStatus: kyc,
@@ -302,20 +343,21 @@ import Combine
             loanType: app.productName ?? (app.loanType.rawValue.capitalized + " Loan"),
             tenure: app.tenureMonths,
             interestRate: app.interestRate,
-            employmentType: "Not specified",
+            employmentType: employmentType,
             employer: "—",
-            monthlyIncome: 0,
+            monthlyIncome: monthlyIncome,
             existingLiabilities: 0,
-            eligibilityScore: 0,
+            eligibilityScore: creditScore > 700 ? 85 : 50,
             emiAmount: amount / Double(max(app.tenureMonths, 1)),
             phoneNumber: app.borrowerPhone ?? "—",
             email: app.borrowerEmail ?? "—",
-            address: "—",
+            address: [borrowerProfile?.address?.line1, borrowerProfile?.address?.city, borrowerProfile?.address?.state].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", "),
             purpose: "—",
             documents: loDocuments,
             timeline: timeline
         )
     }
+
 
     /// Maps a backend document to the officer's rich document model.
     private static func makeOfficerDocument(_ doc: LoanDocument) -> LOLoanDocument {
@@ -403,7 +445,7 @@ import Combine
             KPIData(title: "Pending\nApplications", value: pendingCount, trend: 12.3, trendUp: true, icon: "doc.text.fill", color: .orange, chartData: [0.3, 0.5, 0.4, 0.7, 0.6, 0.8, 0.75]),
             KPIData(title: "Approved\nLoans", value: approvedCount, trend: 8.7, trendUp: true, icon: "checkmark.circle.fill", color: .green, chartData: [0.4, 0.5, 0.55, 0.6, 0.65, 0.7, 0.8]),
             KPIData(title: "Escalated\nCases", value: escalatedCount, trend: -3.2, trendUp: false, icon: "arrow.up.circle.fill", color: .purple, chartData: [0.6, 0.7, 0.5, 0.4, 0.45, 0.35, 0.3]),
-            KPIData(title: "Overdue\nBorrowers", value: 19, trend: -5.1, trendUp: false, icon: "person.crop.circle.badge.exclamationmark.fill", color: Color(red: 0.8, green: 0.4, blue: 0), chartData: [0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4])
+            KPIData(title: "Overdue\nBorrowers", value: overdueBorrowers.count, trend: -5.1, trendUp: false, icon: "person.crop.circle.badge.exclamationmark.fill", color: Color(red: 0.8, green: 0.4, blue: 0), chartData: [0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4])
         ]
     }
 
@@ -416,7 +458,7 @@ import Combine
                 // Add timeline event
                 let event = TimelineEvent(
                     title: "Approved & Recommended",
-                    description: "Recommended for final approval by Rajesh Kumar. Remarks: \(remarks.isEmpty ? "No remarks provided" : remarks)",
+                    description: "Recommended for final approval by \(officerProfile.name). Remarks: \(remarks.isEmpty ? "No remarks provided" : remarks)",
                     timestamp: Date(),
                     status: .approved,
                     officerName: officerProfile.name
@@ -459,7 +501,7 @@ import Combine
                 // Add timeline event
                 let event = TimelineEvent(
                     title: "Application Rejected",
-                    description: "Rejected by Rajesh Kumar. Remarks: \(remarks.isEmpty ? "No remarks provided" : remarks)",
+                    description: "Rejected by \(officerProfile.name). Remarks: \(remarks.isEmpty ? "No remarks provided" : remarks)",
                     timestamp: Date(),
                     status: .rejected,
                     officerName: officerProfile.name
@@ -483,6 +525,31 @@ import Combine
         }
     }
 
+    func sendBackApplication(_ app: LOLoanApplication, remarks: String = "") {
+        if let index = recentApplications.firstIndex(where: { $0.id == app.id }) {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                recentApplications[index].status = .underReview
+                
+                // Add timeline event
+                let event = TimelineEvent(
+                    title: "Sent Back to Borrower",
+                    description: "Requested additional info. Remarks: \(remarks.isEmpty ? "No remarks provided" : remarks)",
+                    timestamp: Date(),
+                    status: .underReview,
+                    officerName: officerProfile.name
+                )
+                recentApplications[index].timeline.insert(event, at: 0)
+                
+                // Update selection
+                if selectedApplication?.id == app.id {
+                    selectedApplication = recentApplications[index]
+                }
+                
+                syncStatus(for: recentApplications[index], to: .additionalInfoRequired, note: remarks)
+            }
+        }
+    }
+
     func escalateApplication(_ app: LOLoanApplication, remarks: String) {
         if let index = recentApplications.firstIndex(where: { $0.id == app.id }) {
             let prevStatus = recentApplications[index].status
@@ -492,7 +559,7 @@ import Combine
                 // Add timeline event
                 let event = TimelineEvent(
                     title: "Escalated to Manager",
-                    description: "Escalated by Rajesh Kumar. Notes: \(remarks.isEmpty ? "No escalation notes provided" : remarks)",
+                    description: "Escalated by \(officerProfile.name). Notes: \(remarks.isEmpty ? "No escalation notes provided" : remarks)",
                     timestamp: Date(),
                     status: .escalated,
                     officerName: officerProfile.name
@@ -583,6 +650,21 @@ import Combine
                 // Update selectedApplication
                 if selectedApplication?.id == app.id {
                     selectedApplication = recentApplications[index]
+                }
+            }
+            
+            // MARK: - Sync to backend: call request-documents API
+            guard let sourceApplicationID = app.sourceApplicationID else { return }
+            let docType = Self.backendDocumentType(docName)
+            Task {
+                do {
+                    try await environment?.loans.requestDocuments(
+                        applicationID: sourceApplicationID,
+                        documentTypes: [docType],
+                        remark: note.isEmpty ? nil : note
+                    )
+                } catch {
+                    print("[LOAppViewModel] requestDocument backend sync failed: \(error.localizedDescription)")
                 }
             }
         }
@@ -738,7 +820,7 @@ import Combine
                         description: desc,
                         timestamp: Date(),
                         status: recentApplications[appIdx].status,
-                        officerName: "Rajesh Kumar"
+                        officerName: officerProfile.name
                     )
                     recentApplications[appIdx].timeline.insert(timelineEvent, at: 0)
                     
@@ -756,9 +838,27 @@ import Combine
                         selectedApplication = recentApplications[appIdx]
                     }
                 }
+                
+                // MARK: - Sync to backend
+                guard let sourceDocID = recentApplications[appIdx].documents[safe: docIdx]?.sourceDocumentID ?? documentId as UUID? else { return }
+                let remark = reviewNotes ?? rejectionReason
+                Task {
+                    do {
+                        if status == .verified {
+                            try await environment?.documents.verifyDocument(documentID: sourceDocID, remark: remark)
+                        } else if status == .rejected {
+                            try await environment?.documents.rejectDocument(documentID: sourceDocID, reason: rejectionReason ?? "Rejected by officer")
+                        }
+                    } catch {
+                        // Backend sync failed — the local state is already updated, so no further action needed.
+                        // A future refresh will re-sync from the actual backend state.
+                        print("[LOAppViewModel] document review sync failed: \(error.localizedDescription)")
+                    }
+                }
             }
         }
     }
+
 
     func markNotificationRead(_ notification: AppNotification) {
         if let index = notifications.firstIndex(where: { $0.id == notification.id }) {

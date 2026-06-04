@@ -23,7 +23,9 @@ struct DashboardView: View {
             .padding(.bottom, 20)
         }
         .background(Color(.systemGroupedBackground))
-        .toolbarTitleDisplayMode(.inlineLarge)
+        .toolbarTitleDisplayMode(.large)
+        .refreshable { await viewModel.refreshAll() }
+        .task { await viewModel.refreshAll() }
     }
 }
 

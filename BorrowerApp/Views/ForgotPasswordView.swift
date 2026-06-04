@@ -1,7 +1,9 @@
 import SwiftUI
+import Supabase
 
 struct ForgotPasswordView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.appEnvironment) private var env
 
     @State private var email = ""
     @State private var isSending = false
@@ -62,9 +64,18 @@ struct ForgotPasswordView: View {
         isSending = true
         emailFocused = false
         Task {
-            try? await Task.sleep(for: .milliseconds(800))
-            isSending = false
-            showSuccess = true
+            do {
+                // Use Supabase's built-in password reset — sends an email with a magic link
+                try await SupabaseManager.shared.client.auth.resetPasswordForEmail(
+                    trimmed,
+                    redirectTo: URL(string: "lms://reset-password")
+                )
+                isSending = false
+                showSuccess = true
+            } catch {
+                isSending = false
+                errorMessage = error.localizedDescription
+            }
         }
     }
 }
@@ -72,3 +83,4 @@ struct ForgotPasswordView: View {
 #Preview {
     NavigationStack { ForgotPasswordView() }
 }
+

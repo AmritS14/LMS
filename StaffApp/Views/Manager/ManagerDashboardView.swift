@@ -28,19 +28,18 @@ struct ManagerDashboardView: View {
         }
         .background(Color.lmsBackground)
         .navigationTitle("Dashboard")
-        .toolbarTitleDisplayMode(.inlineLarge)
+        .toolbarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink(value: ManagerRoute.notifications) {
                     ZStack(alignment: .topTrailing) {
                         Image(systemName: "bell").font(.title3)
-//                        if store.unreadNotificationCount > 0 {
-//                            CountBadge(count: store.unreadNotificationCount)
-//                                .offset(x: 8, y: -6)
-//                        }
+                        if store.unreadNotificationCount > 0 {
+                            CountBadge(count: store.unreadNotificationCount)
+                                .offset(x: 8, y: -6)
+                        }
                     }
                 }
-                .badge(store.unreadNotificationCount)
                 .accessibilityLabel("Notifications")
             }
             ToolbarItem(placement: .topBarTrailing) {
@@ -63,9 +62,6 @@ struct ManagerDashboardView: View {
     private var subtitleRow: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(store.greetingDateText)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
                 Text("Branch: \(store.branchName)")
                     .font(.caption)
                     .foregroundStyle(.secondary)

@@ -19,6 +19,7 @@ struct AddLoanProductSheet: View {
     @State private var maxTenure: Int = 12
     @State private var tenureUnit: TenureUnit = .months
     @State private var errorMessage: String? = nil
+    @State private var isSaving: Bool = false
 
     private let numberFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
@@ -130,7 +131,7 @@ struct AddLoanProductSheet: View {
                         handleCreateProduct()
                     }
                     .fontWeight(.bold)
-                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || maxAmount < minAmount || minAmount <= 0)
+                    .disabled(isSaving || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || maxAmount < minAmount || minAmount <= 0)
                 }
             }
             .alert("Error", isPresented: Binding(
@@ -147,26 +148,30 @@ struct AddLoanProductSheet: View {
     }
 
     private func handleCreateProduct() {
-        do {
-            let isDuplicate = viewModel.productsByCategory.values.flatMap { $0 }.contains { $0.name.lowercased() == name.lowercased() }
-            guard !isDuplicate else {
-                throw NSError(domain: "DuplicateError", code: 1, userInfo: [NSLocalizedDescriptionKey: "A loan product with this name already exists."])
-            }
+        let isDuplicate = viewModel.productsByCategory.values.flatMap { $0 }.contains { $0.name.lowercased() == name.lowercased() }
+        guard !isDuplicate else {
+            errorMessage = "A loan product with this name already exists."
+            return
+        }
 
-            let newProduct = AdminLoanProduct(
-                name: name,
-                minAmount: minAmount,
-                maxAmount: maxAmount,
-                interestRate: interestRate,
-                maxTenure: maxTenure,
-                tenureUnit: tenureUnit
-            )
-            
-            viewModel.productsByCategory[selectedCategory, default: []].append(newProduct)
-            viewModel.markDirty()
-            onDismiss()
-        } catch {
-            errorMessage = error.localizedDescription
+        let newProduct = AdminLoanProduct(
+            name: name,
+            minAmount: minAmount,
+            maxAmount: maxAmount,
+            interestRate: interestRate,
+            maxTenure: maxTenure,
+            tenureUnit: tenureUnit
+        )
+
+        isSaving = true
+        Task {
+            do {
+                try await viewModel.addProduct(newProduct, category: selectedCategory)
+                onDismiss()
+            } catch {
+                isSaving = false
+                errorMessage = error.localizedDescription
+            }
         }
     }
 }

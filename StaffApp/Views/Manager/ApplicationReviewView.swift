@@ -9,16 +9,16 @@ struct ApplicationReviewView: View {
     @State private var activeSheet: ApplicationActionType?
     @State private var pendingResult: ApplicationActionType?
     @State private var completed: ApplicationActionType?
-    @State private var verifiedDocs: Set<String> = Set(Self.documents)
-
-    private static let documents = ["Government ID", "Income Proof", "Collateral Proof"]
-    private static let documentIcons = [
-        "Government ID": "person.text.rectangle",
-        "Income Proof": "doc.text",
-        "Collateral Proof": "building.columns"
-    ]
+    @State private var verifiedDocs: Set<UUID> = []
+    @State private var documents: [LoanDocument] = []
 
     private var app: ManagerApplication? { store.application(id: applicationID) }
+
+    /// Whether the application is in a terminal state where no modifications should be allowed.
+    private var isTerminal: Bool {
+        guard let app else { return true }
+        return [.rejected, .approved, .disbursed, .closed].contains(app.status)
+    }
 
     var body: some View {
         Group {
@@ -37,6 +37,9 @@ struct ApplicationReviewView: View {
     private func content(_ app: ManagerApplication) -> some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: Spacing.m) {
+                if isTerminal {
+                    terminalStatusBanner(app)
+                }
                 borrowerSection(app)
                 loanSection(app)
                 riskSummarySection(app)
@@ -59,6 +62,13 @@ struct ApplicationReviewView: View {
                 officer: app.officerName,
                 onFinish: { dismiss() }
             )
+        }
+        .task {
+            documents = (try? await store.fetchDocuments(for: applicationID)) ?? []
+            // Auto-verify those marked as verified in DB
+            for doc in documents where doc.status == .verified {
+                verifiedDocs.insert(doc.id)
+            }
         }
     }
 
@@ -191,17 +201,28 @@ struct ApplicationReviewView: View {
 
     private var documentsSection: some View {
         SectionCard(title: "Verified Documents",
-                    footer: "Tap a document to toggle verification.") {
-            HStack {
-                Text("Verification")
-                    .font(.subheadline.weight(.semibold))
-                Spacer()
-                StatusBadge("\(verifiedDocs.count) of \(Self.documents.count) Verified",
-                            tone: verifiedDocs.count == Self.documents.count ? .success : .warning,
-                            size: .small)
-            }
-            ForEach(Self.documents, id: \.self) { doc in
-                documentRow(doc)
+                    footer: isTerminal ? nil : "Tap a document to toggle verification.") {
+            if documents.isEmpty {
+                Text("No documents attached.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, Spacing.sm)
+            } else {
+                HStack {
+                    Text("Verification")
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    StatusBadge("\(verifiedDocs.count) of \(documents.count) Verified",
+                                tone: verifiedDocs.count == documents.count ? .success : .warning,
+                                size: .small)
+                }
+                ForEach(documents) { doc in
+                    if isTerminal {
+                        readOnlyDocumentRow(doc)
+                    } else {
+                        documentRow(doc)
+                    }
+                }
             }
         }
     }
@@ -294,18 +315,18 @@ struct ApplicationReviewView: View {
         .background(Color.lmsBackground, in: RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous))
     }
 
-    private func documentRow(_ doc: String) -> some View {
-        let verified = verifiedDocs.contains(doc)
+    private func documentRow(_ doc: LoanDocument) -> some View {
+        let verified = verifiedDocs.contains(doc.id)
         return Button {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                if verified { verifiedDocs.remove(doc) } else { verifiedDocs.insert(doc) }
+                if verified { verifiedDocs.remove(doc.id) } else { verifiedDocs.insert(doc.id) }
             }
         } label: {
             HStack(spacing: Spacing.sm) {
-                Image(systemName: Self.documentIcons[doc] ?? "doc")
+                Image(systemName: "doc.text.fill")
                     .foregroundStyle(Color.lmsAccent)
                     .frame(width: 24)
-                Text(doc).font(.subheadline).foregroundStyle(.primary)
+                Text(doc.kind.rawValue.capitalized).font(.subheadline).foregroundStyle(.primary)
                 Spacer()
                 Image(systemName: verified ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
@@ -317,7 +338,58 @@ struct ApplicationReviewView: View {
         .buttonStyle(.plain)
     }
 
+    /// Read-only document row shown when the application is in a terminal state (rejected/approved/disbursed/closed).
+    private func readOnlyDocumentRow(_ doc: LoanDocument) -> some View {
+        let verified = verifiedDocs.contains(doc.id)
+        return HStack(spacing: Spacing.sm) {
+            Image(systemName: "doc.text.fill")
+                .foregroundStyle(Color.lmsAccent)
+                .frame(width: 24)
+            Text(doc.kind.rawValue.capitalized).font(.subheadline).foregroundStyle(.primary)
+            Spacer()
+            Image(systemName: verified ? "checkmark.circle.fill" : "circle")
+                .font(.title3)
+                .foregroundStyle(verified ? Color.lmsSuccess : Color.lmsGray4)
+        }
+        .padding(Spacing.sm)
+        .background(Color.lmsBackground, in: RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous))
+    }
+
+    // MARK: Terminal status banner
+
+    private func terminalStatusBanner(_ app: ManagerApplication) -> some View {
+        let (icon, text, color): (String, String, Color) = switch app.status {
+        case .rejected:
+            ("xmark.octagon.fill", "This application has been rejected. No further modifications are allowed.", .lmsDanger)
+        case .approved:
+            ("checkmark.seal.fill", "This application has been approved. Pending disbursement.", .lmsSuccess)
+        case .disbursed:
+            ("banknote.fill", "This loan has been disbursed. This record is read-only.", .lmsInfo)
+        case .closed:
+            ("archivebox.fill", "This application is closed.", .secondary)
+        default:
+            ("info.circle.fill", "This application is in a final state.", .secondary)
+        }
+
+        return HStack(spacing: Spacing.sm) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(color)
+            Text(text)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+        }
+        .padding(Spacing.m)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(color.opacity(0.10), in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+    }
+
     // MARK: Action bar
+
+    @State private var isDisbursing = false
+    @State private var disburseError: String? = nil
+
+    @State private var showEscalationWarning = false
 
     @ViewBuilder
     private func actionBar(_ app: ManagerApplication) -> some View {
@@ -325,19 +397,40 @@ struct ApplicationReviewView: View {
             EmptyView()
         } else if app.status == .approved {
             VStack(spacing: Spacing.s) {
+                if let disburseError {
+                    Text(disburseError)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+                
                 Button {
-                    store.disburseLoan(application: app)
-                    dismiss()
+                    Task {
+                        isDisbursing = true
+                        disburseError = nil
+                        do {
+                            try await store.disburseLoan(application: app)
+                            dismiss()
+                        } catch {
+                            disburseError = error.localizedDescription
+                        }
+                        isDisbursing = false
+                    }
                 } label: {
-                    Label("Disburse Loan", systemImage: "banknote.fill")
-                        .frame(maxWidth: .infinity)
+                    if isDisbursing {
+                        ProgressView().tint(.white)
+                    } else {
+                        Label("Disburse Loan", systemImage: "banknote.fill")
+                            .frame(maxWidth: .infinity)
+                    }
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .tint(.blue)
+                .disabled(isDisbursing)
             }
             .padding(Spacing.m)
             .background(.bar)
+
         } else {
             VStack(spacing: Spacing.s) {
                 HStack(spacing: Spacing.s) {
@@ -355,13 +448,27 @@ struct ApplicationReviewView: View {
                 }
                 .controlSize(.large)
 
-                Button { activeSheet = .approve } label: {
+                Button { 
+                    if app.status == .underReview {
+                        showEscalationWarning = true
+                    } else {
+                        activeSheet = .approve 
+                    }
+                } label: {
                     Label("Approve", systemImage: "checkmark.seal.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .tint(.green)
+                .alert("Not Escalated", isPresented: $showEscalationWarning) {
+                    Button("Cancel", role: .cancel) { }
+                    Button("Escalate & Approve", role: .none) {
+                        activeSheet = .approve
+                    }
+                } message: {
+                    Text("This application is still under review by the officer and has not been escalated. Are you sure you want to take it over and approve it?")
+                }
             }
             .padding(Spacing.m)
             .background(.bar)
@@ -370,8 +477,8 @@ struct ApplicationReviewView: View {
 
     @ViewBuilder
     private func decisionSheet(_ action: ApplicationActionType, app: ManagerApplication) -> some View {
-        let onComplete: (String?) -> Void = { remarks in
-            store.decide(action, on: app, remarks: remarks)
+        let onComplete: (String?) async throws -> Void = { remarks in
+            try await store.decide(action, on: app, remarks: remarks)
             pendingResult = action
         }
         switch action {

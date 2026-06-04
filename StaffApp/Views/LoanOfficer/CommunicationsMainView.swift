@@ -124,6 +124,7 @@ struct CommunicationsMainView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Communications")
         .navigationBarTitleDisplayMode(.inline)
+        .refreshable { await viewModel.refreshAll() }
         .sheet(item: $bindableViewModel.selectedConversation) { conversation in
 
             ChatView(conversation: conversation)

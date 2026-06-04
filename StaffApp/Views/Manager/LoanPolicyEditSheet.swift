@@ -4,14 +4,23 @@ import SwiftUI
 
 struct LoanPolicyEditSheet: View {
     @State var policy: LoanPolicyConfig
-    var onSave: (LoanPolicyConfig) -> Void
+    var onSave: (LoanPolicyConfig) async throws -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var showConfirmation = false
+    @State private var isSaving = false
+    @State private var errorMessage: String? = nil
 
     var body: some View {
         NavigationStack {
             Form {
+                if let errorMessage {
+                    Section {
+                        Text(errorMessage)
+                            .foregroundStyle(.red)
+                    }
+                }
+                
                 // MARK: Loan Type Header
 
                 Section {
@@ -73,26 +82,6 @@ struct LoanPolicyEditSheet: View {
                             in: 12...360, step: 12)
                 }
 
-                // MARK: Eligibility
-
-                Section("Eligibility Criteria") {
-                    Stepper("Min Credit Score: \(policy.minCreditScore)",
-                            value: $policy.minCreditScore,
-                            in: 500...800, step: 10)
-
-                    VStack(alignment: .leading, spacing: Spacing.s) {
-                        HStack {
-                            Text("Max DTI Ratio")
-                            Spacer()
-                            Text("\(String(format: "%.0f", policy.maxDTIRatio * 100))%")
-                                .font(.subheadline.weight(.semibold))
-                                .monospacedDigit()
-                        }
-                        Slider(value: $policy.maxDTIRatio, in: 0.2...0.8, step: 0.05)
-                            .tint(typeColor)
-                    }
-                }
-
                 // MARK: Status
 
                 Section {
@@ -109,16 +98,31 @@ struct LoanPolicyEditSheet: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        showConfirmation = true
+                    if isSaving {
+                        ProgressView()
+                    } else {
+                        Button("Save") {
+                            showConfirmation = true
+                        }
+                        .font(.headline)
+                        .disabled(isSaving)
                     }
-                    .font(.headline)
                 }
             }
             .confirmationDialog("Save Changes", isPresented: $showConfirmation,
                                 titleVisibility: .visible) {
                 Button("Save Policy") {
-                    onSave(policy)
+                    Task {
+                        isSaving = true
+                        errorMessage = nil
+                        do {
+                            try await onSave(policy)
+                            dismiss()
+                        } catch {
+                            errorMessage = error.localizedDescription
+                        }
+                        isSaving = false
+                    }
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
@@ -127,6 +131,7 @@ struct LoanPolicyEditSheet: View {
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+        .disabled(isSaving)
     }
 
     // MARK: Helpers
@@ -157,6 +162,7 @@ struct LoanPolicyEditSheet: View {
         .sheet(isPresented: .constant(true)) {
             LoanPolicyEditSheet(
                 policy: LoanPolicyConfig(
+                    id: UUID(),
                     loanType: .home,
                     interestRateMin: 7.5, interestRateMax: 9.5,
                     maxTenureMonths: 360, maxAmount: 10_000_000,

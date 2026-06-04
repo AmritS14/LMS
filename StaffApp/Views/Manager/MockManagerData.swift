@@ -1,3 +1,4 @@
+#if DEBUG
 import Foundation
 
 // Manager-only seed data. Reuses the shared `MockOfficerData` borrower roster
@@ -256,12 +257,12 @@ enum MockManagerData {
     // MARK: Loan Policies
 
     static func loanPolicies() -> [LoanPolicyConfig] {
-        [
-            LoanPolicyConfig(loanType: .home, interestRateMin: 7.5, interestRateMax: 9.5, maxTenureMonths: 360, maxAmount: 10_000_000, minCreditScore: 700, maxDTIRatio: 0.50, isActive: true),
-            LoanPolicyConfig(loanType: .personal, interestRateMin: 10.0, interestRateMax: 14.0, maxTenureMonths: 60, maxAmount: 2_000_000, minCreditScore: 650, maxDTIRatio: 0.40, isActive: true),
-            LoanPolicyConfig(loanType: .business, interestRateMin: 11.0, interestRateMax: 16.0, maxTenureMonths: 84, maxAmount: 5_000_000, minCreditScore: 680, maxDTIRatio: 0.55, isActive: true),
-            LoanPolicyConfig(loanType: .vehicle, interestRateMin: 8.5, interestRateMax: 12.0, maxTenureMonths: 84, maxAmount: 3_000_000, minCreditScore: 660, maxDTIRatio: 0.45, isActive: true),
-            LoanPolicyConfig(loanType: .education, interestRateMin: 8.0, interestRateMax: 11.0, maxTenureMonths: 120, maxAmount: 4_000_000, minCreditScore: 600, maxDTIRatio: 0.60, isActive: true)
+        return [
+            LoanPolicyConfig(id: UUID(), loanType: .home, interestRateMin: 7.5, interestRateMax: 9.5, maxTenureMonths: 360, maxAmount: 10_000_000, minCreditScore: 700, maxDTIRatio: 0.50, isActive: true),
+            LoanPolicyConfig(id: UUID(), loanType: .personal, interestRateMin: 10.0, interestRateMax: 14.0, maxTenureMonths: 60, maxAmount: 2_000_000, minCreditScore: 650, maxDTIRatio: 0.40, isActive: true),
+            LoanPolicyConfig(id: UUID(), loanType: .business, interestRateMin: 11.0, interestRateMax: 16.0, maxTenureMonths: 84, maxAmount: 5_000_000, minCreditScore: 680, maxDTIRatio: 0.55, isActive: true),
+            LoanPolicyConfig(id: UUID(), loanType: .vehicle, interestRateMin: 8.5, interestRateMax: 12.0, maxTenureMonths: 84, maxAmount: 3_000_000, minCreditScore: 660, maxDTIRatio: 0.45, isActive: true),
+            LoanPolicyConfig(id: UUID(), loanType: .education, interestRateMin: 8.0, interestRateMax: 11.0, maxTenureMonths: 120, maxAmount: 4_000_000, minCreditScore: 600, maxDTIRatio: 0.60, isActive: true)
         ]
     }
 
@@ -332,4 +333,4 @@ enum MockManagerData {
         )
     }
 }
-
+#endif

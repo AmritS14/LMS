@@ -17,13 +17,6 @@ struct UserListView: View {
 
     var body: some View {
         List {
-            // Horizontal filter pills
-            filterPills
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets())
-                .listRowSeparator(.hidden)
-                .padding(.bottom, Spacing.m)
-
             // User list section
             if viewModel.isLoading {
                 ProgressView()
@@ -87,6 +80,34 @@ struct UserListView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            viewModel.currentFilter = .all
+                        }
+                    } label: {
+                        Label("All", systemImage: viewModel.currentFilter == .all ? "checkmark" : "person.3")
+                    }
+
+                    Divider()
+
+                    ForEach(UserRole.allCases, id: \.self) { role in
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                viewModel.currentFilter = .role(role)
+                            }
+                        } label: {
+                            Label(role.displayName, systemImage: viewModel.currentFilter == .role(role) ? "checkmark" : "person")
+                        }
+                    }
+                } label: {
+                    Image(systemName: viewModel.currentFilter == .all ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
+                        .font(.title3)
+                }
+                .accessibilityLabel("Filter users")
+            }
+
+            ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showAddStaff = true
                 } label: {
@@ -101,48 +122,7 @@ struct UserListView: View {
         }
     }
 
-    // MARK: - Sections
 
-    /// Horizontal scrollable list of filter pills.
-    private var filterPills: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: Spacing.s) {
-                filterPill(title: "All", isSelected: viewModel.currentFilter == .all) {
-                    viewModel.currentFilter = .all
-                }
-
-                ForEach(UserRole.allCases, id: \.self) { role in
-                    filterPill(title: role.displayName, isSelected: viewModel.currentFilter == .role(role)) {
-                        viewModel.currentFilter = .role(role)
-                    }
-                }
-            }
-            .padding(.horizontal, Spacing.m)
-        }
-    }
-
-    /// A single filter pill.
-    private func filterPill(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                action()
-            }
-        }) {
-            Text(title)
-                .font(.adminSecondary)
-                .padding(.horizontal, Spacing.m)
-                .padding(.vertical, Spacing.s)
-                .foregroundStyle(isSelected ? .white : .primary)
-                .background(
-                    isSelected ? AdminColor.accent : Color(.secondarySystemGroupedBackground),
-                    in: Capsule()
-                )
-                .overlay(
-                    Capsule()
-                        .strokeBorder(isSelected ? Color.clear : Color.primary.opacity(0.08), lineWidth: 1)
-                )
-        }
-    }
 }
 
 #Preview {
