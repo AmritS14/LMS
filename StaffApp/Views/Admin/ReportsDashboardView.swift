@@ -4,7 +4,6 @@ struct ReportsDashboardView: View {
     var preselectedBorrowerName: String? = nil
     @State private var viewModel = ReportsViewModel()
     
-    @State private var selectedBranch: String? = nil
     @State private var selectedType: String? = nil
     @State private var selectedStatus: String? = nil
     @State private var selectedDateRange: DateRangeOption = .all
@@ -17,8 +16,6 @@ struct ReportsDashboardView: View {
     // Expanded Detailed Rows
     @State private var expandedRowIDs: Set<UUID> = []
 
-    // Filter Options (These match standard banking branches/loan types for the filters)
-    private let branches = ["Main", "North", "South", "West"]
     private let loanTypes = ["Personal", "Vehicle", "Home", "Education"]
     private let statuses = ["Active", "Closed", "Defaulted"]
 
@@ -33,7 +30,6 @@ struct ReportsDashboardView: View {
     private var filteredData: [ReportsViewModel.ReportItem] {
         viewModel.items.filter { item in
             if let preselected = preselectedBorrowerName, item.borrowerName != preselected { return false }
-            if let branch = selectedBranch, item.branch != branch { return false }
             if let type = selectedType, item.loanType != type { return false }
             if let status = selectedStatus, item.status != status { return false }
 
@@ -147,30 +143,7 @@ struct ReportsDashboardView: View {
                     }
                 }
 
-                Section("Branch") {
-                    Button {
-                        selectedBranch = nil
-                    } label: {
-                        HStack {
-                            Text("All Branches")
-                            if selectedBranch == nil {
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
-                    ForEach(branches, id: \.self) { branch in
-                        Button {
-                            selectedBranch = branch
-                        } label: {
-                            HStack {
-                                Text(branch)
-                                if selectedBranch == branch {
-                                    Image(systemName: "checkmark")
-                                }
-                            }
-                        }
-                    }
-                }
+
 
                 Section("Type") {
                     Button {
@@ -222,17 +195,15 @@ struct ReportsDashboardView: View {
                     }
                 }
 
-                if selectedBranch != nil || selectedType != nil || selectedStatus != nil || selectedDateRange != .all {
-                    Divider()
-                    Button(role: .destructive) {
-                        resetFilters()
-                    } label: {
-                        Label("Reset Filters", systemImage: "xmark.circle")
-                    }
+                Divider()
+                Button(role: .destructive) {
+                    resetFilters()
+                } label: {
+                    Label("Clear Filters", systemImage: "xmark.circle")
                 }
             } label: {
                 Image(systemName: "line.3.horizontal.decrease.circle")
-                    .symbolVariant((selectedBranch != nil || selectedType != nil || selectedStatus != nil || selectedDateRange != .all) ? .fill : .none)
+                    .symbolVariant((selectedType != nil || selectedStatus != nil || selectedDateRange != .all) ? .fill : .none)
             }
         }
     }
@@ -263,7 +234,6 @@ struct ReportsDashboardView: View {
 
     private func resetFilters() {
         withAnimation {
-            selectedBranch = nil
             selectedType = nil
             selectedStatus = nil
             selectedDateRange = .all
@@ -273,7 +243,7 @@ struct ReportsDashboardView: View {
     private func startExport(format: String) {
         isExporting = true
         
-        let filterDesc = "Branch: \(selectedBranch ?? "All"), Type: \(selectedType ?? "All"), Status: \(selectedStatus ?? "All"), Date: \(selectedDateRange.rawValue)"
+        let filterDesc = "Type: \(selectedType ?? "All"), Status: \(selectedStatus ?? "All"), Date: \(selectedDateRange.rawValue)"
         
         Task {
             let url: URL?

@@ -53,6 +53,18 @@ struct LoanProductEditorSheet: View {
 
     @State private var draftProduct: AdminLoanProduct
     @State private var showUnsavedChangesAlert = false
+    @State private var showStatusChangeAlert = false
+    @State private var pendingStatusChange: Bool? = nil
+
+    private var isActiveBinding: Binding<Bool> {
+        Binding(
+            get: { draftProduct.isActive },
+            set: { newValue in
+                pendingStatusChange = newValue
+                showStatusChangeAlert = true
+            }
+        )
+    }
 
     init(product: Binding<AdminLoanProduct>, onSave: @escaping () -> Void, onCancel: @escaping () -> Void) {
         self._product = product
@@ -151,6 +163,17 @@ struct LoanProductEditorSheet: View {
                         .textCase(.uppercase)
                         .padding(.leading, 8)
                 }
+
+                // Section: Status
+                Section {
+                    Toggle("Loan Availability", isOn: isActiveBinding)
+                } header: {
+                    Text("Loan Status")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
+                }
             }
             .navigationTitle("Edit Product")
             .navigationBarTitleDisplayMode(.inline)
@@ -183,6 +206,34 @@ struct LoanProductEditorSheet: View {
                 }
             } message: {
                 Text("You have unsaved changes. Do you want to leave without saving?")
+            }
+            .alert(
+                pendingStatusChange == false ? "Deactivate Loan Product?" : "Activate Loan Product?",
+                isPresented: $showStatusChangeAlert,
+                presenting: pendingStatusChange
+            ) { newValue in
+                Button("Cancel", role: .cancel) {
+                    pendingStatusChange = nil
+                }
+                if newValue {
+                    Button("Activate") {
+                        draftProduct.isActive = newValue
+                        product = draftProduct
+                        onSave()
+                    }
+                } else {
+                    Button("Deactivate", role: .destructive) {
+                        draftProduct.isActive = newValue
+                        product = draftProduct
+                        onSave()
+                    }
+                }
+            } message: { newValue in
+                if newValue == false {
+                    Text("Are you sure you want to deactivate this loan product?\n\nBorrowers will no longer be able to apply for this loan type while it is inactive.")
+                } else {
+                    Text("Are you sure you want to activate this loan product?\n\nBorrowers will be able to view and apply for this loan type again.")
+                }
             }
         }
     }

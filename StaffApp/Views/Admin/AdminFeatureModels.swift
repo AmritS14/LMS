@@ -107,6 +107,7 @@ struct AdminLoanProduct: Identifiable, Hashable, Codable, Sendable {
     var interestRate: Double
     var maxTenure: Int
     var tenureUnit: TenureUnit
+    var isActive: Bool = true
 
     static let sampleProducts: [LoanCategory: [AdminLoanProduct]] = [
         .personal: [
@@ -244,11 +245,7 @@ enum AdminSeedData {
         }
     )
 
-    static let auditEntries: [AuditEntry] = [
-        AuditEntry(actorID: adminID, actorRole: .admin, action: "Updated role", entityType: "User", entityID: officerID, metadata: ["role": "Loan Officer"], timestamp: .now.addingTimeInterval(-3600)),
-        AuditEntry(actorID: managerID, actorRole: .manager, action: "Reviewed application", entityType: "LoanApplication", entityID: MockOfficerData.assignedApplications()[0].id, metadata: ["result": "Recommended"], timestamp: .now.addingTimeInterval(-7200)),
-        AuditEntry(actorID: officerID, actorRole: .loanOfficer, action: "Verified document", entityType: "LoanDocument", entityID: UUID(), metadata: ["document": "PAN Card"], timestamp: .now.addingTimeInterval(-14_000))
-    ]
+
 }
 
 private func mapAppStatus(_ raw: String) -> ApplicationStatus {
@@ -888,7 +885,8 @@ final class LoanConfigViewModel {
                 maxAmount: NSDecimalNumber(decimal: p.maximumAmount).doubleValue,
                 interestRate: p.displayRate,
                 maxTenure: p.maximumTenureMonths,
-                tenureUnit: .months
+                tenureUnit: .months,
+                isActive: p.isActive
             )
             grouped[Self.category(for: p.loanType), default: []].append(admin)
         }
@@ -960,7 +958,7 @@ final class LoanConfigViewModel {
             maximumTenureMonths: maxMonths,
             minimumInterestRate: product.interestRate,
             maximumInterestRate: product.interestRate,
-            isActive: true
+            isActive: product.isActive
         )
         
         if let environment {

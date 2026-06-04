@@ -6,7 +6,6 @@ struct StaffLoginView: View {
 
     @State private var email: String = ""
     @State private var password: String = ""
-    @State private var isPasswordVisible: Bool = false
     @State private var rememberMe: Bool = false
     @State private var isBusy: Bool = false
     @State private var errorMessage: String?
@@ -60,12 +59,12 @@ struct StaffLoginView: View {
                                 .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
                             
                             VStack(spacing: 6) {
-                                Text("Welcome Back, Admin")
+                                Text("Welcome Back")
                                     .font(.title2)
                                     .fontWeight(.bold)
                                     .foregroundStyle(Color(.label))
                                 
-                                Text("Sign in to access the administration dashboard")
+                                Text("Sign in to access your dashboard")
                                     .font(.subheadline)
                                     .foregroundStyle(Color.secondary)
                                     .multilineTextAlignment(.center)
@@ -83,15 +82,6 @@ struct StaffLoginView: View {
                                     .foregroundStyle(Color.secondary)
                                 
                                 HStack(spacing: 12) {
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                            .fill(Color.blue.opacity(0.1))
-                                            .frame(width: 32, height: 32)
-                                        Image(systemName: "envelope.fill")
-                                            .font(.system(size: 14))
-                                            .foregroundStyle(Color.blue)
-                                    }
-                                    
                                     TextField("Enter your email address", text: $email)
                                         .textContentType(.emailAddress)
                                         .keyboardType(.emailAddress)
@@ -115,36 +105,11 @@ struct StaffLoginView: View {
                                     .foregroundStyle(Color.secondary)
                                 
                                 HStack(spacing: 12) {
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                            .fill(Color.blue.opacity(0.1))
-                                            .frame(width: 32, height: 32)
-                                        Image(systemName: "lock.fill")
-                                            .font(.system(size: 14))
-                                            .foregroundStyle(Color.blue)
-                                    }
-                                    
-                                    if isPasswordVisible {
-                                        TextField("Enter your password", text: $password)
-                                            .textContentType(.password)
-                                            .submitLabel(.go)
-                                            .focused($focusedField, equals: .password)
-                                            .onSubmit(submit)
-                                    } else {
-                                        SecureField("Enter your password", text: $password)
-                                            .textContentType(.password)
-                                            .submitLabel(.go)
-                                            .focused($focusedField, equals: .password)
-                                            .onSubmit(submit)
-                                    }
-                                    
-                                    Button {
-                                        isPasswordVisible.toggle()
-                                    } label: {
-                                        Image(systemName: isPasswordVisible ? "eye.fill" : "eye.slash.fill")
-                                            .font(.system(size: 16))
-                                            .foregroundStyle(Color.secondary)
-                                    }
+                                    SecureField("Enter your password", text: $password)
+                                        .textContentType(.password)
+                                        .submitLabel(.go)
+                                        .focused($focusedField, equals: .password)
+                                        .onSubmit(submit)
                                 }
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 10)

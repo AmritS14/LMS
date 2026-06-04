@@ -332,9 +332,9 @@ struct UserDetailsView: View {
     @ViewBuilder
     private var borrowerSections: some View {
         Section {
-            accountDetailRow(icon: "number", label: "User ID", value: currentUser.uniqueID)
-            accountDetailRow(icon: "envelope.fill", label: "Email", value: currentUser.email)
-            accountDetailRow(icon: "phone.fill", label: "Phone", value: currentUser.phone)
+            accountDetailRow(label: "User ID", value: currentUser.uniqueID)
+            accountDetailRow(label: "Email", value: currentUser.email)
+            accountDetailRow(label: "Phone", value: currentUser.phone)
         } header: {
             Text("Account Details")
                 .font(.adminSectionHeader)
@@ -365,8 +365,8 @@ struct UserDetailsView: View {
 
         let history = viewModel.getLoanHistory(for: currentUser.id)
         Section {
-            accountDetailRow(icon: "doc.text.fill", label: "Total Loans", value: "\(history.count)")
-            accountDetailRow(icon: "chart.line.uptrend.xyaxis", label: "Active Loans", value: "\(history.filter { $0.outstandingBalance > 0 }.count)")
+            accountDetailRow(label: "Total Loans", value: "\(history.count)")
+            accountDetailRow(label: "Active Loans", value: "\(history.filter { $0.outstandingBalance > 0 }.count)")
         } header: {
             Text("Loan Summary")
                 .font(.adminSectionHeader)
@@ -437,9 +437,9 @@ struct UserDetailsView: View {
     @ViewBuilder
     private var loanOfficerSections: some View {
         Section {
-            accountDetailRow(icon: "number", label: "User ID", value: currentUser.uniqueID)
-            accountDetailRow(icon: "envelope.fill", label: "Email", value: currentUser.email)
-            accountDetailRow(icon: "phone.fill", label: "Phone", value: currentUser.phone)
+            accountDetailRow(label: "User ID", value: currentUser.uniqueID)
+            accountDetailRow(label: "Email", value: currentUser.email)
+            accountDetailRow(label: "Phone", value: currentUser.phone)
         } header: {
             Text("Account Details")
                 .font(.adminSectionHeader)
@@ -504,9 +504,9 @@ struct UserDetailsView: View {
     @ViewBuilder
     private var managerSections: some View {
         Section {
-            accountDetailRow(icon: "number", label: "User ID", value: currentUser.uniqueID)
-            accountDetailRow(icon: "envelope.fill", label: "Email", value: currentUser.email)
-            accountDetailRow(icon: "phone.fill", label: "Phone", value: currentUser.phone)
+            accountDetailRow(label: "User ID", value: currentUser.uniqueID)
+            accountDetailRow(label: "Email", value: currentUser.email)
+            accountDetailRow(label: "Phone", value: currentUser.phone)
         } header: {
             Text("Manager Details")
                 .font(.adminSectionHeader)
@@ -573,9 +573,9 @@ struct UserDetailsView: View {
     @ViewBuilder
     private var adminSections: some View {
         Section {
-            accountDetailRow(icon: "number", label: "User ID", value: currentUser.uniqueID)
-            accountDetailRow(icon: "envelope.fill", label: "Email", value: currentUser.email)
-            accountDetailRow(icon: "phone.fill", label: "Phone", value: currentUser.phone)
+            accountDetailRow(label: "User ID", value: currentUser.uniqueID)
+            accountDetailRow(label: "Email", value: currentUser.email)
+            accountDetailRow(label: "Phone", value: currentUser.phone)
         } header: {
             Text("Admin Account Details")
                 .font(.adminSectionHeader)
@@ -587,12 +587,8 @@ struct UserDetailsView: View {
 
     // MARK: - Helpers
 
-    private func accountDetailRow(icon: String, label: String, value: String) -> some View {
+    private func accountDetailRow(label: String, value: String) -> some View {
         HStack(spacing: Spacing.sm) {
-            Image(systemName: icon)
-                .font(.adminCaption)
-                .foregroundStyle(Color.lmsInfo)
-                .frame(width: 20)
             Text(label)
                 .font(.adminSecondary)
                 .foregroundStyle(.secondary)
@@ -781,11 +777,11 @@ struct SimpleUserDetailsView: View {
     var body: some View {
         List {
             Section {
-                accountDetailRow(icon: "person.text.rectangle", label: "Name", value: user.fullName)
-                accountDetailRow(icon: "briefcase.fill", label: "Role", value: user.role.displayName)
-                accountDetailRow(icon: "envelope.fill", label: "Email", value: user.email)
-                accountDetailRow(icon: "phone.fill", label: "Phone", value: user.phone)
-                accountDetailRow(icon: "number", label: "Employee ID", value: user.uniqueID)
+                accountDetailRow(label: "Name", value: user.fullName)
+                accountDetailRow(label: "Role", value: user.role.displayName)
+                accountDetailRow(label: "Email", value: user.email)
+                accountDetailRow(label: "Phone", value: user.phone)
+                accountDetailRow(label: "Employee ID", value: user.uniqueID)
                 
                 HStack {
                     HStack(spacing: Spacing.s) {
@@ -813,15 +809,10 @@ struct SimpleUserDetailsView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
     
-    private func accountDetailRow(icon: String, label: String, value: String) -> some View {
-        HStack {
-            HStack(spacing: Spacing.s) {
-                Image(systemName: icon)
-                    .foregroundStyle(Color.lmsInfo)
-                    .frame(width: 24)
-                Text(label)
-                    .font(.adminBody)
-            }
+    private func accountDetailRow(label: String, value: String) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Text(label)
+                .font(.adminBody)
             Spacer()
             Text(value)
                 .font(.adminSecondary)

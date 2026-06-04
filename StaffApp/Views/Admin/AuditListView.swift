@@ -142,7 +142,11 @@ struct AuditListView: View {
             } else if let error = viewModel.error {
                 ContentUnavailableView("Failed to Load Logs", systemImage: "exclamationmark.triangle", description: Text(error))
             } else if filteredEntries.isEmpty {
-                ContentUnavailableView("No Logs Found", systemImage: "doc.text.magnifyingglass", description: Text("No audit logs match your search criteria."))
+                if viewModel.entries.isEmpty {
+                    ContentUnavailableView("No Activity Yet", systemImage: "clock", description: Text("No audit records are available."))
+                } else {
+                    ContentUnavailableView("No Logs Found", systemImage: "doc.text.magnifyingglass", description: Text("No audit logs match your search criteria."))
+                }
             } else {
                 ForEach(filteredEntries, id: \.id) { entry in
                     VStack(alignment: .leading, spacing: Spacing.xs) {
