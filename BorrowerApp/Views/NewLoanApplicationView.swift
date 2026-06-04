@@ -21,7 +21,6 @@ struct NewLoanApplicationView: View {
     }
     @State private var flowStep: FlowStep = .form
     @State private var showProductComparison = false
-    @State private var expandedCategory: LoanType?
 
     // Amount input
     @State private var amountText: String = ""
@@ -418,159 +417,37 @@ struct NewLoanApplicationView: View {
 
     // MARK: - Product Picker
 
-    /// Unique loan types present in loaded products, preserving a stable order.
-    private var availableCategories: [LoanType] {
-        let order: [LoanType] = [.personal, .home, .vehicle, .education, .business]
-        let present = Set(viewModel.loanProducts.map(\.loanType))
-        return order.filter { present.contains($0) }
-    }
-
-    /// Products belonging to a given category.
-    private func products(for category: LoanType) -> [LoanProduct] {
-        viewModel.loanProducts.filter { $0.loanType == category }
-    }
-
-    /// Whether the selected product belongs to a given category.
-    private func isCategorySelected(_ type: LoanType) -> Bool {
-        selectedProduct?.loanType == type
-    }
-
-    private func iconName(for type: LoanType) -> String {
-        switch type {
-        case .home: return "house.fill"
-        case .personal: return "person.fill"
-        case .vehicle: return "car.fill"
-        case .business: return "briefcase.fill"
-        case .education: return "book.closed.fill"
-        }
-    }
-
-    private func categoryLabel(for type: LoanType) -> String {
-        switch type {
-        case .home: return "Home"
-        case .personal: return "Personal"
-        case .vehicle: return "Vehicle"
-        case .business: return "Business"
-        case .education: return "Education"
-        }
-    }
-
-    private func categoryButton(for type: LoanType) -> some View {
-        let isExpanded = expandedCategory == type
-        let isSelected = isCategorySelected(type)
-        return Button {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                if expandedCategory == type {
-                    expandedCategory = nil
-                } else {
-                    expandedCategory = type
-                }
-            }
-        } label: {
-            VStack(spacing: Spacing.s) {
-                ZStack {
-                    Circle()
-                        .fill(isExpanded ? Color.accentColor : isSelected ? Color.accentColor.opacity(0.2) : Color.lmsFill)
-                        .frame(width: 52, height: 52)
-                    Image(systemName: iconName(for: type))
-                        .foregroundStyle(isExpanded ? Color.white : isSelected ? Color.accentColor : Color.secondary)
-                        .font(.title3)
-                }
-                HStack(spacing: 2) {
-                    Text(categoryLabel(for: type))
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(isExpanded || isSelected ? Color.primary : Color.secondary)
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundStyle(isExpanded ? Color.accentColor : Color.secondary)
-                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
-                }
-            }
-            .frame(width: 76)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func productRow(product: LoanProduct, isLast: Bool) -> some View {
-        VStack(spacing: 0) {
-            Button {
-                viewModel.selectedProduct = product
-                viewModel.requestedAmount = NSDecimalNumber(decimal: product.minimumAmount).doubleValue
-                viewModel.tenureMonths = product.minimumTenureMonths
-                syncAmountText()
-                syncTenureFromViewModel()
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                    expandedCategory = nil
-                }
-            } label: {
-                HStack(spacing: Spacing.sm) {
-                    Image(systemName: product.icon)
-                        .font(.subheadline)
-                        .foregroundStyle(selectedProduct?.id == product.id ? Color.white : Color.accentColor)
-                        .frame(width: 32, height: 32)
-                        .background(
-                            selectedProduct?.id == product.id ? Color.accentColor : Color.accentColor.opacity(0.1),
-                            in: RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        )
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(product.name)
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(Color.primary)
-                        Text("\(shortAmount(NSDecimalNumber(decimal: product.minimumAmount).doubleValue)) – \(shortAmount(NSDecimalNumber(decimal: product.maximumAmount).doubleValue))")
-                            .font(.caption2)
-                            .foregroundStyle(Color.secondary)
-                    }
-
-                    Spacer()
-
-                    if selectedProduct?.id == product.id {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(Color.accentColor)
-                    } else {
-                        Image(systemName: "chevron.right")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(Color.secondary)
-                    }
-                }
-                .padding(.horizontal, Spacing.m)
-                .padding(.vertical, Spacing.sm)
-                .background(selectedProduct?.id == product.id ? Color.accentColor.opacity(0.06) : Color.clear)
-            }
-            .buttonStyle(.plain)
-
-            if !isLast {
-                Divider().padding(.leading, 56)
-            }
-        }
-    }
-
     private var productPicker: some View {
-        VStack(spacing: 0) {
-            // ── Category row ──
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Spacing.sm) {
-                    ForEach(availableCategories, id: \.self) { type in
-                        categoryButton(for: type)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Spacing.sm) {
+                ForEach(viewModel.loanProducts) { product in
+                    Button {
+                        viewModel.selectedProduct = product
+                        viewModel.requestedAmount = NSDecimalNumber(decimal: product.minimumAmount).doubleValue
+                        viewModel.tenureMonths = product.minimumTenureMonths
+                        syncAmountText()
+                        syncTenureFromViewModel()
+                    } label: {
+                        VStack(spacing: Spacing.s) {
+                            ZStack {
+                                Circle()
+                                    .fill(selectedProduct?.id == product.id ? Color.accentColor : Color.lmsFill)
+                                    .frame(width: 52, height: 52)
+                                Image(systemName: product.icon)
+                                    .foregroundStyle(selectedProduct?.id == product.id ? .white : .secondary)
+                                    .font(.title3)
+                            }
+                            Text(product.name.replacingOccurrences(of: " Loan", with: ""))
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(selectedProduct?.id == product.id ? .primary : .secondary)
+                        }
+                        .frame(width: 72)
                     }
+                    .buttonStyle(.plain)
                 }
-                .padding(.vertical, Spacing.s)
-                .padding(.horizontal, Spacing.xs)
             }
-
-            // ── Dropdown list for expanded category ──
-            if let expanded = expandedCategory {
-                let categoryProducts = products(for: expanded)
-                VStack(spacing: 0) {
-                    ForEach(Array(categoryProducts.enumerated()), id: \.element.id) { index, product in
-                        productRow(product: product, isLast: index == categoryProducts.count - 1)
-                    }
-                }
-                .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
-                .padding(.horizontal, Spacing.xs)
-                .padding(.top, Spacing.xs)
-                .transition(.opacity.combined(with: .move(edge: .top)))
-            }
+            .padding(.vertical, Spacing.s)
+            .padding(.horizontal, Spacing.xs)
         }
     }
 
