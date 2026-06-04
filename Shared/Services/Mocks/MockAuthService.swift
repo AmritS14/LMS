@@ -77,6 +77,10 @@ actor MockAuthService: AuthService {
         _currentUser = user
         return user
     }
+    
+    func updatePassword(password: String) async throws -> User {
+        return Self.seedBorrower
+    }
 
     func signOut() async throws {
         _currentUser = nil

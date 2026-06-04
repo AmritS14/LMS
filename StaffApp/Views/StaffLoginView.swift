@@ -9,6 +9,7 @@ struct StaffLoginView: View {
     @State private var isBusy: Bool = false
     @State private var errorMessage: String?
     @FocusState private var focusedField: Field?
+    @State private var navigateToOTP = false
 
     private enum Field { case email, password }
 
@@ -165,6 +166,9 @@ struct StaffLoginView: View {
                     }
                     .padding(.horizontal, 20)
                 }
+                .navigationDestination(isPresented: $navigateToOTP) {
+                    StaffOTPView(email: email)
+                }
             }
         }
     }
@@ -176,11 +180,10 @@ struct StaffLoginView: View {
         errorMessage = nil
         Task {
             do {
-                let user = try await auth.signIn(email: email, password: password)
+                _ = try await auth.signIn(email: email, password: password)
+                try await auth.requestOTP(identifier: email)
                 isBusy = false
-                withAnimation(.easeInOut(duration: 0.4)) {
-                    session.currentUser = user
-                }
+                navigateToOTP = true
             } catch {
                 errorMessage = error.localizedDescription
                 isBusy = false

@@ -63,6 +63,22 @@ actor SupabaseAuthService: AuthService {
         throw NSError(domain: "Auth", code: 501, userInfo: [NSLocalizedDescriptionKey: "Use verifyEmailOTP instead."])
     }
     
+    func updatePassword(password: String) async throws -> User {
+        try await client.auth.update(user: UserAttributes(password: password))
+        // also we need to update must_change_password to false in public.users
+        if let session = try? await client.auth.session {
+            let userId = session.user.id
+            try await client.from("users")
+                .update(["must_change_password": false])
+                .eq("id", value: userId)
+                .execute()
+        }
+        guard let currentUser = await self.currentUser else {
+            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Failed to get current user"])
+        }
+        return currentUser
+    }
+    
     func signInWithPasskey() async throws -> User {
         // Not implemented in this basic Supabase setup
         throw URLError(.unsupportedURL)
