@@ -35,11 +35,15 @@ public struct SupabaseManager: Sendable {
         }
         self.decoder = customDecoder
 
+        let isBorrowerApp = Bundle.main.bundleIdentifier?.contains("BorrowerApp") == true
+        let authStorage: any AuthStorage = isBorrowerApp ? KeychainAuthStorage() : MemoryAuthStorage()
+
         self.client = SupabaseClient(
             supabaseURL: URL(string: "https://kezcsrprvhzysftopjqd.supabase.co")!,
             supabaseKey: "sb_publishable_kVi_Wh86_lesAuTm6f7kxw_8xshrFgQ",
             options: SupabaseClientOptions(
-                db: SupabaseClientOptions.DatabaseOptions(decoder: customDecoder)
+                db: SupabaseClientOptions.DatabaseOptions(decoder: customDecoder),
+                auth: SupabaseClientOptions.AuthOptions(storage: authStorage)
             )
         )
     }
