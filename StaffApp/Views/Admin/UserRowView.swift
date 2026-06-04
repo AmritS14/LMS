@@ -343,26 +343,6 @@ struct UserDetailsView: View {
                 .padding(.leading, 8)
         }
 
-        Section {
-            if let officer = viewModel.getAssignedOfficer(for: currentUser.id) {
-                NavigationKeyValueRow(key: "Loan Officer", value: officer.fullName, destinationUser: officer, viewModel: viewModel)
-                if let manager = viewModel.getSupervisingManager(for: officer.id) {
-                    NavigationKeyValueRow(key: "Manager", value: manager.fullName, destinationUser: manager, viewModel: viewModel)
-                } else {
-                    KeyValueRow(key: "Manager", value: "None")
-                }
-            } else {
-                KeyValueRow(key: "Loan Officer", value: "Unassigned")
-                KeyValueRow(key: "Manager", value: "None")
-            }
-        } header: {
-            Text("Assigned Staff")
-                .font(.adminSectionHeader)
-                .foregroundStyle(Color.secondary)
-                .textCase(.uppercase)
-                .padding(.leading, 8)
-        }
-
         let history = viewModel.getLoanHistory(for: currentUser.id)
         Section {
             accountDetailRow(label: "Total Loans", value: "\(history.count)")
