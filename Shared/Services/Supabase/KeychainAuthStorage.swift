@@ -1,7 +1,7 @@
 import Foundation
 import Supabase
 
-struct KeychainAuthStorage: AuthStorage {
+struct KeychainAuthStorage: AuthLocalStorage {
     let key = "supabase.auth.token"
     
     func store(key: String, value: Data) throws {

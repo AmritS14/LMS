@@ -1,7 +1,7 @@
 import Foundation
 import Supabase
 
-class MemoryAuthStorage: AuthStorage, @unchecked Sendable {
+class MemoryAuthStorage: AuthLocalStorage, @unchecked Sendable {
     private var storage: [String: Data] = [:]
     
     func store(key: String, value: Data) throws { storage[key] = value }

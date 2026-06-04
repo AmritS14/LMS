@@ -36,7 +36,7 @@ public struct SupabaseManager: Sendable {
         self.decoder = customDecoder
 
         let isBorrowerApp = Bundle.main.bundleIdentifier?.contains("BorrowerApp") == true
-        let authStorage: any AuthStorage = isBorrowerApp ? KeychainAuthStorage() : MemoryAuthStorage()
+        let authStorage: any AuthLocalStorage = isBorrowerApp ? KeychainAuthStorage() : MemoryAuthStorage()
 
         self.client = SupabaseClient(
             supabaseURL: URL(string: "https://kezcsrprvhzysftopjqd.supabase.co")!,
