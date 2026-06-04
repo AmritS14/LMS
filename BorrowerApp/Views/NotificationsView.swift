@@ -58,7 +58,9 @@ struct NotificationsView: View {
 
     private func fetchNotifications() async {
         guard let env else { return }
-        isLoading = true
+        if notifications.isEmpty {
+            isLoading = true
+        }
         do {
             notifications = try await env.notifications.fetchHistory(limit: 50)
         } catch {

@@ -13,7 +13,9 @@ final class RepaymentViewModel {
 
     func loadRepaymentData(loanService: any LoanService, loan: Loan) async {
         self.loanService = loanService
-        isLoading = true
+        if activeLoan == nil {
+            isLoading = true
+        }
         errorMessage = nil
         do {
             self.activeLoan = loan

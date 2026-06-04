@@ -709,7 +709,9 @@ final class UserManagementViewModel {
     /// Replaces the seeded mock users with the real directory from the backend.
     func load() async {
         guard let environment else { return }
-        isLoading = true
+        if users.isEmpty {
+            isLoading = true
+        }
         loadError = nil
         do {
             async let usersReq = environment.admin.listUsers(ids: nil)

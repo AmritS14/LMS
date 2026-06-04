@@ -22,7 +22,9 @@ final class DashboardViewModel {
         sanctionLetterService: any SanctionLetterService,
         borrowerID: UUID
     ) async {
-        isLoading = true
+        if activeLoans.isEmpty && applications.isEmpty {
+            isLoading = true
+        }
         errorMessage = nil
         do {
             async let loansReq = loanService.fetchActiveLoans(borrowerID: borrowerID)
