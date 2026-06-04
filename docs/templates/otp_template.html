@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Your OTP Code</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f9f9f9; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 500px; margin: 0 auto; background: #ffffff; padding: 32px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .header { text-align: center; margin-bottom: 24px; }
+        .logo { font-size: 24px; font-weight: bold; color: #007aff; }
+        .content { font-size: 16px; line-height: 1.5; text-align: center; }
+        .otp-code { font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #1c1c1e; background: #f2f2f7; padding: 16px; border-radius: 8px; margin: 24px 0; display: inline-block; }
+        .footer { margin-top: 32px; font-size: 14px; color: #8e8e93; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">LMS Portal</div>
+        </div>
+        <div class="content">
+            <p>Hello,</p>
+            <p>Here is your one-time password to securely log in to your account.</p>
+            <div class="otp-code">{{ .Token }}</div>
+            <p>This code will expire in 10 minutes. If you did not request this, please ignore this email.</p>
+        </div>
+        <div class="footer">
+            &copy; 2026 LMS Inc. All rights reserved.
+        </div>
+    </div>
+</body>
+</html>
