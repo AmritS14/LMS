@@ -15,6 +15,8 @@ protocol LoanService: Sendable {
     func fetchActiveLoans(borrowerID: UUID) async throws -> [Loan]
     func fetchEMISchedule(loanID: UUID) async throws -> [EMI]
     func payEMI(emiID: UUID) async throws -> EMI
+    func createEMIOrder(emiID: UUID) async throws -> EMIOrder
+    func verifyEMIPayment(emiID: UUID, orderId: String, paymentId: String, signature: String) async throws -> EMI
 
     // Staff workflow actions
     func startReview(applicationID: UUID) async throws

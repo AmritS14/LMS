@@ -284,6 +284,28 @@ actor MockLoanService: LoanService {
         throw NSError(domain: "Mock", code: 501, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
     }
 
+    func createEMIOrder(emiID: UUID) async throws -> EMIOrder {
+        try await Task.sleep(for: .milliseconds(300))
+        return EMIOrder(
+            orderId: "order_mock_\(emiID.uuidString.prefix(8))",
+            amount: 100000,
+            currency: "INR",
+            keyId: "rzp_test_mock"
+        )
+    }
+
+    func verifyEMIPayment(emiID: UUID, orderId: String, paymentId: String, signature: String) async throws -> EMI {
+        try await Task.sleep(for: .milliseconds(300))
+        for loanIdx in loans.indices {
+            if let emiIdx = loans[loanIdx].emiSchedule.firstIndex(where: { $0.id == emiID }) {
+                loans[loanIdx].emiSchedule[emiIdx].status = .paid
+                loans[loanIdx].emiSchedule[emiIdx].paidAt = .now
+                return loans[loanIdx].emiSchedule[emiIdx]
+            }
+        }
+        throw NSError(domain: "Mock", code: 404, userInfo: [NSLocalizedDescriptionKey: "EMI not found"])
+    }
+
     func fetchApplications(statuses: [String]) async throws -> [LoanApplication] { return applications }
     func startReview(applicationID: UUID) async throws {}
     func requestDocuments(applicationID: UUID, documentTypes: [String], remark: String?) async throws {}

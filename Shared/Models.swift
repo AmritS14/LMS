@@ -224,6 +224,13 @@ enum EMIStatus: String, Codable, Sendable {
     case upcoming, paid, overdue
 }
 
+struct EMIOrder: Sendable {
+    let orderId: String
+    let amount: Int      // in paise (rupees × 100)
+    let currency: String
+    let keyId: String
+}
+
 struct EMI: Identifiable, Codable, Sendable, Hashable {
     var id: UUID = UUID()
     var installmentNumber: Int

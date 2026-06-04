@@ -125,6 +125,8 @@
 		F04C0D732FC06930009E0886 /* LMSTextFieldStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F04C0D712FC06930009E0886 /* LMSTextFieldStyle.swift */; };
 		F0B1C0AD2FC3FB2800612B34 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0B1C0AC2FC3FB2800612B34 /* StatusBadge.swift */; };
 		F0B1C0AE2FC3FB2800612B34 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0B1C0AC2FC3FB2800612B34 /* StatusBadge.swift */; };
+		F0CE3D702FD1C0AD00B7540A /* RazorpayCheckoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CE3D6F2FD1C0AD00B7540A /* RazorpayCheckoutView.swift */; };
+		F0DB21EB2FD1BEAA00B02890 /* RazorpayCheckout in Frameworks */ = {isa = PBXBuildFile; productRef = F0DB21EA2FD1BEAA00B02890 /* RazorpayCheckout */; };
 		F7F7B90D792B9760F95CE95A /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F43612DC9CA160255FFC33 /* Colors.swift */; };
 		F872AD1A8550E9CF19A04C1D /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E121B25741BC258047859E /* PrimaryButton.swift */; };
 		FD0AE4D7A632B3191185FF78 /* SanctionLetterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EDCABD57104D7ECA2854453 /* SanctionLetterService.swift */; };
@@ -209,6 +211,7 @@
 		F040CB032FC430DF00A9E2F9 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		F04C0D712FC06930009E0886 /* LMSTextFieldStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LMSTextFieldStyle.swift; sourceTree = "<group>"; };
 		F0B1C0AC2FC3FB2800612B34 /* StatusBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBadge.swift; sourceTree = "<group>"; };
+		F0CE3D6F2FD1C0AD00B7540A /* RazorpayCheckoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RazorpayCheckoutView.swift; sourceTree = "<group>"; };
 		F3F99DE09F9F0CC21967249D /* SupabaseAdminService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseAdminService.swift; path = Supabase/SupabaseAdminService.swift; sourceTree = "<group>"; };
 		F582C8AB54B323AD8E169865 /* EMICalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EMICalculator.swift; sourceTree = "<group>"; };
 		FEE98171A238045C22C2F9E8 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
@@ -245,6 +248,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F0DB21EB2FD1BEAA00B02890 /* RazorpayCheckout in Frameworks */,
 				74AB73E0D51BA0BC3D97D04A /* Supabase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -311,6 +315,7 @@
 		6032DD2746980F04465DA927 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				F0CE3D6F2FD1C0AD00B7540A /* RazorpayCheckoutView.swift */,
 				EA934F6F2FCF37460067F38F /* UpdatePasswordView.swift */,
 				378FE18EBDE8ED6EAC15B43F /* ApplicationTrackingView.swift */,
 				EAA0D6C9B4ADA02384A08BA9 /* BorrowerMessagingView.swift */,
@@ -519,6 +524,7 @@
 			name = BorrowerApp;
 			packageProductDependencies = (
 				2F2A278D8B7228C924F45E5A /* Supabase */,
+				F0DB21EA2FD1BEAA00B02890 /* RazorpayCheckout */,
 			);
 			productName = BorrowerApp;
 			productReference = 2C0817FF4EFCC1827F3C20E5 /* BorrowerApp.app */;
@@ -544,6 +550,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				B2309659DF6C2938AA38D457 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				F0DB21E92FD1BEAA00B02890 /* XCRemoteSwiftPackageReference "razorpay-pod" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3C83BCA67B2DF25CC483E810 /* Products */;
@@ -624,6 +631,7 @@
 				1498870D378AA154011348C5 /* RepaymentDashboardView.swift in Sources */,
 				D6B196110A20A011B5023784 /* RootView.swift in Sources */,
 				610C7AC52D28556867E7C7C3 /* SectionCard.swift in Sources */,
+				F0CE3D702FD1C0AD00B7540A /* RazorpayCheckoutView.swift in Sources */,
 				10763574BC09806E93C4652B /* SessionStore.swift in Sources */,
 				1C26C1CDE9A2228093CEE9A3 /* Spacing.swift in Sources */,
 				52450F643B5688BA2198ADC1 /* Typography.swift in Sources */,
@@ -956,6 +964,14 @@
 				minimumVersion = 2.0.0;
 			};
 		};
+		F0DB21E92FD1BEAA00B02890 /* XCRemoteSwiftPackageReference "razorpay-pod" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/razorpay/razorpay-pod";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.3;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -968,6 +984,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B2309659DF6C2938AA38D457 /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Supabase;
+		};
+		F0DB21EA2FD1BEAA00B02890 /* RazorpayCheckout */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F0DB21E92FD1BEAA00B02890 /* XCRemoteSwiftPackageReference "razorpay-pod" */;
+			productName = RazorpayCheckout;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

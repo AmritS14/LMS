@@ -4,7 +4,7 @@ import Supabase
 /// Supabase implementation of LoanService
 actor SupabaseLoanService: LoanService {
     private let client: SupabaseClient
-    private let apiBase = "https://arshitsinghal-lms-backend-new.hf.space"
+    private let apiBase = "https://amrits14-lms-test.hf.space"
 
     init(client: SupabaseClient) {
         self.client = client
@@ -474,6 +474,68 @@ actor SupabaseLoanService: LoanService {
         struct PayResponse: Decodable {
             let emi: DBEMI
         }
+        let payResponse = try SupabaseManager.shared.decoder.decode(PayResponse.self, from: data)
+        let dbEmi = payResponse.emi
+        return EMI(
+            id: dbEmi.id,
+            installmentNumber: dbEmi.installment_number,
+            dueDate: dbEmi.due_date,
+            principalComponent: dbEmi.principal_component,
+            interestComponent: dbEmi.interest_component,
+            totalAmount: dbEmi.total_amount,
+            status: mapEMIStatus(dbEmi.status),
+            paidAt: dbEmi.paid_at
+        )
+    }
+
+    // MARK: - Razorpay Payment
+
+    func createEMIOrder(emiID: UUID) async throws -> EMIOrder {
+        guard let session = try? await client.auth.session else {
+            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "You must be logged in to pay EMIs"])
+        }
+        let url = URL(string: "\(apiBase)/emis/\(emiID.uuidString)/create-order")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let (data, httpResponse) = try await URLSession.shared.data(for: request)
+        if let httpRes = httpResponse as? HTTPURLResponse, !(200...299).contains(httpRes.statusCode) {
+            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: "Create order failed: \(errorStr)"])
+        }
+
+        struct OrderResponse: Decodable {
+            let orderId: String
+            let amount: Int
+            let currency: String
+            let keyId: String
+        }
+        let response = try JSONDecoder().decode(OrderResponse.self, from: data)
+        return EMIOrder(orderId: response.orderId, amount: response.amount, currency: response.currency, keyId: response.keyId)
+    }
+
+    func verifyEMIPayment(emiID: UUID, orderId: String, paymentId: String, signature: String) async throws -> EMI {
+        guard let session = try? await client.auth.session else {
+            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "You must be logged in to pay EMIs"])
+        }
+        let url = URL(string: "\(apiBase)/emis/\(emiID.uuidString)/verify-payment")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body = ["razorpayOrderId": orderId, "razorpayPaymentId": paymentId, "razorpaySignature": signature]
+        request.httpBody = try JSONEncoder().encode(body)
+
+        let (data, httpResponse) = try await URLSession.shared.data(for: request)
+        if let httpRes = httpResponse as? HTTPURLResponse, !(200...299).contains(httpRes.statusCode) {
+            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: "Verification failed: \(errorStr)"])
+        }
+
+        struct PayResponse: Decodable { let emi: DBEMI }
         let payResponse = try SupabaseManager.shared.decoder.decode(PayResponse.self, from: data)
         let dbEmi = payResponse.emi
         return EMI(

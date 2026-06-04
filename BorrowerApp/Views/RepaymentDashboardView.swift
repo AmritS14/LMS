@@ -46,12 +46,15 @@ struct RepaymentDashboardView: View {
         .refreshable { await loadData() }
         .task { await loadData() }
         .sheet(item: $emiToPay) { emi in
-            PayEMISheet(emi: emi, loan: viewModel.activeLoan) {
-                await viewModel.payEMI(emi)
-                return viewModel.paymentSuccess
+            if let env {
+                PayEMISheet(emi: emi, loan: viewModel.activeLoan, loanService: env.loans) {
+                    if let loan = viewModel.activeLoan {
+                        await viewModel.loadRepaymentData(loanService: env.loans, loan: loan)
+                    }
+                }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
             }
-            .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showForeclosureSheet) {
             if let activeLoan = viewModel.activeLoan, let env {

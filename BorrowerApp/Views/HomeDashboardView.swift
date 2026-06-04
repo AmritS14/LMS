@@ -133,20 +133,16 @@ struct HomeDashboardView: View {
         .padding(.top, Spacing.m)
     }
 
+    @ViewBuilder
     private func paySheet(emi: EMI) -> some View {
-        let loan = viewModel.activeLoans.first(where: { $0.id == selectedLoanID })
-        return PayEMISheet(emi: emi, loan: loan) {
-            await repaymentViewModel.payEMI(emi)
-            if repaymentViewModel.paymentSuccess {
-                // Refresh dashboard data after successful payment
+        if let env {
+            let loan = viewModel.activeLoans.first(where: { $0.id == selectedLoanID })
+            PayEMISheet(emi: emi, loan: loan, loanService: env.loans) {
                 await loadData()
-                emiToPay = nil
-                return true
             }
-            return false
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
     }
 
     // MARK: - Sections
@@ -671,17 +667,20 @@ struct EMIRow: View {
 struct PayEMISheet: View {
     let emi: EMI
     let loan: Loan?
-    let onConfirm: () async -> Bool
+    let loanService: any LoanService
+    let onSuccess: () async -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var isProcessing = false
-    @State private var didSucceed = false
+    @State private var phase: Phase = .ready
+    @State private var pendingOrder: EMIOrder?
     @State private var errorText: String?
+
+    private enum Phase { case ready, ordering, verifying, succeeded }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                if didSucceed {
+                if phase == .succeeded {
                     successContent
                 } else {
                     paymentContent
@@ -689,14 +688,11 @@ struct PayEMISheet: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.lmsBackground.ignoresSafeArea())
-            .navigationTitle(didSucceed ? "Payment Successful" : "Pay EMI")
+            .navigationTitle(phase == .succeeded ? "Payment Successful" : "Pay EMI")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-//                    Button(didSucceed ? "Done" : "Cancel") { dismiss() }
-                    Button(role: .close) {
-                        dismiss()
-                    }
+                    Button(role: .close) { dismiss() }
                 }
             }
         }
@@ -738,7 +734,7 @@ struct PayEMISheet: View {
             HStack(spacing: Spacing.s) {
                 Image(systemName: "lock.shield.fill")
                     .foregroundStyle(.secondary)
-                Text("Secure payment via UPI")
+                Text("Secured by Razorpay")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -747,9 +743,9 @@ struct PayEMISheet: View {
 
             PrimaryButton(
                 "Pay \(Formatting.currency(emi.totalAmount))",
-                isLoading: isProcessing
+                isLoading: phase == .ordering || phase == .verifying
             ) {
-                Task { await processPayment() }
+                Task { await startPayment() }
             }
             .padding(.horizontal, Spacing.m)
             .padding(.bottom, Spacing.m)
@@ -793,15 +789,38 @@ struct PayEMISheet: View {
         .padding(Spacing.m)
     }
 
-    private func processPayment() async {
-        isProcessing = true
+    private func startPayment() async {
+        phase = .ordering
         errorText = nil
-        let success = await onConfirm()
-        isProcessing = false
-        if success {
-            withAnimation(.easeInOut) { didSucceed = true }
-        } else {
-            errorText = "Payment failed. Please try again."
+        do {
+            let order = try await loanService.createEMIOrder(emiID: emi.id)
+            pendingOrder = order
+            RazorpayCheckoutManager.shared.startPayment(order: order) { paymentId, orderId, sig in
+                Task { await verify(paymentId: paymentId, orderId: orderId, signature: sig) }
+            } onError: { description in
+                errorText = description
+                phase = .ready
+            }
+        } catch {
+            errorText = error.localizedDescription
+            phase = .ready
+        }
+    }
+
+    private func verify(paymentId: String, orderId: String, signature: String) async {
+        phase = .verifying
+        do {
+            _ = try await loanService.verifyEMIPayment(
+                emiID: emi.id,
+                orderId: orderId,
+                paymentId: paymentId,
+                signature: signature
+            )
+            withAnimation(.easeInOut) { phase = .succeeded }
+            await onSuccess()
+        } catch {
+            errorText = error.localizedDescription
+            phase = .ready
         }
     }
 }
