@@ -93,13 +93,13 @@ struct ManagerProfileView: View {
             Section("Personal Details") {
                 LabeledContent("Manager ID", value: employeeID)
                 LabeledContent("Email", value: session.currentUser?.email ?? "—")
-                LabeledContent("Phone", value: session.currentUser?.phone ?? "—")
+                LabeledContent("Phone", value: session.currentUser?.phone ?? "1234567890")
                 
-                Button(role: .destructive) {
-                    showDeactivateAlert = true
-                } label: {
-                    Label("Deactivate Account", systemImage: "person.crop.circle.badge.xmark")
-                }
+//                Button(role: .destructive) {
+//                    showDeactivateAlert = true
+//                } label: {
+//                    Label("Deactivate Account", systemImage: "person.crop.circle.badge.xmark")
+//                }
             }
 
             // MARK: Logout
@@ -131,14 +131,14 @@ struct ManagerProfileView: View {
         } message: {
             Text("Are you sure you want to sign out? You will need to log in again to access the manager dashboard.")
         }
-        .alert("Deactivate Account", isPresented: $showDeactivateAlert) {
-            Button("Cancel", role: .cancel) { }
-            Button("Deactivate", role: .destructive) {
-                // Placeholder for actual deactivation logic
-            }
-        } message: {
-            Text("Are you sure you want to deactivate your manager account? This action cannot be undone.")
-        }
+//        .alert("Deactivate Account", isPresented: $showDeactivateAlert) {
+//            Button("Cancel", role: .cancel) { }
+//            Button("Deactivate", role: .destructive) {
+//                // Placeholder for actual deactivation logic
+//            }
+//        } message: {
+//            Text("Are you sure you want to deactivate your manager account? This action cannot be undone.")
+//        }
     }
 
     // MARK: Helpers
