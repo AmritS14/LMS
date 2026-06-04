@@ -75,6 +75,7 @@ struct HomeDashboardView: View {
         VStack(spacing: Spacing.ml) {
             if viewModel.isLoading {
                 ProgressView()
+                    .frame(maxWidth: .infinity)
                     .padding(.top, Spacing.xl)
             } else if let error = viewModel.errorMessage {
                 ContentUnavailableView(
@@ -93,6 +94,7 @@ struct HomeDashboardView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity)
     }
 
     private var loanSummaryCard: some View {

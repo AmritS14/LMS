@@ -11,6 +11,10 @@ actor SupabaseAuthService: AuthService {
     func signIn(email: String, password: String) async throws -> User {
         let session = try await client.auth.signIn(email: email, password: password)
         let user = try await mapSupabaseUserToLocalUser(session.user)
+        guard user.isActive else {
+            try? await client.auth.signOut()
+            throw NSError(domain: "AuthError", code: 403, userInfo: [NSLocalizedDescriptionKey: "Your account has been deactivated. Please contact support."])
+        }
         await SupabaseManager.shared.logAuditEvent(action: "User Login", entityType: "auth", entityID: user.id, metadata: [:])
         return user
     }
@@ -42,6 +46,10 @@ actor SupabaseAuthService: AuthService {
             type: .signup
         )
         let user = try await mapSupabaseUserToLocalUser(session.user)
+        guard user.isActive else {
+            try? await client.auth.signOut()
+            throw NSError(domain: "AuthError", code: 403, userInfo: [NSLocalizedDescriptionKey: "Your account has been deactivated. Please contact support."])
+        }
         await SupabaseManager.shared.logAuditEvent(action: "User Login", entityType: "auth", entityID: user.id, metadata: [:])
         return user
     }
@@ -71,7 +79,14 @@ actor SupabaseAuthService: AuthService {
     var currentUser: User? {
         get async {
             guard let session = try? await client.auth.session else { return nil }
-            return try? await mapSupabaseUserToLocalUser(session.user)
+            if let user = try? await mapSupabaseUserToLocalUser(session.user) {
+                if !user.isActive {
+                    try? await client.auth.signOut()
+                    return nil
+                }
+                return user
+            }
+            return nil
         }
     }
     

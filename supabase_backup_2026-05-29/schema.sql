@@ -468,3 +468,225 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
 after insert on auth.users
 for each row execute function public.handle_new_user();
+
+-- ----------------------------------------------------------------------------
+-- Audit Triggers and RPC integration
+-- ----------------------------------------------------------------------------
+
+-- RPC for client-side logging of non-table events
+create or replace function public.log_audit_event(
+    p_action text,
+    p_entity_type text,
+    p_entity_id uuid,
+    p_metadata jsonb default '{}'::jsonb
+)
+returns uuid
+language plpgsql
+security definer
+set search_path to 'public'
+as $$
+declare
+    v_actor_id uuid;
+    v_actor_role public.user_role;
+    v_audit_id uuid;
+begin
+    v_actor_id := auth.uid();
+    if v_actor_id is null then
+        raise exception 'No authenticated user session found';
+    end if;
+
+    select role into v_actor_role
+    from public.users
+    where id = v_actor_id;
+
+    insert into public.audit_entries (
+        actor_id,
+        action,
+        entity_type,
+        entity_id,
+        metadata,
+        actor_role
+    ) values (
+        v_actor_id,
+        p_action,
+        p_entity_type,
+        p_entity_id,
+        p_metadata,
+        v_actor_role
+    ) returning id into v_audit_id;
+
+    return v_audit_id;
+end;
+$$;
+
+grant execute on function public.log_audit_event(text, text, uuid, jsonb) to authenticated;
+
+-- General trigger function to log table-level changes
+create or replace function public.log_table_change_to_audit()
+returns trigger
+language plpgsql
+security definer
+set search_path to 'public'
+as $$
+declare
+    v_actor_id uuid;
+    v_actor_role public.user_role;
+    v_action text;
+    v_entity_type text;
+    v_entity_id uuid;
+    v_metadata jsonb := '{}'::jsonb;
+begin
+    v_actor_id := auth.uid();
+    if v_actor_id is null then
+        select id, role into v_actor_id, v_actor_role
+        from public.users
+        where role = 'admin'
+        limit 1;
+        
+        if v_actor_id is null then
+            return coalesce(NEW, OLD);
+        end if;
+    else
+        select role into v_actor_role
+        from public.users
+        where id = v_actor_id;
+    end if;
+
+    if TG_TABLE_NAME = 'loan_products' then
+        v_entity_type := 'loan_product';
+        if TG_OP = 'INSERT' then
+            v_entity_id := NEW.id;
+            v_action := 'Created Loan Product';
+            v_metadata := jsonb_build_object('name', NEW.name);
+        elsif TG_OP = 'UPDATE' then
+            v_entity_id := NEW.id;
+            v_action := 'Updated Loan Product';
+            v_metadata := jsonb_build_object('name', NEW.name);
+        elsif TG_OP = 'DELETE' then
+            v_entity_id := OLD.id;
+            v_action := 'Deleted Loan Product';
+            v_metadata := jsonb_build_object('name', OLD.name);
+        end if;
+
+    elsif TG_TABLE_NAME = 'loans' then
+        v_entity_type := 'loan';
+        if TG_OP = 'INSERT' then
+            v_entity_id := NEW.id;
+            v_action := 'Created Loan';
+            v_metadata := jsonb_build_object('status', NEW.status);
+        elsif TG_OP = 'UPDATE' then
+            v_entity_id := NEW.id;
+            if OLD.status is distinct from NEW.status then
+                if NEW.status = 'archived' then
+                    v_action := 'Archived Loan';
+                elsif NEW.status = 'active' and OLD.status = 'archived' then
+                    v_action := 'Restored Loan';
+                else
+                    v_action := 'Updated Loan Status';
+                end if;
+            else
+                v_action := 'Updated Loan';
+            end if;
+            v_metadata := jsonb_build_object('status', NEW.status);
+        elsif TG_OP = 'DELETE' then
+            v_entity_id := OLD.id;
+            v_action := 'Deleted Loan';
+            v_metadata := jsonb_build_object('status', OLD.status);
+        end if;
+
+    elsif TG_TABLE_NAME = 'users' then
+        v_entity_type := 'user';
+        if TG_OP = 'UPDATE' then
+            v_entity_id := NEW.id;
+            if OLD.role is distinct from NEW.role and OLD.is_active is distinct from NEW.is_active then
+                v_action := 'Updated User Role and Status';
+                v_metadata := jsonb_build_object('new_role', NEW.role, 'is_active', NEW.is_active);
+            elsif OLD.role is distinct from NEW.role then
+                v_action := 'Updated User Role to ' || NEW.role;
+                v_metadata := jsonb_build_object('new_role', NEW.role);
+            elsif OLD.is_active is distinct from NEW.is_active then
+                if NEW.is_active then
+                    v_action := 'Activated User';
+                else
+                    v_action := 'Deactivated User';
+                end if;
+                v_metadata := jsonb_build_object('is_active', NEW.is_active);
+            else
+                return NEW;
+            end if;
+        elsif TG_OP = 'DELETE' then
+            v_entity_id := OLD.id;
+            v_action := 'Deleted User';
+            v_metadata := jsonb_build_object('email', OLD.email);
+        else
+            return NEW;
+        end if;
+
+    elsif TG_TABLE_NAME = 'sanction_letters' then
+        v_entity_type := 'loan_application';
+        if TG_OP = 'INSERT' then
+            v_entity_id := NEW.loan_application_id;
+            v_action := 'Sanction Letter Generated';
+            v_metadata := jsonb_build_object('ref', NEW.pdf_path);
+        elsif TG_OP = 'UPDATE' then
+            v_entity_id := NEW.loan_application_id;
+            if OLD.status is distinct from NEW.status then
+                if NEW.status = 'sent' then
+                    v_action := 'Sanction Letter Sent';
+                elsif NEW.status = 'accepted' or (OLD.is_accepted = false and NEW.is_accepted = true) then
+                    v_action := 'Sanction Letter Accepted';
+                else
+                    v_action := 'Updated Sanction Letter';
+                end if;
+            else
+                v_action := 'Updated Sanction Letter';
+            end if;
+            v_metadata := jsonb_build_object('status', NEW.status);
+        elsif TG_OP = 'DELETE' then
+            v_entity_id := OLD.loan_application_id;
+            v_action := 'Deleted Sanction Letter';
+        end if;
+    end if;
+
+    if v_action is not null then
+        insert into public.audit_entries (
+            actor_id,
+            action,
+            entity_type,
+            entity_id,
+            metadata,
+            actor_role
+        ) values (
+            v_actor_id,
+            v_action,
+            v_entity_type,
+            v_entity_id,
+            v_metadata,
+            v_actor_role
+        );
+    end if;
+
+    return coalesce(NEW, OLD);
+end;
+$$;
+
+drop trigger if exists audit_loan_products_trigger on public.loan_products;
+create trigger audit_loan_products_trigger
+after insert or update or delete on public.loan_products
+for each row execute function public.log_table_change_to_audit();
+
+drop trigger if exists audit_loans_trigger on public.loans;
+create trigger audit_loans_trigger
+after insert or update or delete on public.loans
+for each row execute function public.log_table_change_to_audit();
+
+drop trigger if exists audit_users_trigger on public.users;
+create trigger audit_users_trigger
+after update or delete on public.users
+for each row execute function public.log_table_change_to_audit();
+
+drop trigger if exists audit_sanction_letters_trigger on public.sanction_letters;
+create trigger audit_sanction_letters_trigger
+after insert or update or delete on public.sanction_letters
+for each row execute function public.log_table_change_to_audit();
+

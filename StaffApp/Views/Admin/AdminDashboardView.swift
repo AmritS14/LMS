@@ -14,8 +14,8 @@ struct AdminDashboardView: View {
     @Bindable var userVM: UserManagementViewModel
     @Environment(\.appEnvironment) private var env
     @State private var showAddStaff = false
-
-
+    
+    
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: Spacing.l) {
@@ -38,7 +38,7 @@ struct AdminDashboardView: View {
                     .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
                     .padding(.horizontal, Spacing.m)
                 }
-
+                
                 subtitleRow
                 summaryCardsSection
                 auditActivitySection
@@ -56,37 +56,12 @@ struct AdminDashboardView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 20) {
-                    NavigationLink(destination: AdminNotificationsView(viewModel: viewModel)) {
-                        ZStack(alignment: .topTrailing) {
-                            Image(systemName: "bell.fill")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundStyle(.primary)
-                            
-                            if viewModel.unreadNotificationsCount > 0 {
-                                Circle()
-                                    .fill(Color.red)
-                                    .frame(width: 8, height: 8)
-                                    .offset(x: 4, y: -4)
-                            }
-                        }
-                    }
-                    .accessibilityLabel("Notifications")
-
-                    NavigationLink(destination: ProfileView()) {
-                        Image(systemName: "person.crop.circle")
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundStyle(.primary)
-                    }
-                    .accessibilityLabel("Profile")
+                NavigationLink(destination: ProfileView()) {
+                    Image(systemName: "person.crop.circle")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(.primary)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(
-                    Capsule()
-                        .fill(Color(.secondarySystemGroupedBackground))
-                        .shadow(color: .black.opacity(0.06), radius: 6, x: 0, y: 3)
-                )
+                .accessibilityLabel("Profile")
             }
         }
         .refreshable {
@@ -104,9 +79,9 @@ struct AdminDashboardView: View {
             AddStaffSheet(viewModel: userVM)
         }
     }
-
+    
     // MARK: - Subviews
-
+    
     private var subtitleRow: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
@@ -118,7 +93,7 @@ struct AdminDashboardView: View {
         }
         .padding(.horizontal, Spacing.m)
     }
-
+    
     private var summaryCardsSection: some View {
         VStack(spacing: Spacing.m) {
             HStack(spacing: Spacing.m) {
@@ -156,9 +131,9 @@ struct AdminDashboardView: View {
         }
         .padding(.horizontal, Spacing.m)
     }
-
+    
     private func summaryCard(icon: String, title: String, value: String,
-                              subtitle: String, accent: Color) -> some View {
+                             subtitle: String, accent: Color) -> some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             HStack {
                 Image(systemName: icon)
@@ -166,7 +141,7 @@ struct AdminDashboardView: View {
                     .foregroundStyle(accent)
                     .frame(width: 32, height: 32)
                     .background(accent.opacity(0.12),
-                                 in: RoundedRectangle(cornerRadius: CornerRadius.small))
+                                in: RoundedRectangle(cornerRadius: CornerRadius.small))
                 Spacer()
             }
             Text(value)
@@ -183,7 +158,7 @@ struct AdminDashboardView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
     }
-
+    
     private var auditActivitySection: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             HStack(alignment: .firstTextBaseline) {
@@ -198,7 +173,7 @@ struct AdminDashboardView: View {
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, Spacing.m)
-
+            
             VStack(spacing: 0) {
                 if viewModel.recentAuditLogs.isEmpty {
                     Text("No recent audit activity.")
@@ -225,7 +200,7 @@ struct AdminDashboardView: View {
                         .padding(.horizontal, Spacing.m)
                         .padding(.vertical, 12)
                         .contentShape(Rectangle())
-
+                        
                         if index < viewModel.recentAuditLogs.prefix(5).count - 1 {
                             Divider()
                                 .padding(.leading, Spacing.m)
@@ -239,87 +214,7 @@ struct AdminDashboardView: View {
     }
 }
 
-// MARK: - Admin Notifications View
 
-struct AdminNotificationsView: View {
-    var viewModel: DashboardViewModel
-
-    var body: some View {
-        List {
-            if viewModel.unreadNotificationsCount > 0 {
-                Section {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(viewModel.unreadNotificationsCount) unread").font(.headline)
-                            Text("Swipe to read or dismiss").font(.footnote).foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Button("Read all") { viewModel.markAllNotificationsRead() }
-                            .font(.subheadline.weight(.semibold))
-                            .buttonStyle(.plain)
-                            .foregroundStyle(Color.lmsAccent)
-                    }
-                }
-            }
-
-            Section("All Notifications") {
-                if viewModel.notifications.isEmpty {
-                    Text("No notifications.")
-                        .font(.adminSecondary)
-                        .foregroundStyle(.secondary)
-                        .padding(.vertical, Spacing.s)
-                } else {
-                    ForEach(viewModel.notifications) { notification in
-                        row(notification)
-                            .swipeActions(edge: .leading) {
-                                Button { viewModel.markNotificationRead(notification) } label: {
-                                    Label("Read", systemImage: "envelope.open")
-                                }
-                                .tint(.lmsInfo)
-                            }
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    viewModel.dismissNotification(notification)
-                                } label: {
-                                    Label("Dismiss", systemImage: "xmark.circle")
-                                }
-                            }
-                    }
-                }
-            }
-        }
-        .listStyle(.insetGrouped)
-        .navigationTitle("Notifications")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private func row(_ notification: AdminNotification) -> some View {
-        HStack(alignment: .top, spacing: Spacing.sm) {
-            Image(systemName: "bell.fill")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(notification.isRead ? .secondary : Color.lmsAccent)
-                .frame(width: 32, height: 32)
-                .background((notification.isRead ? Color.secondary : Color.lmsAccent).opacity(0.12),
-                            in: RoundedRectangle(cornerRadius: CornerRadius.small))
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(notification.title)
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(notification.isRead ? .secondary : .primary)
-                    Spacer()
-                    Text(notification.createdAt, format: .relative(presentation: .named))
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
-                Text(notification.message)
-                    .font(.subheadline)
-                    .foregroundStyle(notification.isRead ? .tertiary : .secondary)
-            }
-        }
-        .padding(.vertical, Spacing.xs)
-    }
-}
 
 #Preview {
     NavigationStack {

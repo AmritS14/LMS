@@ -29,7 +29,6 @@ struct LoanReviewView: View {
     @State private var selectedAction: ActionType? = nil
     @State private var officerRemarks: String = ""
     @State private var expandedDocumentIDs: Set<UUID> = []
-    @State private var showShareSheet = false
     @State private var showSendBackAlert = false
     @State private var escalationNotes: String = ""
     @State private var requestedDocumentName: String = ""

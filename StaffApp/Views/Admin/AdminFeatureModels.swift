@@ -107,6 +107,7 @@ struct AdminLoanProduct: Identifiable, Hashable, Codable, Sendable {
     var interestRate: Double
     var maxTenure: Int
     var tenureUnit: TenureUnit
+    var foreclosurePenaltyRate: Double = 2.0
     var isActive: Bool = true
 
     static let sampleProducts: [LoanCategory: [AdminLoanProduct]] = [
@@ -404,48 +405,6 @@ final class DashboardViewModel {
             print("Failed to fetch dashboard audit logs: \(error)")
         }
 
-        // Fetch notifications for current admin user
-        if let user = await environment.auth.currentUser {
-            do {
-                let notifResp = try await client
-                    .from("notifications")
-                    .select("id, title, message, is_read, created_at")
-                    .eq("user_id", value: user.id.uuidString)
-                    .order("created_at", ascending: false)
-                    .limit(30)
-                    .execute()
-                struct DBNotification: Decodable {
-                    let id: UUID
-                    let title: String
-                    let message: String?
-                    let is_read: Bool?
-                    let created_at: Date
-                }
-                let dbNotifs = try SupabaseManager.shared.decoder.decode([DBNotification].self, from: notifResp.data)
-                self.notifications = dbNotifs.map { n in
-                    AdminNotification(
-                        id: n.id,
-                        title: n.title,
-                        message: n.message ?? "",
-                        isRead: n.is_read ?? false,
-                        createdAt: n.created_at
-                    )
-                }
-            } catch {
-                print("Failed to fetch admin notifications: \(error)")
-                // fallback mock data for testing/offline consistency
-                self.notifications = [
-                    AdminNotification(title: "System Update Successful", message: "Database schema migration completed successfully.", isRead: false, createdAt: Date().addingTimeInterval(-3600)),
-                    AdminNotification(title: "New Manager Registered", message: "Manager account created for Branch Office 2.", isRead: true, createdAt: Date().addingTimeInterval(-7200))
-                ]
-            }
-        } else {
-            // fallback mock data for testing/offline consistency
-            self.notifications = [
-                AdminNotification(title: "System Update Successful", message: "Database schema migration completed successfully.", isRead: false, createdAt: Date().addingTimeInterval(-3600)),
-                AdminNotification(title: "New Manager Registered", message: "Manager account created for Branch Office 2.", isRead: true, createdAt: Date().addingTimeInterval(-7200))
-            ]
-        }
     }
 
     func subscribeToRealtimeChanges() {
@@ -479,43 +438,16 @@ final class DashboardViewModel {
         for index in notifications.indices {
             notifications[index].isRead = true
         }
-        guard let environment else { return }
-        Task {
-            if let user = await environment.auth.currentUser {
-                let client = SupabaseManager.shared.client
-                _ = try? await client
-                    .from("notifications")
-                    .update(["is_read": true])
-                    .eq("user_id", value: user.id.uuidString)
-                    .execute()
-            }
-        }
     }
     
     func markNotificationRead(_ notification: AdminNotification) {
         if let index = notifications.firstIndex(where: { $0.id == notification.id }) {
             notifications[index].isRead = true
         }
-        Task {
-            let client = SupabaseManager.shared.client
-            _ = try? await client
-                .from("notifications")
-                .update(["is_read": true])
-                .eq("id", value: notification.id.uuidString)
-                .execute()
-        }
     }
     
     func dismissNotification(_ notification: AdminNotification) {
         notifications.removeAll(where: { $0.id == notification.id })
-        Task {
-            let client = SupabaseManager.shared.client
-            _ = try? await client
-                .from("notifications")
-                .delete()
-                .eq("id", value: notification.id.uuidString)
-                .execute()
-        }
     }
 }
 
@@ -708,7 +640,9 @@ final class UserManagementViewModel {
     /// Replaces the seeded mock users with the real directory from the backend.
     func load() async {
         guard let environment else { return }
-        isLoading = true
+        if users.isEmpty {
+            isLoading = true
+        }
         loadError = nil
         do {
             async let usersReq = environment.admin.listUsers(ids: nil)
@@ -985,6 +919,7 @@ final class LoanConfigViewModel {
                 interestRate: p.displayRate,
                 maxTenure: p.maximumTenureMonths,
                 tenureUnit: .months,
+                foreclosurePenaltyRate: p.foreclosurePenaltyRate,
                 isActive: p.isActive
             )
             // Prefer description-stored category (set on create/update) over name heuristic
@@ -1015,6 +950,7 @@ final class LoanConfigViewModel {
             maximumTenureMonths: maxMonths,
             minimumInterestRate: product.interestRate,
             maximumInterestRate: product.interestRate,
+            foreclosurePenaltyRate: product.foreclosurePenaltyRate,
             isActive: true
         )
 
@@ -1029,7 +965,8 @@ final class LoanConfigViewModel {
             maxAmount: NSDecimalNumber(decimal: created.maximumAmount).doubleValue,
             interestRate: created.displayRate,
             maxTenure: created.maximumTenureMonths,
-            tenureUnit: .months
+            tenureUnit: .months,
+            foreclosurePenaltyRate: created.foreclosurePenaltyRate
         )
         productsByCategory[category, default: []].append(adminProduct)
         showSaveAlert = true
@@ -1100,6 +1037,7 @@ final class LoanConfigViewModel {
             maximumTenureMonths: maxMonths,
             minimumInterestRate: product.interestRate,
             maximumInterestRate: product.interestRate,
+            foreclosurePenaltyRate: product.foreclosurePenaltyRate,
             isActive: product.isActive
         )
         

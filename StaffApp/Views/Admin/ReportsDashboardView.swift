@@ -10,7 +10,6 @@ struct ReportsDashboardView: View {
 
     // Export Flow States
     @State private var isExporting = false
-    @State private var showExportShareSheet = false
     @State private var exportURL: URL? = nil
 
     // Expanded Detailed Rows
@@ -79,6 +78,7 @@ struct ReportsDashboardView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("Reports")
         .navigationBarTitleDisplayMode(.inline)
+        .refreshable { await viewModel.loadReportData() }
         .task {
             await viewModel.loadReportData()
         }
@@ -99,34 +99,12 @@ struct ReportsDashboardView: View {
         .toolbar {
             reportsToolbar
         }
-        .sheet(isPresented: $showExportShareSheet) {
-            if let url = exportURL {
-                ShareSheet(activityItems: [url])
-            }
-        }
     }
 
     // MARK: - Toolbar
     @ToolbarContentBuilder
     private var reportsToolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
-            Menu {
-                Button {
-                    startExport(format: "PDF")
-                } label: {
-                    Label("Export as PDF", systemImage: "doc.richtext")
-                }
-
-                Button {
-                    startExport(format: "Excel")
-                } label: {
-                    Label("Export as Excel", systemImage: "tablecells")
-                }
-            } label: {
-                Image(systemName: "square.and.arrow.up")
-            }
-            .disabled(viewModel.isLoading || viewModel.isAccessRestricted || viewModel.hasError || filteredData.isEmpty)
-
             Menu {
                 Section("Date Range") {
                     ForEach(DateRangeOption.allCases) { opt in
@@ -237,31 +215,6 @@ struct ReportsDashboardView: View {
             selectedType = nil
             selectedStatus = nil
             selectedDateRange = .all
-        }
-    }
-
-    private func startExport(format: String) {
-        isExporting = true
-        
-        let filterDesc = "Type: \(selectedType ?? "All"), Status: \(selectedStatus ?? "All"), Date: \(selectedDateRange.rawValue)"
-        
-        Task {
-            let url: URL?
-            if format == "PDF" {
-                url = await viewModel.generatePDF(from: filteredData, filters: filterDesc)
-            } else {
-                url = await viewModel.generateCSV(from: filteredData, filters: filterDesc)
-            }
-            
-            await MainActor.run {
-                self.exportURL = url
-                self.isExporting = false
-                if url != nil {
-                    self.showExportShareSheet = true
-                } else {
-                    self.viewModel.hasError = true
-                }
-            }
         }
     }
     

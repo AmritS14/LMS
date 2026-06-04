@@ -26,6 +26,7 @@ struct ManagerDashboardView: View {
             }
             .padding(.vertical, Spacing.m)
         }
+        .refreshable { await store.refreshAll() }
         .background(Color.lmsBackground)
         .navigationTitle("Dashboard")
         .toolbarTitleDisplayMode(.large)

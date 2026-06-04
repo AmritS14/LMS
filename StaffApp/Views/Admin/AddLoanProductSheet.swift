@@ -16,6 +16,7 @@ struct AddLoanProductSheet: View {
     @State private var minAmount: Double = 50_000
     @State private var maxAmount: Double = 10_00_000
     @State private var interestRate: Double = 10.0
+    @State private var foreclosurePenaltyRate: Double = 2.0
     @State private var maxTenure: Int = 12
     @State private var tenureUnit: TenureUnit = .months
     @State private var errorMessage: String? = nil
@@ -94,6 +95,23 @@ struct AddLoanProductSheet: View {
                         .padding(.leading, 8)
                 }
 
+                // Section 4b: Foreclosure Settings
+                Section {
+                    HStack {
+                        Text("Foreclosure Penalty Rate")
+                        Spacer()
+                        Text("\(foreclosurePenaltyRate, specifier: "%.2f")%")
+                            .foregroundStyle(.secondary)
+                    }
+                    Slider(value: $foreclosurePenaltyRate, in: 0...10, step: 0.25)
+                } header: {
+                    Text("Foreclosure Settings")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
+                }
+
                 // Section 5: Tenure Constraints
                 Section {
                     Stepper(value: $maxTenure, in: 1...1000, step: 1) {
@@ -158,7 +176,8 @@ struct AddLoanProductSheet: View {
             maxAmount: maxAmount,
             interestRate: interestRate,
             maxTenure: maxTenure,
-            tenureUnit: tenureUnit
+            tenureUnit: tenureUnit,
+            foreclosurePenaltyRate: foreclosurePenaltyRate
         )
 
         isSaving = true

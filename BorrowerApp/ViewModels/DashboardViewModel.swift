@@ -22,7 +22,9 @@ final class DashboardViewModel {
         sanctionLetterService: any SanctionLetterService,
         borrowerID: UUID
     ) async {
-        isLoading = true
+        if activeLoans.isEmpty && applications.isEmpty {
+            isLoading = true
+        }
         errorMessage = nil
         do {
             async let loansReq = loanService.fetchActiveLoans(borrowerID: borrowerID)
@@ -32,14 +34,24 @@ final class DashboardViewModel {
             self.activeLoans = fetchedLoans.filter { $0.status == .active }
             
             var fetchedApps = try await appsReq
-            for i in 0..<fetchedApps.count {
-                let app = fetchedApps[i]
-                if app.status == .approved || app.status == .disbursed || app.status == .recommended {
-                    if let letter = try? await sanctionLetterService.fetchSanctionLetter(for: app.id) {
+            
+            await withTaskGroup(of: (Int, SanctionLetter?).self) { group in
+                for i in 0..<fetchedApps.count {
+                    let app = fetchedApps[i]
+                    if app.status == .approved || app.status == .disbursed || app.status == .recommended {
+                        group.addTask {
+                            let letter = try? await sanctionLetterService.fetchSanctionLetter(for: app.id)
+                            return (i, letter)
+                        }
+                    }
+                }
+                for await (i, letter) in group {
+                    if let letter = letter {
                         fetchedApps[i].sanctionLetter = letter
                     }
                 }
             }
+            
             self.applications = fetchedApps
             
             await loadRequestNotes(loanService: loanService)
@@ -58,17 +70,24 @@ final class DashboardViewModel {
             requestNotes = [:]
             return
         }
+        
         var notes: [UUID: String] = [:]
-        for app in pending {
-            guard let events = try? await loanService.fetchApplicationEvents(applicationID: app.id) else { continue }
-            // The most recent document_requested event carrying a remark is the
-            // officer's message to the borrower.
-            if let note = events
-                .filter({ $0.eventType == "document_requested" && !($0.remark ?? "").isEmpty })
-                .sorted(by: { $0.createdAt > $1.createdAt })
-                .first?
-                .remark {
-                notes[app.id] = note
+        await withTaskGroup(of: (UUID, String?).self) { group in
+            for app in pending {
+                group.addTask {
+                    guard let events = try? await loanService.fetchApplicationEvents(applicationID: app.id) else { return (app.id, nil) }
+                    let note = events
+                        .filter({ $0.eventType == "document_requested" && !($0.remark ?? "").isEmpty })
+                        .sorted(by: { $0.createdAt > $1.createdAt })
+                        .first?
+                        .remark
+                    return (app.id, note)
+                }
+            }
+            for await (id, note) in group {
+                if let note = note {
+                    notes[id] = note
+                }
             }
         }
         requestNotes = notes
@@ -81,17 +100,26 @@ final class DashboardViewModel {
         let eligible = applications.filter {
             $0.status == .approved || $0.status == .recommended || $0.status == .disbursed
         }
+        
         var paths: [UUID: String] = [:]
-        for app in eligible {
-            guard let events = try? await loanService.fetchApplicationEvents(applicationID: app.id) else { continue }
-            // Look for the special sanction-letter-issued marker
-            let slEvent = events
-                .filter({ $0.remark == "[SANCTION_LETTER_ISSUED]" })
-                .sorted(by: { $0.createdAt > $1.createdAt })
-                .first
-            if slEvent != nil {
-                // The PDF path follows the naming convention used in SupabaseSanctionLetterService
-                paths[app.id] = "sanction_letters/\(app.id.uuidString).pdf"
+        await withTaskGroup(of: (UUID, String?).self) { group in
+            for app in eligible {
+                group.addTask {
+                    guard let events = try? await loanService.fetchApplicationEvents(applicationID: app.id) else { return (app.id, nil) }
+                    let slEvent = events
+                        .filter({ $0.remark == "[SANCTION_LETTER_ISSUED]" })
+                        .sorted(by: { $0.createdAt > $1.createdAt })
+                        .first
+                    if slEvent != nil {
+                        return (app.id, "sanction_letters/\(app.id.uuidString).pdf")
+                    }
+                    return (app.id, nil)
+                }
+            }
+            for await (id, path) in group {
+                if let path = path {
+                    paths[id] = path
+                }
             }
         }
         sanctionLetterPDFPaths = paths

@@ -4,7 +4,7 @@ import Supabase
 /// Supabase implementation of LoanService
 actor SupabaseLoanService: LoanService {
     private let client: SupabaseClient
-    private let apiBase = "https://amrits14-lms-test.hf.space"
+    private let apiBase = "https://arshitsinghal-lms-backend-new.hf.space"
 
     init(client: SupabaseClient) {
         self.client = client
@@ -22,6 +22,7 @@ actor SupabaseLoanService: LoanService {
         let maximum_tenure_months: Int
         let minimum_interest_rate: Double
         let maximum_interest_rate: Double
+        let foreclosure_penalty_rate: Double
         let is_active: Bool
     }
     
@@ -103,6 +104,7 @@ actor SupabaseLoanService: LoanService {
         switch raw.lowercased() {
         case "settled", "closed": return .settled
         case "defaulted": return .defaulted
+        case "foreclosed": return .foreclosed
         default: return .active
         }
     }
@@ -126,6 +128,7 @@ actor SupabaseLoanService: LoanService {
             maximumTenureMonths: db.maximum_tenure_months,
             minimumInterestRate: db.minimum_interest_rate,
             maximumInterestRate: db.maximum_interest_rate,
+            foreclosurePenaltyRate: db.foreclosure_penalty_rate,
             isActive: db.is_active
         )
     }
@@ -205,6 +208,7 @@ actor SupabaseLoanService: LoanService {
             "maximum_tenure_months": .integer(product.maximumTenureMonths),
             "minimum_interest_rate": .double(product.minimumInterestRate),
             "maximum_interest_rate": .double(product.maximumInterestRate),
+            "foreclosure_penalty_rate": .double(product.foreclosurePenaltyRate),
             "is_active": .bool(product.isActive)
         ]
 
@@ -219,8 +223,6 @@ actor SupabaseLoanService: LoanService {
         let created = toDomainProduct(dbProduct)
         // Refresh the product→type cache so new products map correctly.
         productCache[created.id] = created.loanType
-        
-        await SupabaseManager.shared.logAuditEvent(action: "Created Loan Product", entityType: "loan_product", entityID: created.id, metadata: ["name": .string(created.name)])
         return created
     }
     
@@ -234,6 +236,7 @@ actor SupabaseLoanService: LoanService {
             "maximum_tenure_months": .integer(product.maximumTenureMonths),
             "minimum_interest_rate": .double(product.minimumInterestRate),
             "maximum_interest_rate": .double(product.maximumInterestRate),
+            "foreclosure_penalty_rate": .double(product.foreclosurePenaltyRate),
             "is_active": .bool(product.isActive)
         ]
 
@@ -248,8 +251,6 @@ actor SupabaseLoanService: LoanService {
         let dbProduct = try SupabaseManager.shared.decoder.decode(DBLoanProduct.self, from: response.data)
         let updated = toDomainProduct(dbProduct)
         productCache[updated.id] = updated.loanType
-        
-        await SupabaseManager.shared.logAuditEvent(action: "Updated Loan Product", entityType: "loan_product", entityID: updated.id, metadata: ["name": .string(updated.name)])
         return updated
     }
     
@@ -261,7 +262,6 @@ actor SupabaseLoanService: LoanService {
             .execute()
             
         productCache.removeValue(forKey: id)
-        await SupabaseManager.shared.logAuditEvent(action: "Deleted Loan Product", entityType: "loan_product", entityID: id, metadata: [:])
     }
 
     func createApplication(productID: UUID, requestedAmount: Decimal, tenureMonths: Int) async throws -> LoanApplication {
@@ -386,7 +386,9 @@ actor SupabaseLoanService: LoanService {
             let outstanding = dbLoan.outstanding_balance
             let isAllPaid = !emis.isEmpty && emis.allSatisfy { $0.status == .paid }
             let loanStatus: LoanStatus
-            if outstanding <= 0 || isAllPaid {
+            if dbLoan.status == "foreclosed" {
+                loanStatus = .foreclosed
+            } else if outstanding <= 0 || isAllPaid {
                 loanStatus = .settled
             } else {
                 loanStatus = mapLoanStatus(dbLoan.status)
@@ -700,76 +702,61 @@ actor SupabaseLoanService: LoanService {
     // MARK: - Foreclosure Calculations & Database Updates
 
     func calculateForeclosure(loanID: UUID) async throws -> ForeclosureDetails {
-        let response = try await client
-            .from("loans")
-            .select()
-            .eq("id", value: loanID)
-            .single()
-            .execute()
-            
-        let dbLoan = try SupabaseManager.shared.decoder.decode(DBLoan.self, from: response.data)
-        
-        let outstanding = dbLoan.outstanding_balance
-        let penaltyRate = 0.02 // 2% early closure fee
-        let penaltyAmount = outstanding * Decimal(penaltyRate)
-        let gstAmount = penaltyAmount * Decimal(0.18) // 18% GST on penalty
-        let totalPayoffAmount = outstanding + penaltyAmount + gstAmount
-        
-        return ForeclosureDetails(
-            outstandingBalance: outstanding,
-            penaltyRate: penaltyRate,
-            penaltyAmount: penaltyAmount,
-            gstAmount: gstAmount,
-            totalPayoffAmount: totalPayoffAmount
-        )
+        guard let session = try? await client.auth.session else {
+            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "You must be logged in to view foreclosure details"])
+        }
+
+        let url = URL(string: "\(apiBase)/loans/\(loanID.uuidString)/foreclosure-details")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let (data, httpResponse) = try await URLSession.shared.data(for: request)
+
+        if let httpRes = httpResponse as? HTTPURLResponse, !(200...299).contains(httpRes.statusCode) {
+            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: "Foreclosure calculation failed: \(errorStr)"])
+        }
+
+        return try SupabaseManager.shared.decoder.decode(ForeclosureDetails.self, from: data)
     }
 
     func forecloseLoan(loanID: UUID, totalPayoff: Decimal) async throws -> Loan {
-        // Update loan status to 'closed' in Supabase to satisfy DB constraints
-        let updateData: [String: AnyJSON] = [
-            "status": .string("closed"),
-            "outstanding_balance": .double(0.0)
-        ]
-        
-        _ = try await client
-            .from("loans")
-            .update(updateData)
-            .eq("id", value: loanID)
-            .execute()
-            
-        // Mark all unpaid/overdue EMIs as paid/closed
-        let emiUpdate: [String: AnyJSON] = [
-            "status": .string("paid"),
-            "paid_at": .string(ISO8601DateFormatter().string(from: Date()))
-        ]
-        
-        _ = try await client
-            .from("emis")
-            .update(emiUpdate)
-            .eq("loan_id", value: loanID)
-            .neq("status", value: "paid")
-            .execute()
-            
-        // Record foreclosure in audit entries if authenticated
-        if let user = try? await client.auth.session.user {
-            let auditData: [String: AnyJSON] = [
-                "actor_id": .string(user.id.uuidString),
-                "action": .string("Foreclosed Loan"),
-                "entity_type": .string("Loan"),
-                "entity_id": .string(loanID.uuidString),
-                "metadata": .object(["payoff_amount": .string("\(totalPayoff)")])
-            ]
-            _ = try? await client.from("audit_entries").insert(auditData).execute()
+        guard let session = try? await client.auth.session else {
+            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "You must be logged in to foreclose loans"])
         }
-        
-        // Return refreshed Loan domain object
-        let loans = try await fetchActiveLoans(borrowerID: client.auth.session.user.id)
-        if var closedLoan = loans.first(where: { $0.id == loanID }) {
-            closedLoan.status = .foreclosed // Set domain status explicitly to foreclosed
-            return closedLoan
+
+        let url = URL(string: "\(apiBase)/loans/\(loanID.uuidString)/foreclose")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let (data, httpResponse) = try await URLSession.shared.data(for: request)
+
+        if let httpRes = httpResponse as? HTTPURLResponse, !(200...299).contains(httpRes.statusCode) {
+            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: "Foreclosure failed: \(errorStr)"])
         }
+
+        let dbLoan = try SupabaseManager.shared.decoder.decode(DBLoan.self, from: data)
+        let emis = try await fetchEMISchedule(loanID: dbLoan.id)
+        let loanType = await loanTypeForApplication(dbLoan.application_id)
         
-        throw NSError(domain: "Loan", code: 500, userInfo: [NSLocalizedDescriptionKey: "Failed to reload foreclosed loan"])
+        return Loan(
+            id: dbLoan.id,
+            applicationID: dbLoan.application_id,
+            borrowerID: dbLoan.borrower_id,
+            loanType: loanType,
+            principal: dbLoan.principal,
+            interestRate: dbLoan.interest_rate,
+            tenureMonths: dbLoan.tenure_months,
+            disbursementDate: dbLoan.disbursement_date,
+            outstandingBalance: dbLoan.outstanding_balance,
+            emiSchedule: emis,
+            status: .foreclosed
+        )
     }
 
     // MARK: - Sanction Letter Issued Event

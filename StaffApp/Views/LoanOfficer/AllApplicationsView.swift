@@ -54,6 +54,7 @@ struct AllApplicationsView: View {
             .padding(.top, 8)
         }
         .background(Color(.systemGroupedBackground))
+        .refreshable { await viewModel.refreshAll() }
         .navigationTitle("Applications")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
