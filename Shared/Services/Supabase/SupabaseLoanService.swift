@@ -4,7 +4,7 @@ import Supabase
 /// Supabase implementation of LoanService
 actor SupabaseLoanService: LoanService {
     private let client: SupabaseClient
-    private let apiBase = "https://amrits14-lms-test.hf.space"
+    private let apiBase = "https://arshitsinghal-lms-backend-new.hf.space"
 
     init(client: SupabaseClient) {
         self.client = client
