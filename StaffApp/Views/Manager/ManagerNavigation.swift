@@ -30,8 +30,7 @@ struct ManagerNavigationStack<Root: View>: View {
             OfficerPerformanceView()
         case .officerDetail(let name):
             OfficerDetailView(officerName: name)
-        case .auditLogs:
-            AuditLogsView()
+
         case .loanPolicies:
             LoanPoliciesView()
         case .riskAlerts:

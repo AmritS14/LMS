@@ -44,7 +44,7 @@ final class ArchiveViewModel {
     }
 
     func load() async {
-        guard let env = environment else {
+        guard environment != nil else {
             // Previews
             self.loans = []
             return
@@ -134,7 +134,6 @@ final class ArchiveViewModel {
 // MARK: - Archive List View
 struct ArchiveListView: View {
     @State private var viewModel = ArchiveViewModel()
-    @Environment(\.appEnvironment) private var env
     
     @State private var exportURL: URL?
     @State private var showExportSheet = false

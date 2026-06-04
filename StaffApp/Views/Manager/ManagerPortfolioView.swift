@@ -227,7 +227,6 @@ struct ManagerPortfolioView: View {
         }
         .padding(.horizontal, Spacing.m)
     }
-
     // MARK: NPA Monitoring
 
     private var npaSection: some View {
@@ -266,7 +265,6 @@ struct ManagerPortfolioView: View {
         }
         .padding(.horizontal, Spacing.m)
     }
-
 
 
     // MARK: Greeting

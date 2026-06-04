@@ -404,7 +404,7 @@ final class DashboardViewModel {
                 table: "loan_applications"
             )
             do {
-                await channel.subscribe()
+                try await channel.subscribeWithError()
                 for await _ in changes {
                     try? await self.refreshDashboard()
                 }
@@ -563,10 +563,10 @@ final class AdminApplicationDetailViewModel {
                 AnyAction.self,
                 schema: "public",
                 table: "loan_applications",
-                filter: "id=eq.\(applicationID.uuidString)"
+                filter: .eq("id", value: applicationID.uuidString)
             )
             do {
-                await channel.subscribe()
+                try await channel.subscribeWithError()
                 for await _ in changes {
                     await self.loadDetails()
                 }

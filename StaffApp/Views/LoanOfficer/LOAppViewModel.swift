@@ -184,7 +184,6 @@ private extension Array {
                         if let loan = loans.first(where: { $0.applicationID == sourceID }) {
                             let overdueEMIs = loan.emiSchedule.filter { $0.status == .overdue }
                             if !overdueEMIs.isEmpty {
-                                let totalOverdue = overdueEMIs.reduce(0) { $0 + NSDecimalNumber(decimal: $1.totalAmount).doubleValue }
                                 let oldestOverdue = overdueEMIs.map { $0.dueDate }.min() ?? Date()
                                 let dpd = max(0, Calendar.current.dateComponents([.day], from: oldestOverdue, to: Date()).day ?? 0)
                                 
