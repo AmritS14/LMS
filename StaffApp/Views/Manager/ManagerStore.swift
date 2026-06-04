@@ -19,6 +19,14 @@ final class ManagerStore {
     var applications: [ManagerApplication] = []
     var recentActions: [ManagerRecentAction] = []
     var notifications: [OfficerNotification] = []
+    var notificationsEnabled: Bool = true {
+        didSet {
+            UserDefaults.standard.set(notificationsEnabled, forKey: "manager_notifications_enabled_key")
+            Task {
+                await loadNotifications()
+            }
+        }
+    }
 
     var approvedToday: Int = 0
     var rejectedToday: Int = 0
@@ -94,6 +102,8 @@ final class ManagerStore {
         self.environment = environment
         self.currentUserID = session.currentUser?.id
         self.currentUserName = session.currentUser?.fullName ?? "Manager"
+        
+        self.notificationsEnabled = UserDefaults.standard.object(forKey: "manager_notifications_enabled_key") as? Bool ?? true
 
         // Set the name immediately; employee ID and branch are fetched in refreshAll()
         managerProfile = OfficerProfileSummary(
@@ -140,6 +150,7 @@ final class ManagerStore {
         struct NestedApp: Decodable {
             struct NestedUser: Decodable { let full_name: String? }
             let id: UUID
+            let status: String?
             let requested_amount: Decimal?
             let borrower_id: UUID?
             let borrower: NestedUser?
@@ -449,27 +460,45 @@ final class ManagerStore {
     // MARK: Private — Load: Notifications
 
     private func loadNotifications() async {
-        guard let userID = currentUserID else { return }
+        guard notificationsEnabled else {
+            await MainActor.run {
+                self.notifications = []
+            }
+            return
+        }
+        
         do {
             let resp = try await supabase
-                .from("notifications")
-                .select("id, title, message, type, is_read, created_at")
-                .eq("user_id", value: userID.uuidString)
+                .from("loan_application_events")
+                .select("id, application_id, actor_id, event_type, remark, created_at, loan_applications(id, status, requested_amount, borrower_id, borrower:users!loan_applications_borrower_id_fkey(full_name))")
+                .eq("event_type", value: "sent_to_manager")
                 .order("created_at", ascending: false)
                 .limit(30)
                 .execute()
-            let dbNotifs = try decoder.decode([DBNotification].self, from: resp.data)
-            notifications = dbNotifs.map { n in
-                OfficerNotification(
-                    title: n.title,
-                    message: n.message ?? "",
-                    timestamp: n.created_at,
-                    type: notificationType(from: n.type),
-                    priority: (n.type == "fraud_alert" || n.type == "pending_approval") ? 1 : 2,
-                    isRead: n.is_read ?? false
-                )
+                
+            let events = try decoder.decode([DBEventWithApp].self, from: resp.data)
+            
+            await MainActor.run {
+                self.notifications = events.map { event in
+                    let isEscalated = event.loan_applications?.status == "escalated"
+                    let title = isEscalated ? "Application Escalated" : "Recommendation Pending"
+                    let borrowerName = event.loan_applications?.borrower?.full_name ?? "Applicant"
+                    let msg = event.remark ?? (isEscalated ? "Escalated for manager review." : "Recommended for manager approval.")
+                    let type: NotificationType = isEscalated ? .escalation : .pendingApproval
+                    
+                    return OfficerNotification(
+                        title: "\(title) (\(borrowerName))",
+                        message: msg,
+                        timestamp: event.created_at,
+                        type: type,
+                        priority: isEscalated ? 1 : 2,
+                        isRead: false
+                    )
+                }
             }
-        } catch { /* notifications table may not exist yet */ }
+        } catch {
+            print("[ManagerStore] Failed to load notifications: \(error)")
+        }
     }
 
     private func notificationType(from raw: String?) -> NotificationType {
@@ -961,6 +990,39 @@ final class ManagerStore {
                 ManagerAuditLogEntry(
                     loanReferenceCode: existing.referenceCode, action: action.verb,
                     managerName: self.currentUserName, timestamp: .now, status: .completed
+                ),
+                at: 0
+            )
+        }
+    }
+
+    func updateDocumentReview(
+        documentID: UUID,
+        status: DocumentVerificationStatus,
+        reviewNotes: String?,
+        rejectionReason: String?
+    ) async throws {
+        guard let environment else { return }
+        
+        let remark = status == .verified ? reviewNotes : (status == .rejected ? rejectionReason : nil)
+        
+        switch status {
+        case .verified:
+            try await environment.documents.verifyDocument(documentID: documentID, remark: remark)
+        case .rejected:
+            try await environment.documents.rejectDocument(documentID: documentID, reason: remark ?? "Rejected by manager")
+        case .pending:
+            try await environment.documents.updateStatus(documentID: documentID, status: .pending)
+        }
+        
+        await MainActor.run {
+            self.auditLogs.insert(
+                ManagerAuditLogEntry(
+                    loanReferenceCode: "DOC-REV",
+                    action: "Doc \(status.rawValue.uppercased())",
+                    managerName: self.currentUserName,
+                    timestamp: .now,
+                    status: .completed
                 ),
                 at: 0
             )

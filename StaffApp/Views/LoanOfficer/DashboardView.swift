@@ -127,9 +127,9 @@ struct KPICardView: View {
             
             // Icon Badge
             ZStack {
-                Circle()
-                    .fill(kpi.color.opacity(0.1))
-                    .frame(width: 36, height: 36)
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(kpi.color.opacity(0.12))
+                    .frame(width: 32, height: 32)
                 Image(systemName: kpi.icon)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(kpi.color)

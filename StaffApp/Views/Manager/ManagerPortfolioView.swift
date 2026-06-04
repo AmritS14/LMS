@@ -9,31 +9,49 @@ struct ManagerPortfolioView: View {
             VStack(spacing: Spacing.l) {
                 greetingSection
                 summaryCardsSection
-                portfolioHealthSection
                 loanCategoriesSection
                 officerPerformanceSection
                 collectionSection
                 npaSection
             }
-            .padding(.vertical, Spacing.m)
+            .padding(.bottom, Spacing.m)
         }
         .background(Color.lmsBackground)
         .navigationTitle("Dashboard")
         .toolbarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: Spacing.m) {
+                HStack(spacing: 20) {
                     NavigationLink(value: ManagerRoute.notifications) {
-                        Image(systemName: "bell.fill").font(.title3)
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: "bell.fill")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundStyle(.primary)
+                            
+                            if store.unreadNotificationCount > 0 {
+                                Circle()
+                                    .fill(Color.red)
+                                    .frame(width: 8, height: 8)
+                                    .offset(x: 4, y: -4)
+                            }
+                        }
                     }
-                    .badge(store.unreadNotificationCount)
                     .accessibilityLabel("Notifications")
 
                     NavigationLink(value: ManagerRoute.profile) {
-                        Image(systemName: "person.crop.circle").font(.title3)
+                        Image(systemName: "person.crop.circle")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(.primary)
                     }
                     .accessibilityLabel("Profile")
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule()
+                        .fill(Color(.secondarySystemGroupedBackground))
+                        .shadow(color: .black.opacity(0.06), radius: 6, x: 0, y: 3)
+                )
             }
         }
         .refreshable { await store.refreshAll() }
@@ -106,47 +124,6 @@ struct ManagerPortfolioView: View {
         .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
     }
 
-    // MARK: Portfolio Health
-
-    private var portfolioHealthSection: some View {
-        SectionCard(title: "Portfolio Health") {
-            let npa = store.portfolioSummary.npaRatio
-            let atRisk = store.atRiskPercent
-            let healthy = max(0, 1.0 - npa - atRisk)
-
-            VStack(alignment: .leading, spacing: Spacing.s) {
-                GeometryReader { geo in
-                    HStack(spacing: 2) {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.lmsSuccess)
-                            .frame(width: geo.size.width * healthy)
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.lmsWarning)
-                            .frame(width: geo.size.width * atRisk)
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.lmsDanger)
-                            .frame(width: geo.size.width * npa)
-                    }
-                }
-                .frame(height: 12)
-
-                HStack(spacing: Spacing.l) {
-                    healthLegend(color: .lmsSuccess, label: "Healthy", value: Formatting.percent(healthy, fractionDigits: 0))
-                    healthLegend(color: .lmsWarning, label: "At Risk", value: Formatting.percent(atRisk, fractionDigits: 0))
-                    healthLegend(color: .lmsDanger, label: "NPA", value: Formatting.percent(npa, fractionDigits: 1))
-                }
-            }
-        }
-        .padding(.horizontal, Spacing.m)
-    }
-
-    private func healthLegend(color: Color, label: String, value: String) -> some View {
-        HStack(spacing: Spacing.xs) {
-            Circle().fill(color).frame(width: 8, height: 8)
-            Text(label).font(.caption).foregroundStyle(.secondary)
-            Text(value).font(.caption.weight(.semibold)).foregroundStyle(.primary)
-        }
-    }
 
     // MARK: Loan Categories
 

@@ -43,7 +43,7 @@ struct ProfileView: View {
             Button(role: .destructive) { showSignOutConfirmation = true } label: {
                 HStack {
                     Spacer()
-                    Text("Sign out")
+                    Text("Sign Out")
                     Spacer()
                 }
             }

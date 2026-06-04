@@ -88,6 +88,8 @@
 		AA00KYC000000002FF02 /* SupabaseAadhaarKYCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00KYC000000002FF01 /* SupabaseAadhaarKYCService.swift */; };
 		AA00KYC000000002FF03 /* SupabaseAadhaarKYCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00KYC000000002FF01 /* SupabaseAadhaarKYCService.swift */; };
 		AA00KYC000000003FF02 /* AadhaarKYCView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00KYC000000003FF01 /* AadhaarKYCView.swift */; };
+		AA00UMS000000001FF02 /* UnreadMessageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00UMS000000001FF01 /* UnreadMessageStore.swift */; };
+		AA00UMS000000001FF03 /* UnreadMessageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00UMS000000001FF01 /* UnreadMessageStore.swift */; };
 		AAFC609E76A4CEC4B45C1C19 /* ProductComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ECA8C941966C60EAD82892 /* ProductComparisonView.swift */; };
 		AEC46A6B6FC8863AC7B09AEE /* LoanApplicationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67CE1BB7A83A622F16249215 /* LoanApplicationViewModel.swift */; };
 		AF6096782C4A1998ACE43AED /* ApplicationTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378FE18EBDE8ED6EAC15B43F /* ApplicationTrackingView.swift */; };
@@ -98,8 +100,6 @@
 		BDA45FEA7B090FD0D0C4187B /* SanctionLetterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DA929AF844ADA35BA5AD73B /* SanctionLetterView.swift */; };
 		BE28FEE792EA8A0F91A8089C /* Endpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16751F7EF73D594F9FAEA39E /* Endpoints.swift */; };
 		C7EC73AA5008E5C5A111E157 /* MessagingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D006F72DB84815CA65BE6A7 /* MessagingService.swift */; };
-		AA00UMS000000001FF02 /* UnreadMessageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00UMS000000001FF01 /* UnreadMessageStore.swift */; };
-		AA00UMS000000001FF03 /* UnreadMessageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00UMS000000001FF01 /* UnreadMessageStore.swift */; };
 		C91CFCBE3339A03C9B9CA822 /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E9312F55475E7E88D99F512 /* Formatting.swift */; };
 		D0F0B59BB72652B77FC50780 /* SectionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B906761D8C52A50034E4A58 /* SectionCard.swift */; };
 		D1A96A5D5B9276150793483D /* SupabaseLoanService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 914A1BB4F51D4F5C31806EFD /* SupabaseLoanService.swift */; };
@@ -152,7 +152,6 @@
 		31E5097AB0790F850016BE59 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		378FE18EBDE8ED6EAC15B43F /* ApplicationTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationTrackingView.swift; sourceTree = "<group>"; };
 		38E3BA31DFDF4BBB9114F3C4 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
-		AA00UMS000000001FF01 /* UnreadMessageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnreadMessageStore.swift; sourceTree = "<group>"; };
 		3D006F72DB84815CA65BE6A7 /* MessagingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagingService.swift; sourceTree = "<group>"; };
 		51E121B25741BC258047859E /* PrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrimaryButton.swift; sourceTree = "<group>"; };
 		5311FB36A8266E69CFD93D54 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
@@ -193,6 +192,7 @@
 		AA00KYC000000001FF01 /* AadhaarKYCService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AadhaarKYCService.swift; sourceTree = "<group>"; };
 		AA00KYC000000002FF01 /* SupabaseAadhaarKYCService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseAadhaarKYCService.swift; path = Supabase/SupabaseAadhaarKYCService.swift; sourceTree = "<group>"; };
 		AA00KYC000000003FF01 /* AadhaarKYCView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AadhaarKYCView.swift; sourceTree = "<group>"; };
+		AA00UMS000000001FF01 /* UnreadMessageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnreadMessageStore.swift; sourceTree = "<group>"; };
 		B07AD9174280E67995096E93 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		B1F43612DC9CA160255FFC33 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
 		BB001122334455667788BB00 /* ForgotPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordView.swift; sourceTree = "<group>"; };

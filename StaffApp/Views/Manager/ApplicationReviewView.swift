@@ -11,6 +11,7 @@ struct ApplicationReviewView: View {
     @State private var completed: ApplicationActionType?
     @State private var verifiedDocs: Set<UUID> = []
     @State private var documents: [LoanDocument] = []
+    @State private var selectedDocument: LoanDocument?
 
     private var app: ManagerApplication? { store.application(id: applicationID) }
 
@@ -34,6 +35,17 @@ struct ApplicationReviewView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    private func loadDocuments() async {
+        if let docs = try? await store.fetchDocuments(for: applicationID) {
+            self.documents = docs
+            var verified = Set<UUID>()
+            for doc in docs where doc.status == .verified {
+                verified.insert(doc.id)
+            }
+            self.verifiedDocs = verified
+        }
+    }
+
     private func content(_ app: ManagerApplication) -> some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: Spacing.m) {
@@ -54,6 +66,13 @@ struct ApplicationReviewView: View {
         .sheet(item: $activeSheet, onDismiss: presentSuccessIfNeeded) { action in
             decisionSheet(action, app: app)
         }
+        .sheet(item: $selectedDocument) { doc in
+            ManagerDocumentReviewSheet(document: doc, isReadOnly: isTerminal) {
+                Task {
+                    await loadDocuments()
+                }
+            }
+        }
         .fullScreenCover(item: $completed) { action in
             SuccessStateView(
                 actionType: action,
@@ -64,11 +83,7 @@ struct ApplicationReviewView: View {
             )
         }
         .task {
-            documents = (try? await store.fetchDocuments(for: applicationID)) ?? []
-            // Auto-verify those marked as verified in DB
-            for doc in documents where doc.status == .verified {
-                verifiedDocs.insert(doc.id)
-            }
+            await loadDocuments()
         }
     }
 
@@ -201,7 +216,7 @@ struct ApplicationReviewView: View {
 
     private var documentsSection: some View {
         SectionCard(title: "Verified Documents",
-                    footer: isTerminal ? nil : "Tap a document to toggle verification.") {
+                    footer: isTerminal ? "Tap a document to view details." : "Tap a document to review verification.") {
             if documents.isEmpty {
                 Text("No documents attached.")
                     .font(.subheadline)
@@ -316,21 +331,27 @@ struct ApplicationReviewView: View {
     }
 
     private func documentRow(_ doc: LoanDocument) -> some View {
-        let verified = verifiedDocs.contains(doc.id)
-        return Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                if verified { verifiedDocs.remove(doc.id) } else { verifiedDocs.insert(doc.id) }
-            }
+        Button {
+            selectedDocument = doc
         } label: {
             HStack(spacing: Spacing.sm) {
-                Image(systemName: "doc.text.fill")
+                Image(systemName: doc.kind.iconName)
                     .foregroundStyle(Color.lmsAccent)
                     .frame(width: 24)
-                Text(doc.kind.rawValue.capitalized).font(.subheadline).foregroundStyle(.primary)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(doc.fileName)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    Text(doc.kind.displayLabel)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                
                 Spacer()
-                Image(systemName: verified ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
-                    .foregroundStyle(verified ? Color.lmsSuccess : Color.lmsGray4)
+                
+                StatusBadge(doc.status.displayLabel, tone: doc.status.tone, size: .small)
             }
             .padding(Spacing.sm)
             .background(Color.lmsBackground, in: RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous))
@@ -340,19 +361,32 @@ struct ApplicationReviewView: View {
 
     /// Read-only document row shown when the application is in a terminal state (rejected/approved/disbursed/closed).
     private func readOnlyDocumentRow(_ doc: LoanDocument) -> some View {
-        let verified = verifiedDocs.contains(doc.id)
-        return HStack(spacing: Spacing.sm) {
-            Image(systemName: "doc.text.fill")
-                .foregroundStyle(Color.lmsAccent)
-                .frame(width: 24)
-            Text(doc.kind.rawValue.capitalized).font(.subheadline).foregroundStyle(.primary)
-            Spacer()
-            Image(systemName: verified ? "checkmark.circle.fill" : "circle")
-                .font(.title3)
-                .foregroundStyle(verified ? Color.lmsSuccess : Color.lmsGray4)
+        Button {
+            selectedDocument = doc
+        } label: {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: doc.kind.iconName)
+                    .foregroundStyle(Color.lmsAccent)
+                    .frame(width: 24)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(doc.fileName)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    Text(doc.kind.displayLabel)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Spacer()
+                
+                StatusBadge(doc.status.displayLabel, tone: doc.status.tone, size: .small)
+            }
+            .padding(Spacing.sm)
+            .background(Color.lmsBackground, in: RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous))
         }
-        .padding(Spacing.sm)
-        .background(Color.lmsBackground, in: RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous))
+        .buttonStyle(.plain)
     }
 
     // MARK: Terminal status banner

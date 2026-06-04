@@ -5,7 +5,6 @@ struct ManagerProfileView: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.appEnvironment) private var env
 
-    @State private var notificationsEnabled = true
     @State private var emailAlerts = true
     @State private var riskAlerts = true
     @State private var biometricEnabled = true
@@ -26,28 +25,12 @@ struct ManagerProfileView: View {
     }
 
     var body: some View {
+        @Bindable var store = managerStore
         List {
             // MARK: Profile header
-
-            Section {
-                HStack(spacing: Spacing.m) {
-                    AvatarView(initials: initials(from: profileName), size: 56)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(profileName)
-                            .font(.lmsTitle3)
-                        Text(employeeID)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Text("Branch Manager")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
-                    }
-
-                    Spacer()
-                }
-                .padding(.vertical, Spacing.xs)
-            }
+            headerView
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
 
             // MARK: Branch Information
 
@@ -60,9 +43,10 @@ struct ManagerProfileView: View {
             // MARK: Notification Preferences
 
             Section("Notification Preferences") {
-                Toggle(isOn: $notificationsEnabled) {
+                Toggle(isOn: $store.notificationsEnabled) {
                     Label("Push Notifications", systemImage: "bell.badge")
                 }
+                .tint(Color.lmsAccent)
             }
 
             // MARK: Security
@@ -118,6 +102,7 @@ struct ManagerProfileView: View {
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Profile")
+        .navigationBarTitleDisplayMode(.inline)
         .alert("Sign Out?", isPresented: $showLogoutConfirmation) {
             Button("Sign Out", role: .destructive) {
                 Task {
@@ -141,6 +126,32 @@ struct ManagerProfileView: View {
     }
 
     // MARK: Helpers
+
+    private var headerView: some View {
+        VStack(spacing: 14) {
+            AvatarView(
+                initials: initials(from: profileName),
+                size: 84,
+                colors: [.lmsInfo, .lmsAccent]
+            )
+            .shadow(color: Color.blue.opacity(0.15), radius: 8, x: 0, y: 4)
+
+            VStack(spacing: 6) {
+                Text(profileName)
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(.primary)
+                
+                Text("Branch Manager")
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 5)
+                    .background(Color.blue.opacity(0.15), in: Capsule())
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.s)
+    }
 
     private func initials(from name: String) -> String {
         let parts = name.split(separator: " ")
