@@ -22,11 +22,7 @@ struct SystemSettingsView: View {
                 } label: {
                     settingsRow(title: "EMI Reminder Schedules", subtitle: "Manage timing and templates for reminders")
                 }
-                NavigationLink {
-                    ArchiveListView()
-                } label: {
-                    settingsRow(title: "Loan Archives", subtitle: "Manage historical and closed loan records")
-                }
+
 
             } header: {
                 Text("Catalog")
