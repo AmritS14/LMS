@@ -51,3 +51,4 @@ verify_sanction_flow.sh
 supabase_sanction_letters_setup.sql
 lms-backend
 document_preview_flow.md
+/.agents
