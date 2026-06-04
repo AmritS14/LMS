@@ -135,9 +135,6 @@ final class ArchiveViewModel {
 struct ArchiveListView: View {
     @State private var viewModel = ArchiveViewModel()
     
-    @State private var exportURL: URL?
-    @State private var showExportSheet = false
-    
     // Search and Filter State
     @State private var searchText = ""
     @State private var selectedDateRange: DateRangeFilter = .all
@@ -286,17 +283,6 @@ struct ArchiveListView: View {
                         .foregroundStyle((selectedDateRange != .all || selectedCategory != nil || selectedArchiveStatus != .all) ? Color.blue : Color.primary)
                 }
             }
-            
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    if let url = viewModel.generateCSV(from: filteredLoans) {
-                        exportURL = url
-                        showExportSheet = true
-                    }
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                }
-            }
         }
         // Confirmation Dialog - Archive
         .alert("Archive Loan?", isPresented: $showArchiveConfirmAlert, presenting: pendingArchiveActionItem) { item in
@@ -332,11 +318,6 @@ struct ArchiveListView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(errorText)
-        }
-        .sheet(isPresented: $showExportSheet) {
-            if let url = exportURL {
-                ShareSheet(activityItems: [url])
-            }
         }
     }
     

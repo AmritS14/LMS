@@ -57,21 +57,7 @@ struct AdminDashboardView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 20) {
-                    NavigationLink(destination: AdminNotificationsView(viewModel: viewModel)) {
-                        ZStack(alignment: .topTrailing) {
-                            Image(systemName: "bell.fill")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundStyle(.primary)
-                            
-                            if viewModel.unreadNotificationsCount > 0 {
-                                Circle()
-                                    .fill(Color.red)
-                                    .frame(width: 8, height: 8)
-                                    .offset(x: 4, y: -4)
-                            }
-                        }
-                    }
-                    .accessibilityLabel("Notifications")
+
 
                     NavigationLink(destination: ProfileView()) {
                         Image(systemName: "person.crop.circle")
@@ -239,87 +225,7 @@ struct AdminDashboardView: View {
     }
 }
 
-// MARK: - Admin Notifications View
 
-struct AdminNotificationsView: View {
-    var viewModel: DashboardViewModel
-
-    var body: some View {
-        List {
-            if viewModel.unreadNotificationsCount > 0 {
-                Section {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(viewModel.unreadNotificationsCount) unread").font(.headline)
-                            Text("Swipe to read or dismiss").font(.footnote).foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Button("Read all") { viewModel.markAllNotificationsRead() }
-                            .font(.subheadline.weight(.semibold))
-                            .buttonStyle(.plain)
-                            .foregroundStyle(Color.lmsAccent)
-                    }
-                }
-            }
-
-            Section("All Notifications") {
-                if viewModel.notifications.isEmpty {
-                    Text("No notifications.")
-                        .font(.adminSecondary)
-                        .foregroundStyle(.secondary)
-                        .padding(.vertical, Spacing.s)
-                } else {
-                    ForEach(viewModel.notifications) { notification in
-                        row(notification)
-                            .swipeActions(edge: .leading) {
-                                Button { viewModel.markNotificationRead(notification) } label: {
-                                    Label("Read", systemImage: "envelope.open")
-                                }
-                                .tint(.lmsInfo)
-                            }
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    viewModel.dismissNotification(notification)
-                                } label: {
-                                    Label("Dismiss", systemImage: "xmark.circle")
-                                }
-                            }
-                    }
-                }
-            }
-        }
-        .listStyle(.insetGrouped)
-        .navigationTitle("Notifications")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private func row(_ notification: AdminNotification) -> some View {
-        HStack(alignment: .top, spacing: Spacing.sm) {
-            Image(systemName: "bell.fill")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(notification.isRead ? .secondary : Color.lmsAccent)
-                .frame(width: 32, height: 32)
-                .background((notification.isRead ? Color.secondary : Color.lmsAccent).opacity(0.12),
-                            in: RoundedRectangle(cornerRadius: CornerRadius.small))
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(notification.title)
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(notification.isRead ? .secondary : .primary)
-                    Spacer()
-                    Text(notification.createdAt, format: .relative(presentation: .named))
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
-                Text(notification.message)
-                    .font(.subheadline)
-                    .foregroundStyle(notification.isRead ? .tertiary : .secondary)
-            }
-        }
-        .padding(.vertical, Spacing.xs)
-    }
-}
 
 #Preview {
     NavigationStack {
