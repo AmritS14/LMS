@@ -1,10 +1,66 @@
 import SwiftUI
+import UIKit
+import PDFKit
+import QuickLook
+
+// MARK: - Preview Phase
+
+private enum DocumentPreviewPhase {
+    case loading
+    case image(UIImage, URL)
+    case pdf(Data, URL)
+    case unsupported(URL)
+    case empty
+    case failed(String)
+}
+
+// MARK: - PDFKit Wrapper
+
+private struct PDFKitView: UIViewRepresentable {
+    let data: Data
+
+    func makeUIView(context: Context) -> PDFView {
+        let view = PDFView()
+        view.autoScales = true
+        view.document = PDFDocument(data: data)
+        return view
+    }
+
+    func updateUIView(_ uiView: PDFView, context: Context) {}
+}
+
+// MARK: - QuickLook Wrapper
+
+private struct QuickLookPreview: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeCoordinator() -> Coordinator { Coordinator(url: url) }
+
+    func makeUIViewController(context: Context) -> QLPreviewController {
+        let controller = QLPreviewController()
+        controller.dataSource = context.coordinator
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: QLPreviewController, context: Context) {}
+
+    final class Coordinator: NSObject, QLPreviewControllerDataSource {
+        let url: URL
+        init(url: URL) { self.url = url }
+        func numberOfPreviewItems(in controller: QLPreviewController) -> Int { 1 }
+        func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> any QLPreviewItem {
+            url as NSURL
+        }
+    }
+}
+
+// MARK: - Sheet
 
 struct ManagerDocumentReviewSheet: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.appEnvironment) private var env
     @Environment(ManagerStore.self) private var store
-    
+
     let document: LoanDocument
     let isReadOnly: Bool
     let onSave: () -> Void
@@ -14,25 +70,17 @@ struct ManagerDocumentReviewSheet: View {
     @State private var rejectionReason: String
     @State private var kycReport: AadhaarVerificationReport? = nil
     @State private var isLoadingReport = false
-    @State private var documentURL: URL? = nil
-    @State private var isLoadingURL = false
-    @State private var urlFetchError: String? = nil
+    @State private var previewPhase: DocumentPreviewPhase = .loading
+    @State private var showFullScreen = false
+    @State private var tempFileURL: URL? = nil
     @State private var errorMessage: String? = nil
     @State private var isSaving = false
-
-    private var isImage: Bool {
-        let name = document.fileName.lowercased()
-        return name.hasSuffix(".png") || name.hasSuffix(".jpg") || name.hasSuffix(".jpeg") || name.hasSuffix(".heic")
-    }
 
     init(document: LoanDocument, isReadOnly: Bool = false, onSave: @escaping () -> Void) {
         self.document = document
         self.isReadOnly = isReadOnly
         self.onSave = onSave
-
-        // Initialize state from existing document properties.
         _selectedStatus = State(initialValue: document.status)
-        // Default to empty strings as we don't have existing notes/rejections in LoanDocument model directly
         _reviewNotes = State(initialValue: "")
         _rejectionReason = State(initialValue: "")
     }
@@ -54,14 +102,11 @@ struct ManagerDocumentReviewSheet: View {
                         .cornerRadius(12)
                     }
 
-                    // Document Preview Card
                     documentPreviewSection
 
                     if !isReadOnly {
-                        // Review Options Section
                         reviewOptionsSection
 
-                        // Action Buttons
                         VStack(spacing: 12) {
                             saveButton
                         }
@@ -84,43 +129,105 @@ struct ManagerDocumentReviewSheet: View {
                     }
                 }
             }
-            .task {
-                await fetchDocumentURL()
-                
+            .task(id: document.id) {
+                previewPhase = .loading
+                await loadPreview()
+
                 if document.kind == .identityProof, let env {
                     isLoadingReport = true
                     kycReport = try? await env.aadhaarKYC.report(documentID: document.id)
                     isLoadingReport = false
                 }
             }
+            .onDisappear {
+                cleanupTempFile()
+            }
+            .fullScreenCover(isPresented: $showFullScreen) {
+                fullScreenViewer
+            }
         }
     }
 
-    @MainActor
-    private func fetchDocumentURL() async {
-        guard let env else {
-            // No live environment – fall back to the stored remote URL (preview / mock mode).
-            documentURL = document.remoteURL
-            return
+    // MARK: - Full-Screen Viewer
+
+    @ViewBuilder
+    private var fullScreenViewer: some View {
+        switch previewPhase {
+        case .image(_, let url), .pdf(_, let url):
+            QuickLookPreview(url: url).ignoresSafeArea()
+        default:
+            EmptyView()
         }
-        isLoadingURL = true
-        urlFetchError = nil
+    }
+
+    // MARK: - Load Preview
+
+    @MainActor
+    private func loadPreview() async {
+        // Resolve a URL to fetch from
+        let signedURL: URL
         do {
-            documentURL = try await env.documents.signedURL(documentID: document.id)
-        } catch {
-            // Fall back to the document's stored remote URL if the backend call fails.
-            if let fallback = document.remoteURL {
-                documentURL = fallback
+            if let env {
+                signedURL = try await env.documents.signedURL(documentID: document.id)
+            } else if let fallback = document.remoteURL {
+                signedURL = fallback
             } else {
-                urlFetchError = error.localizedDescription
+                previewPhase = .empty
+                return
+            }
+        } catch {
+            if let fallback = document.remoteURL {
+                signedURL = fallback
+            } else {
+                previewPhase = .failed(error.localizedDescription)
+                return
             }
         }
-        isLoadingURL = false
+
+        // Download raw bytes
+        let data: Data
+        do {
+            let (bytes, _) = try await URLSession.shared.data(from: signedURL)
+            data = bytes
+        } catch {
+            previewPhase = .failed("Download failed: \(error.localizedDescription)")
+            return
+        }
+
+        // Write to a temp file so QuickLook can open it by URL
+        let ext = (document.fileName as NSString).pathExtension
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension(ext.isEmpty ? "bin" : ext)
+        do {
+            try data.write(to: tempURL)
+        } catch {
+            previewPhase = .failed("Could not prepare file: \(error.localizedDescription)")
+            return
+        }
+        cleanupTempFile()
+        tempFileURL = tempURL
+
+        // Detect content type from bytes
+        if let image = UIImage(data: data) {
+            previewPhase = .image(image, tempURL)
+        } else if data.starts(with: [0x25, 0x50, 0x44, 0x46]) { // %PDF magic bytes
+            previewPhase = .pdf(data, tempURL)
+        } else {
+            previewPhase = .unsupported(signedURL)
+        }
     }
+
+    private func cleanupTempFile() {
+        guard let url = tempFileURL else { return }
+        try? FileManager.default.removeItem(at: url)
+        tempFileURL = nil
+    }
+
+    // MARK: - Document Preview Section
 
     private var documentPreviewSection: some View {
         VStack(spacing: 16) {
-            // Attached document header
             HStack(spacing: 12) {
                 Image(systemName: document.kind.iconName)
                     .font(.system(size: 20))
@@ -147,7 +254,6 @@ struct ManagerDocumentReviewSheet: View {
             }
             .padding(.horizontal, 4)
 
-            // Verification block: UIDAI report card or image preview
             Group {
                 if isLoadingReport {
                     HStack(spacing: 10) {
@@ -161,128 +267,19 @@ struct ManagerDocumentReviewSheet: View {
                 } else if let report = kycReport {
                     AadhaarVerificationReportCard(report: report)
                 } else {
-                    VStack(spacing: 16) {
-                        if isLoadingURL {
-                            HStack(spacing: 10) {
-                                ProgressView().scaleEffect(0.8)
-                                Text("Loading document…")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(.secondary)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 30)
-                        } else {
-                            VStack(spacing: 16) {
-                                // Inline Image Preview (if image)
-                                if isImage, let url = documentURL {
-                                    AsyncImage(url: url) { phase in
-                                        switch phase {
-                                        case .empty:
-                                            ProgressView()
-                                                .frame(height: 200)
-                                        case .success(let image):
-                                            image
-                                                .resizable()
-                                                .aspectRatio(contentMode: .fit)
-                                                .frame(maxHeight: 300)
-                                                .cornerRadius(12)
-                                        case .failure:
-                                            VStack(spacing: 8) {
-                                                Image(systemName: "exclamationmark.triangle")
-                                                    .font(.title)
-                                                    .foregroundColor(.orange)
-                                                Text("Failed to load image preview")
-                                                    .font(.caption)
-                                                    .foregroundColor(.secondary)
-                                            }
-                                            .frame(height: 200)
-                                        @unknown default:
-                                            EmptyView()
-                                        }
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                    .padding(8)
-                                    .background(Color(.secondarySystemGroupedBackground))
-                                    .cornerRadius(12)
-                                } else {
-                                    // Document Icon and Type label
-                                    VStack(spacing: 12) {
-                                        Image(systemName: isImage ? "photo.fill" : "doc.text.fill")
-                                            .font(.system(size: 48))
-                                            .foregroundColor(.blue.opacity(0.8))
-                                        
-                                        Text(document.fileName)
-                                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                            .foregroundColor(.primary)
-                                            .multilineTextAlignment(.center)
-                                            .padding(.horizontal)
-                                    }
-                                    .padding(.vertical, 16)
-                                }
-                                
-                                // Open Document Button
-                                if let url = documentURL {
-                                    Link(destination: url) {
-                                        HStack {
-                                            Image(systemName: "arrow.up.right.app.fill")
-                                            Text(isImage ? "View Full Image" : "Open Document")
-                                        }
-                                        .font(.system(size: 14, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 12)
-                                        .background(
-                                            LinearGradient(
-                                                colors: [Color.blue, Color(red: 0.15, green: 0.4, blue: 0.95)],
-                                                startPoint: .leading,
-                                                endPoint: .trailing
-                                            )
-                                        )
-                                        .cornerRadius(10)
-                                        .shadow(color: Color.blue.opacity(0.3), radius: 4, x: 0, y: 2)
-                                    }
-                                    .buttonStyle(.plain)
-                                    .padding(.horizontal, 8)
-                                } else if let urlFetchError {
-                                    VStack(spacing: 8) {
-                                        HStack(spacing: 6) {
-                                            Image(systemName: "exclamationmark.triangle.fill")
-                                                .foregroundColor(.orange)
-                                            Text(urlFetchError)
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
-                                                .multilineTextAlignment(.center)
-                                        }
-                                        Button {
-                                            Task { await fetchDocumentURL() }
-                                        } label: {
-                                            Label("Retry", systemImage: "arrow.clockwise")
-                                                .font(.system(size: 13, weight: .semibold))
-                                                .foregroundColor(.blue)
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-                                    .padding(.horizontal, 8)
-                                } else {
-                                    Text("Unable to generate access link")
-                                        .font(.caption)
-                                        .foregroundColor(.red)
-                                }
-                            }
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 20)
-                    .padding(.horizontal, 16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(.secondarySystemGroupedBackground))
-                            .shadow(color: .black.opacity(0.02), radius: 4)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color(.separator).opacity(0.2), lineWidth: 0.5)
-                    )
+                    previewContent
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 20)
+                        .padding(.horizontal, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color(.secondarySystemGroupedBackground))
+                                .shadow(color: .black.opacity(0.02), radius: 4)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color(.separator).opacity(0.2), lineWidth: 0.5)
+                        )
                 }
             }
         }
@@ -296,6 +293,135 @@ struct ManagerDocumentReviewSheet: View {
         )
     }
 
+    @ViewBuilder
+    private var previewContent: some View {
+        switch previewPhase {
+        case .loading:
+            HStack(spacing: 10) {
+                ProgressView().scaleEffect(0.8)
+                Text("Loading document…")
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+
+        case .image(let uiImage, _):
+            VStack(spacing: 12) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxHeight: 360)
+                    .cornerRadius(12)
+                viewFullScreenButton
+            }
+
+        case .pdf(let data, _):
+            VStack(spacing: 12) {
+                PDFKitView(data: data)
+                    .frame(maxHeight: 360)
+                    .cornerRadius(12)
+                viewFullScreenButton
+            }
+
+        case .unsupported(let url):
+            VStack(spacing: 12) {
+                Image(systemName: "doc.questionmark.fill")
+                    .font(.system(size: 48))
+                    .foregroundColor(.secondary)
+                Text("Preview not available")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.secondary)
+                Link(destination: url) {
+                    HStack {
+                        Image(systemName: "arrow.up.right.app.fill")
+                        Text("Open Document")
+                    }
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.blue, Color(red: 0.15, green: 0.4, blue: 0.95)],
+                            startPoint: .leading, endPoint: .trailing
+                        )
+                    )
+                    .cornerRadius(10)
+                    .shadow(color: Color.blue.opacity(0.3), radius: 4, x: 0, y: 2)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 8)
+            }
+
+        case .empty:
+            VStack(spacing: 8) {
+                Image(systemName: "icloud.slash")
+                    .font(.system(size: 40))
+                    .foregroundColor(.secondary)
+                Text("Awaiting Upload")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.secondary)
+                Text("The borrower has not uploaded this document yet.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.vertical, 10)
+
+        case .failed(let message):
+            VStack(spacing: 10) {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.orange)
+                    Text(message)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                Button {
+                    Task {
+                        previewPhase = .loading
+                        await loadPreview()
+                    }
+                } label: {
+                    Label("Retry", systemImage: "arrow.clockwise")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.blue)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 8)
+        }
+    }
+
+    private var viewFullScreenButton: some View {
+        Button {
+            showFullScreen = true
+        } label: {
+            HStack {
+                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                Text("View Full Screen")
+            }
+            .font(.system(size: 14, weight: .bold))
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(
+                LinearGradient(
+                    colors: [Color.blue, Color(red: 0.15, green: 0.4, blue: 0.95)],
+                    startPoint: .leading, endPoint: .trailing
+                )
+            )
+            .cornerRadius(10)
+            .shadow(color: Color.blue.opacity(0.3), radius: 4, x: 0, y: 2)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 8)
+    }
+
+    // MARK: - Review Options
+
     private var reviewOptionsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Review Action")
@@ -304,38 +430,16 @@ struct ManagerDocumentReviewSheet: View {
                 .textCase(.uppercase)
 
             HStack(spacing: 8) {
-                // Verify Option
-                optionButton(
-                    status: .verified,
-                    title: "Verify",
-                    icon: "checkmark.circle.fill",
-                    selectedColor: .green
-                )
-
-                // Needs Review Option
-                optionButton(
-                    status: .pending,
-                    title: "Needs Review",
-                    icon: "questionmark.circle.fill",
-                    selectedColor: .orange
-                )
-
-                // Reject Option
-                optionButton(
-                    status: .rejected,
-                    title: "Reject",
-                    icon: "xmark.circle.fill",
-                    selectedColor: .red
-                )
+                optionButton(status: .verified, title: "Verify", icon: "checkmark.circle.fill", selectedColor: .green)
+                optionButton(status: .pending, title: "Needs Review", icon: "questionmark.circle.fill", selectedColor: .orange)
+                optionButton(status: .rejected, title: "Reject", icon: "xmark.circle.fill", selectedColor: .red)
             }
 
-            // Conditional TextFields
             if selectedStatus == .pending {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Review Notes")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(.primary)
-
                     TextField("Enter notes for the borrower or team...", text: $reviewNotes, axis: .vertical)
                         .lineLimit(3...5)
                         .padding(12)
@@ -352,7 +456,6 @@ struct ManagerDocumentReviewSheet: View {
                     Text("Rejection Reason")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(.primary)
-
                     TextField("Enter rejection reason for the borrower...", text: $rejectionReason, axis: .vertical)
                         .lineLimit(3...5)
                         .padding(12)
@@ -378,7 +481,6 @@ struct ManagerDocumentReviewSheet: View {
 
     private func optionButton(status: DocumentVerificationStatus, title: String, icon: String, selectedColor: Color) -> some View {
         let isSelected = selectedStatus == status
-
         return Button {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
                 selectedStatus = status
@@ -404,6 +506,8 @@ struct ManagerDocumentReviewSheet: View {
         }
         .buttonStyle(.plain)
     }
+
+    // MARK: - Save
 
     private var saveButton: some View {
         Button {
@@ -439,8 +543,7 @@ struct ManagerDocumentReviewSheet: View {
             .background(
                 LinearGradient(
                     colors: [Color.blue, Color(red: 0.15, green: 0.4, blue: 0.95)],
-                    startPoint: .leading,
-                    endPoint: .trailing
+                    startPoint: .leading, endPoint: .trailing
                 )
             )
             .cornerRadius(12)
@@ -451,7 +554,8 @@ struct ManagerDocumentReviewSheet: View {
     }
 }
 
-// Helper extensions mapping status to visual badges
+// MARK: - Status Extensions
+
 extension DocumentVerificationStatus {
     var color: Color {
         switch self {
@@ -460,7 +564,7 @@ extension DocumentVerificationStatus {
         case .rejected: return .red
         }
     }
-    
+
     var icon: String {
         switch self {
         case .verified: return "checkmark.circle.fill"
@@ -468,7 +572,7 @@ extension DocumentVerificationStatus {
         case .rejected: return "xmark.circle.fill"
         }
     }
-    
+
     var tone: StatusBadge.Tone {
         switch self {
         case .verified: return .success
@@ -476,7 +580,7 @@ extension DocumentVerificationStatus {
         case .rejected: return .danger
         }
     }
-    
+
     var displayLabel: String {
         switch self {
         case .verified: return "Verified"
@@ -497,7 +601,7 @@ extension DocumentKind {
         case .other: return "doc.fill"
         }
     }
-    
+
     var displayLabel: String {
         switch self {
         case .identityProof: return "Identity Proof"
