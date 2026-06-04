@@ -14,8 +14,8 @@ struct AdminDashboardView: View {
     @Bindable var userVM: UserManagementViewModel
     @Environment(\.appEnvironment) private var env
     @State private var showAddStaff = false
-
-
+    
+    
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: Spacing.l) {
@@ -38,7 +38,7 @@ struct AdminDashboardView: View {
                     .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
                     .padding(.horizontal, Spacing.m)
                 }
-
+                
                 subtitleRow
                 summaryCardsSection
                 auditActivitySection
@@ -56,23 +56,12 @@ struct AdminDashboardView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 20) {
-
-
-                    NavigationLink(destination: ProfileView()) {
-                        Image(systemName: "person.crop.circle")
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundStyle(.primary)
-                    }
-                    .accessibilityLabel("Profile")
+                NavigationLink(destination: ProfileView()) {
+                    Image(systemName: "person.crop.circle")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(.primary)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(
-                    Capsule()
-                        .fill(Color(.secondarySystemGroupedBackground))
-                        .shadow(color: .black.opacity(0.06), radius: 6, x: 0, y: 3)
-                )
+                .accessibilityLabel("Profile")
             }
         }
         .refreshable {
@@ -90,9 +79,9 @@ struct AdminDashboardView: View {
             AddStaffSheet(viewModel: userVM)
         }
     }
-
+    
     // MARK: - Subviews
-
+    
     private var subtitleRow: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
@@ -104,7 +93,7 @@ struct AdminDashboardView: View {
         }
         .padding(.horizontal, Spacing.m)
     }
-
+    
     private var summaryCardsSection: some View {
         VStack(spacing: Spacing.m) {
             HStack(spacing: Spacing.m) {
@@ -142,9 +131,9 @@ struct AdminDashboardView: View {
         }
         .padding(.horizontal, Spacing.m)
     }
-
+    
     private func summaryCard(icon: String, title: String, value: String,
-                              subtitle: String, accent: Color) -> some View {
+                             subtitle: String, accent: Color) -> some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             HStack {
                 Image(systemName: icon)
@@ -152,7 +141,7 @@ struct AdminDashboardView: View {
                     .foregroundStyle(accent)
                     .frame(width: 32, height: 32)
                     .background(accent.opacity(0.12),
-                                 in: RoundedRectangle(cornerRadius: CornerRadius.small))
+                                in: RoundedRectangle(cornerRadius: CornerRadius.small))
                 Spacer()
             }
             Text(value)
@@ -169,7 +158,7 @@ struct AdminDashboardView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
     }
-
+    
     private var auditActivitySection: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             HStack(alignment: .firstTextBaseline) {
@@ -184,7 +173,7 @@ struct AdminDashboardView: View {
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, Spacing.m)
-
+            
             VStack(spacing: 0) {
                 if viewModel.recentAuditLogs.isEmpty {
                     Text("No recent audit activity.")
@@ -211,7 +200,7 @@ struct AdminDashboardView: View {
                         .padding(.horizontal, Spacing.m)
                         .padding(.vertical, 12)
                         .contentShape(Rectangle())
-
+                        
                         if index < viewModel.recentAuditLogs.prefix(5).count - 1 {
                             Divider()
                                 .padding(.leading, Spacing.m)
