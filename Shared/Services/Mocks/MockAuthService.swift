@@ -41,8 +41,11 @@ actor MockAuthService: AuthService {
         return Self.seedBorrower
     }
 
-    func signUp(email: String, password: String, fullName: String, phone: String) async throws {
-        try await Task.sleep(for: .seconds(1))
+    func signUp(email: String, password: String, fullName: String, phone: String, dob: Date) async throws {
+        try await Task.sleep(for: .seconds(0.8))
+        if email.contains("fail") {
+            throw NSError(domain: "Auth", code: 400, userInfo: [NSLocalizedDescriptionKey: "Registration failed"])
+        }
     }
 
     func verifyEmailOTP(email: String, code: String) async throws -> User {
@@ -51,6 +54,21 @@ actor MockAuthService: AuthService {
             return Self.seedBorrower
         }
         throw URLError(.userAuthenticationRequired)
+    }
+
+    func requestOTP(identifier: String) async throws {
+        try await Task.sleep(for: .milliseconds(500))
+    }
+
+    func verifyOTP(identifier: String, code: String) async throws -> User {
+        try await Task.sleep(for: .milliseconds(400))
+        guard code == "123456" else {
+            throw NSError(domain: "Auth", code: 401,
+                          userInfo: [NSLocalizedDescriptionKey: "Invalid OTP. Use 123456."])
+        }
+        let user = Self.seedBorrower
+        _currentUser = user
+        return user
     }
 
     func signInWithPasskey() async throws -> User {

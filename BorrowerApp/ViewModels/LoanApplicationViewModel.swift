@@ -104,5 +104,13 @@ final class LoanApplicationViewModel {
         uploadedDocumentIDs = []
         documentsLinked = false
         errorMessage = nil
+        if let selected = selectedProduct {
+            requestedAmount = NSDecimalNumber(decimal: selected.minimumAmount).doubleValue
+            tenureMonths = selected.minimumTenureMonths
+        } else if let first = loanProducts.first {
+            selectedProduct = first
+            requestedAmount = NSDecimalNumber(decimal: first.minimumAmount).doubleValue
+            tenureMonths = first.minimumTenureMonths
+        }
     }
 }

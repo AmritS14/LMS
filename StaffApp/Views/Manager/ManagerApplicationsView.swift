@@ -143,13 +143,17 @@ struct ManagerApplicationsView: View {
         .contextMenu {
             if app.status != .approved && app.status != .rejected && app.status != .disbursed {
                 Button {
-                    store.decide(.approve, on: app, remarks: "Quick approved from list.")
+                    Task {
+                        try? await store.decide(.approve, on: app, remarks: "Quick approved from list.")
+                    }
                 } label: {
                     Label("Quick Approve", systemImage: "checkmark.seal.fill")
                 }
 
                 Button(role: .destructive) {
-                    store.decide(.reject, on: app, remarks: "Quick rejected from list.")
+                    Task {
+                        try? await store.decide(.reject, on: app, remarks: "Quick rejected from list.")
+                    }
                 } label: {
                     Label("Quick Reject", systemImage: "xmark.octagon.fill")
                 }

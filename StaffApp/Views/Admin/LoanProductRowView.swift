@@ -141,12 +141,18 @@ struct LoanProductEditorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button(action: {
                         if hasChanges {
                             showUnsavedChangesAlert = true
                         } else {
                             onCancel()
                         }
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.primary)
+                            .padding(8)
+                            .background(Color(uiColor: .systemGray5), in: Circle())
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {

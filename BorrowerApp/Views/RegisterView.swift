@@ -12,8 +12,10 @@ struct RegisterView: View {
     @State private var phone = ""
     @State private var password = ""
     @State private var confirmPassword = ""
+    @State private var dateOfBirth = Calendar.current.date(byAdding: .year, value: -18, to: Date()) ?? Date()
 
     @State private var showSuccess = false
+    @State private var errorMessage: String?
 
     @FocusState private var focusedField: Field?
 
@@ -34,12 +36,18 @@ struct RegisterView: View {
         !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !phone.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         isPasswordValid &&
-        password == confirmPassword
+        password == confirmPassword &&
+        isAtLeast18
+    }
+
+    private var isAtLeast18: Bool {
+        let age = Calendar.current.dateComponents([.year], from: dateOfBirth, to: Date()).year ?? 0
+        return age >= 18
     }
 
     var body: some View {
         Form {
-            Section("Personal Details") {
+            Section {
                 TextField("Full Name", text: $fullName)
                     .textContentType(.name)
                     .textInputAutocapitalization(.words)
@@ -60,6 +68,16 @@ struct RegisterView: View {
                     .textContentType(.telephoneNumber)
                     .keyboardType(.phonePad)
                     .focused($focusedField, equals: .phone)
+
+                DatePicker("Date of Birth", selection: $dateOfBirth, displayedComponents: .date)
+                    .environment(\.locale, Locale(identifier: "en_IN"))
+            } header: {
+                Text("Personal Details")
+            } footer: {
+                Text("Important: Please ensure that your Full Name, Date of Birth, and Phone Number exactly match the details on your government-issued documents (Aadhaar Card and PAN Card). The same mobile number must be registered with your Aadhaar for proper KYC verification.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, Spacing.xs)
             }
 
             Section {
@@ -80,7 +98,15 @@ struct RegisterView: View {
                 passwordRequirements
             }
 
-            if let errorMessage = viewModel.errorMessage ?? (password != confirmPassword && !password.isEmpty && !confirmPassword.isEmpty ? "Passwords do not match." : nil) {
+            if !isAtLeast18 {
+                Section {
+                    Label("You must be at least 18 years old to register.", systemImage: "xmark.circle.fill")
+                        .foregroundStyle(Color.lmsDanger)
+                        .font(.footnote)
+                }
+            }
+
+            if let errorMessage = errorMessage ?? viewModel.errorMessage ?? (password != confirmPassword && !password.isEmpty && !confirmPassword.isEmpty ? "Passwords do not match." : nil) {
                 Section {
                     Label(errorMessage, systemImage: "exclamationmark.circle.fill")
                         .foregroundStyle(Color.lmsDanger)
@@ -103,6 +129,7 @@ struct RegisterView: View {
         }
     }
 
+
     // MARK: - Password Requirements
     private var passwordRequirements: some View {
         VStack(alignment: .leading, spacing: Spacing.xs_s) {
@@ -122,13 +149,33 @@ struct RegisterView: View {
     }
 
     private func submit() {
-        guard isFormValid, let auth = env?.auth else { return }
+        guard isFormValid else {
+            errorMessage = password != confirmPassword
+                ? "Passwords do not match."
+                : "Please fill in all fields correctly."
+            return
+        }
+        guard let auth = env?.auth else {
+            errorMessage = "App is not configured. Please try again."
+            return
+        }
+        errorMessage = nil
         focusedField = nil
-        viewModel.identifier = email
+        // Set the identifier on the shared view model so OTPVerificationView can use it
+        viewModel.identifier = email.trimmingCharacters(in: .whitespacesAndNewlines)
         Task {
-            let success = await viewModel.signUp(authService: auth, password: password, fullName: fullName, phone: phone)
+            let success = await viewModel.signUp(
+                authService: auth,
+                password: password,
+                fullName: fullName.trimmingCharacters(in: .whitespacesAndNewlines),
+                phone: phone.trimmingCharacters(in: .whitespacesAndNewlines),
+                dob: dateOfBirth
+            )
             if success {
+                // Navigate to OTP verification screen
                 navigateToOTP = true
+            } else {
+                errorMessage = viewModel.errorMessage ?? "Registration failed. Please try again."
             }
         }
     }

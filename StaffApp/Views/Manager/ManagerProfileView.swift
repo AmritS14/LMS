@@ -139,8 +139,7 @@ struct ManagerProfileView: View {
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Profile")
-        .confirmationDialog("Sign Out", isPresented: $showLogoutConfirmation,
-                            titleVisibility: .visible) {
+        .alert("Sign Out?", isPresented: $showLogoutConfirmation) {
             Button("Sign Out", role: .destructive) {
                 Task {
                     try? await env?.auth.signOut()

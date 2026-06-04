@@ -131,6 +131,44 @@ struct NewLoanApplicationView: View {
                             .padding(.horizontal, Spacing.m)
                     }
 
+                    if !isEligibleToApply {
+                        VStack(alignment: .leading, spacing: Spacing.sm) {
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundStyle(.orange)
+                                    .font(.subheadline)
+                                Text("Incomplete Profile Requirements")
+                                    .font(.subheadline.weight(.semibold))
+                            }
+                            
+                            Text("Before submitting a loan application, you must complete the following setup requirements in your profile settings:")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.bottom, 4)
+                            
+                            VStack(alignment: .leading, spacing: 6) {
+                                requirementsRow(
+                                    title: "KYC Verification Status",
+                                    isDone: session.borrowerProfile?.kycStatus == .verified
+                                )
+                                requirementsRow(
+                                    title: "Employment Status",
+                                    isDone: session.borrowerProfile?.employmentType != nil
+                                )
+                                requirementsRow(
+                                    title: "Monthly Salary / Income details",
+                                    isDone: (session.borrowerProfile?.monthlyIncome ?? 0) > 0
+                                )
+                            }
+                        }
+                        .padding(Spacing.m)
+                        .background(Color.lmsWarning.opacity(0.08), in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                                .stroke(Color.lmsWarning.opacity(0.3), lineWidth: 1)
+                        )
+                    }
+
                     submitButton
                 }
             }
@@ -305,11 +343,14 @@ struct NewLoanApplicationView: View {
             }
             Spacer()
             PrimaryButton("Done") {
-                if let onComplete {
-                    // Embedded in TabView — reset form, switch to Home tab
-                    viewModel = LoanApplicationViewModel()
-                    uploadedKinds = []
+                viewModel.reset()
+                uploadedKinds = []
+                syncAmountText()
+                syncTenureFromViewModel()
+                withAnimation {
                     flowStep = .form
+                }
+                if let onComplete {
                     onComplete()
                 } else {
                     dismiss()
@@ -591,8 +632,29 @@ struct NewLoanApplicationView: View {
 
     // MARK: - Submit Button
 
+    private var isEligibleToApply: Bool {
+        let hasSalary = (session.borrowerProfile?.monthlyIncome ?? 0) > 0
+        let hasEmployment = session.borrowerProfile?.employmentType != nil
+        let hasKYC = session.borrowerProfile?.kycStatus == .verified
+        return hasSalary && hasEmployment && hasKYC
+    }
+
+    private func requirementsRow(title: String, isDone: Bool) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: isDone ? "checkmark.circle.fill" : "xmark.circle.fill")
+                .foregroundStyle(isDone ? Color.lmsSuccess : Color.lmsDanger)
+                .font(.footnote)
+            Text(title)
+                .font(.footnote)
+                .foregroundStyle(isDone ? .primary : .secondary)
+        }
+    }
+
     private var submitButton: some View {
-        PrimaryButton("Submit Application", isLoading: viewModel.isSubmitting) {
+        PrimaryButton(
+            isEligibleToApply ? "Submit Application" : "Submit Application (Incomplete Profile)",
+            isLoading: viewModel.isSubmitting
+        ) {
             Task {
                 guard let env, let userID = session.currentUser?.id else { return }
                 let success = await viewModel.submit(
@@ -604,6 +666,7 @@ struct NewLoanApplicationView: View {
                 }
             }
         }
+        .disabled(!isEligibleToApply || viewModel.isSubmitting)
     }
 
     // MARK: - Document Upload Row

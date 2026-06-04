@@ -52,7 +52,7 @@ actor SupabaseLoanService: LoanService {
         let status: String
         let created_at: Date
         let updated_at: Date
-        let users: NestedUser?
+        let borrower: NestedUser?
         let assigned_officer: NestedOfficer?
         let loan_products: NestedProduct?
     }
@@ -159,7 +159,7 @@ actor SupabaseLoanService: LoanService {
     }
 
     private func toDomainEnriched(_ db: DBEnrichedApplication) -> LoanApplication {
-        let name = db.users?.full_name.flatMap { $0.isEmpty ? nil : $0 }
+        let name = db.borrower?.full_name.flatMap { $0.isEmpty ? nil : $0 }
         let officerName = db.assigned_officer?.full_name.flatMap { $0.isEmpty ? nil : $0 }
         return LoanApplication(
             id: db.id,
@@ -175,8 +175,8 @@ actor SupabaseLoanService: LoanService {
             createdAt: db.created_at,
             updatedAt: db.updated_at,
             borrowerName: name,
-            borrowerEmail: db.users?.email,
-            borrowerPhone: db.users?.phone,
+            borrowerEmail: db.borrower?.email,
+            borrowerPhone: db.borrower?.phone,
             productName: db.loan_products?.name
         )
     }
@@ -187,7 +187,7 @@ actor SupabaseLoanService: LoanService {
         let response = try await client
             .from("loan_products")
             .select()
-            .eq("is_active", value: true)
+            .order("name", ascending: true)
             .execute()
         
         let dbProducts = try SupabaseManager.shared.decoder.decode([DBLoanProduct].self, from: response.data)
@@ -314,22 +314,15 @@ actor SupabaseLoanService: LoanService {
     }
 
     func fetchAssignedApplications(officerID: UUID) async throws -> [LoanApplication] {
-        guard let session = try? await client.auth.session else {
-            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
-        }
-
-        let url = URL(string: "\(apiBase)/applications/assigned")!
-        var request = URLRequest(url: url)
-        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
-
-        let (data, httpResponse) = try await URLSession.shared.data(for: request)
-        if let httpRes = httpResponse as? HTTPURLResponse, !(200...299).contains(httpRes.statusCode) {
-            let errorStr = String(data: data, encoding: .utf8) ?? "Unknown error"
-            throw NSError(domain: "API", code: httpRes.statusCode, userInfo: [NSLocalizedDescriptionKey: errorStr])
-        }
-
         try await ensureProductCache()
-        let dbApps = try SupabaseManager.shared.decoder.decode([DBEnrichedApplication].self, from: data)
+        let response = try await client
+            .from("loan_applications")
+            .select("id, borrower_id, assigned_officer_id, loan_product_id, requested_amount, tenure_months, interest_rate, status, created_at, updated_at, borrower:users!loan_applications_borrower_id_fkey(id, email, full_name, phone), assigned_officer:users!loan_applications_assigned_officer_id_fkey(id, email, full_name), loan_products(id, name)")
+            .eq("assigned_officer_id", value: officerID)
+            .order("created_at", ascending: false)
+            .execute()
+
+        let dbApps = try SupabaseManager.shared.decoder.decode([DBEnrichedApplication].self, from: response.data)
         return dbApps.map(toDomainEnriched)
     }
 
@@ -337,16 +330,22 @@ actor SupabaseLoanService: LoanService {
         try await ensureProductCache()
         let response = try await client
             .from("loan_applications")
-            .select("id, borrower_id, assigned_officer_id, loan_product_id, requested_amount, tenure_months, interest_rate, status, created_at, updated_at, users:users!loan_applications_borrower_id_fkey(id, email, full_name, phone), assigned_officer:users!loan_applications_assigned_officer_id_fkey(id, email, full_name), loan_products(id, name)")
+            .select("id, borrower_id, assigned_officer_id, loan_product_id, requested_amount, tenure_months, interest_rate, status, created_at, updated_at, borrower:users!loan_applications_borrower_id_fkey(id, email, full_name, phone), assigned_officer:users!loan_applications_assigned_officer_id_fkey(id, email, full_name), loan_products(id, name)")
             .in("status", values: statuses)
             .order("created_at", ascending: false)
             .execute()
+        
+        if let str = String(data: response.data, encoding: .utf8) {
+            print("SUPABASE_DEBUG_JSON: \(str)")
+        }
+
         let dbApps = try SupabaseManager.shared.decoder.decode([DBEnrichedApplication].self, from: response.data)
         return dbApps.map(toDomainEnriched)
     }
 
     func updateStatus(applicationID: UUID, to status: ApplicationStatus, note: String?) async throws {
-        // Route through specific workflow endpoints based on target status
+        // Route through specific workflow endpoints based on target status.
+        // The backend state machine (application-workflow.ts) defines valid transitions.
         switch status {
         case .underReview:
             try await startReview(applicationID: applicationID)
@@ -356,6 +355,13 @@ actor SupabaseLoanService: LoanService {
             try await rejectApplication(applicationID: applicationID, remark: note)
         case .escalated, .recommended:
             try await sendToManager(applicationID: applicationID, remark: note)
+        case .additionalInfoRequired:
+            // "Send Back" is not a direct backend transition from manager_review.
+            // The backend workflow only allows manager_review → approved | rejected.
+            // We map Send Back to a rejection with a [RETURNED] prefix so the officer
+            // knows the application was sent back for revision, not permanently rejected.
+            let returnedRemark = "[RETURNED TO OFFICER] " + (note ?? "Please address the issues and resubmit.")
+            try await rejectApplication(applicationID: applicationID, remark: returnedRemark)
         default:
             throw NSError(domain: "LoanService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Use specific workflow actions for status transitions"])
         }
@@ -377,6 +383,15 @@ actor SupabaseLoanService: LoanService {
             let emis = try await fetchEMISchedule(loanID: dbLoan.id)
             // Determine loan type from the application's product
             let loanType = await loanTypeForApplication(dbLoan.application_id)
+            let outstanding = dbLoan.outstanding_balance
+            let isAllPaid = !emis.isEmpty && emis.allSatisfy { $0.status == .paid }
+            let loanStatus: LoanStatus
+            if outstanding <= 0 || isAllPaid {
+                loanStatus = .settled
+            } else {
+                loanStatus = mapLoanStatus(dbLoan.status)
+            }
+            
             loans.append(Loan(
                 id: dbLoan.id,
                 applicationID: dbLoan.application_id,
@@ -386,9 +401,9 @@ actor SupabaseLoanService: LoanService {
                 interestRate: dbLoan.interest_rate,
                 tenureMonths: dbLoan.tenure_months,
                 disbursementDate: dbLoan.disbursement_date,
-                outstandingBalance: dbLoan.outstanding_balance,
+                outstandingBalance: outstanding,
                 emiSchedule: emis,
-                status: mapLoanStatus(dbLoan.status)
+                status: loanStatus
             ))
         }
         return loans

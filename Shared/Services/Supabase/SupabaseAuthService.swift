@@ -13,17 +13,24 @@ actor SupabaseAuthService: AuthService {
         return try await mapSupabaseUserToLocalUser(session.user)
     }
     
-    func signUp(email: String, password: String, fullName: String, phone: String) async throws {
+    func signUp(email: String, password: String, fullName: String, phone: String, dob: Date) async throws {
         // According to supabase-swift v2, signUp with userMetadata can be passed via SignUpOptions
         let meta: [String: AnyJSON] = [
             "full_name": .string(fullName),
             "contact_phone": .string(phone) // Using 'contact_phone' because Supabase drops 'phone' in metadata
         ]
-        _ = try await client.auth.signUp(
+        
+        let response = try await client.auth.signUp(
             email: email, 
             password: password, 
             data: meta
         )
+        
+        // Let's manually save the date of birth into borrower_profiles using saveBorrowerProfile
+        // ONLY if we have a valid ID. Sometimes user ID is missing until OTP is verified depending on confirm settings.
+        let userID = response.user.id
+        let profile = BorrowerProfile(id: userID, dateOfBirth: dob)
+        try? await saveBorrowerProfile(profile)
     }
     
     func verifyEmailOTP(email: String, code: String) async throws -> User {

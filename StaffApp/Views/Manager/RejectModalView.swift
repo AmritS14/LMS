@@ -2,11 +2,13 @@ import SwiftUI
 
 struct RejectModalView: View {
     let app: ManagerApplication
-    var onComplete: (String?) -> Void
+    var onComplete: (String?) async throws -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var selectedReason = "Documentation"
     @State private var remarks = ""
+    @State private var isSubmitting = false
+    @State private var errorMessage: String? = nil
 
     private let reasons = [
         ("Credit Risk", "creditcard"),
@@ -64,14 +66,34 @@ struct RejectModalView: View {
                             }
                     }
 
-                    Button(role: .destructive) {
-                        onComplete(rejectionSummary)
-                        dismiss()
-                    } label: {
-                        Text("Reject Application")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity, minHeight: 28)
+                    if let errorMessage {
+                        Text(errorMessage)
+                            .font(.caption)
+                            .foregroundStyle(.red)
                     }
+
+                    Button(role: .destructive) {
+                        Task {
+                            isSubmitting = true
+                            errorMessage = nil
+                            do {
+                                try await onComplete(rejectionSummary)
+                                dismiss()
+                            } catch {
+                                errorMessage = error.localizedDescription
+                            }
+                            isSubmitting = false
+                        }
+                    } label: {
+                        if isSubmitting {
+                            ProgressView().tint(.white)
+                        } else {
+                            Text("Reject Application")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity, minHeight: 28)
+                        }
+                    }
+                    .disabled(isSubmitting)
                     .buttonStyle(.borderedProminent)
                     .buttonBorderShape(.roundedRectangle(radius: CornerRadius.button))
                     .controlSize(.large)
@@ -84,7 +106,7 @@ struct RejectModalView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button(action: { dismiss() }) { Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(.primary).padding(8).background(Color(uiColor: .systemGray5), in: Circle()) }
                 }
             }
         }

@@ -2,11 +2,13 @@ import SwiftUI
 
 struct ApproveModalView: View {
     let app: ManagerApplication
-    var onComplete: (String?) -> Void
+    var onComplete: (String?) async throws -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var remarks = "Excellent credit profile, approved for full amount."
     @State private var notifyBorrower = true
+    @State private var isSubmitting = false
+    @State private var errorMessage: String? = nil
 
     var body: some View {
         NavigationStack {
@@ -36,14 +38,34 @@ struct ApproveModalView: View {
                     .padding(Spacing.m)
                     .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
 
-                    Button {
-                        onComplete(remarks)
-                        dismiss()
-                    } label: {
-                        Text("Confirm Approval")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity, minHeight: 28)
+                    if let errorMessage {
+                        Text(errorMessage)
+                            .font(.caption)
+                            .foregroundStyle(.red)
                     }
+
+                    Button {
+                        Task {
+                            isSubmitting = true
+                            errorMessage = nil
+                            do {
+                                try await onComplete(remarks)
+                                dismiss()
+                            } catch {
+                                errorMessage = error.localizedDescription
+                            }
+                            isSubmitting = false
+                        }
+                    } label: {
+                        if isSubmitting {
+                            ProgressView().tint(.white)
+                        } else {
+                            Text("Confirm Approval")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity, minHeight: 28)
+                        }
+                    }
+                    .disabled(isSubmitting)
                     .buttonStyle(.borderedProminent)
                     .buttonBorderShape(.roundedRectangle(radius: CornerRadius.button))
                     .controlSize(.large)
@@ -56,7 +78,7 @@ struct ApproveModalView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button(action: { dismiss() }) { Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(.primary).padding(8).background(Color(uiColor: .systemGray5), in: Circle()) }
                 }
             }
         }

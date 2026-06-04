@@ -212,9 +212,7 @@ struct AddReminderScheduleSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") {
-                        handleCancel()
-                    }
+                    Button(action: { handleCancel() }) { Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(.primary).padding(8).background(Color(uiColor: .systemGray5), in: Circle()) }
                 }
                 
                 ToolbarItem(placement: .topBarTrailing) {

@@ -104,7 +104,7 @@ struct HomeDashboardView: View {
             }
             return false
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.large])
         .presentationDragIndicator(.visible)
     }
 

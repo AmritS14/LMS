@@ -10,6 +10,7 @@ struct BorrowerProfileView: View {
     @State private var isCheckingCreditScore = false
     @State private var creditScoreLastChecked: Date?
     @State private var showCreditCheckSheet = false
+    @State private var showEmploymentSheet = false
 
     private var kycStatusText: String {
         switch session.borrowerProfile?.kycStatus {
@@ -41,6 +42,39 @@ struct BorrowerProfileView: View {
                         value: session.currentUser?.phone ?? "—")
             }
 
+            // Employment & Income
+            Section {
+                Button {
+                    showEmploymentSheet = true
+                } label: {
+                    HStack(spacing: Spacing.sm) {
+                        iconBadge(icon: "briefcase.fill", color: .purple)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Employment Details")
+                                .foregroundStyle(.primary)
+                            if let type = session.borrowerProfile?.employmentType,
+                               let income = session.borrowerProfile?.monthlyIncome {
+                                Text(type.rawValue.capitalized)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(Formatting.currency(income))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        Spacer()
+                        if session.borrowerProfile?.employmentType == nil {
+                            Text("Setup")
+                                .foregroundStyle(Color.accentColor)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color(uiColor: .systemFill), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        }
+                    }
+                }
+                .foregroundStyle(.primary)
+            }
+
             // Credit Score
             Section {
                 creditScoreRow
@@ -57,12 +91,13 @@ struct BorrowerProfileView: View {
             // Verification
             Section("Verification") {
                 NavigationLink {
-                    KYCView()
+                    KYCOptionsView()
                 } label: {
                     let isVerified = session.borrowerProfile?.kycStatus == .verified
+                    let isRejected = session.borrowerProfile?.kycStatus == .rejected
                     iconLabelRow(
-                        icon: isVerified ? "checkmark.seal.fill" : "exclamationmark.triangle.fill",
-                        iconColor: isVerified ? .teal : .orange,
+                        icon: isVerified ? "checkmark.seal.fill" : (isRejected ? "xmark.seal.fill" : "person.text.rectangle.fill"),
+                        iconColor: isVerified ? .teal : (isRejected ? .red : .blue),
                         title: "KYC Status",
                         detail: kycStatusText
                     )
@@ -105,13 +140,11 @@ struct BorrowerProfileView: View {
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.large)
         .task { await loadData() }
-        .confirmationDialog(
-            "Sign out of your account?",
-            isPresented: $showSignOutConfirm,
-            titleVisibility: .visible
-        ) {
+        .alert("Sign Out?", isPresented: $showSignOutConfirm) {
             Button("Sign Out", role: .destructive) { signOut() }
             Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Are you sure you want to sign out of your account?")
         }
         .sheet(isPresented: $showCreditCheckSheet) {
             CreditCheckSheet(
@@ -120,8 +153,17 @@ struct BorrowerProfileView: View {
                     Task { await loadData() }
                 }
             )
-            .presentationDetents([.medium])
+            .presentationDetents([.large])
             .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showEmploymentSheet) {
+            if let env {
+                EmploymentDetailsSheet(env: env) {
+                    Task { await loadData() }
+                }
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+            }
         }
     }
 
@@ -458,7 +500,7 @@ struct CreditCheckSheet: View {
                                 let score = try await verifyPANAndFetchScore(pan: trimmed)
                                 isChecking = false
                                 
-                                // Save score to session
+                                // Save score to backend and update session
                                 var updatedProfile = session.borrowerProfile ?? BorrowerProfile(
                                     id: session.currentUser?.id ?? UUID(),
                                     dateOfBirth: Date()
@@ -466,8 +508,10 @@ struct CreditCheckSheet: View {
                                 updatedProfile.creditScore = score
                                 updatedProfile.panNumber = trimmed
                                 
-                                // Commits directly to live Supabase!
-                                try await env?.auth.saveBorrowerProfile(updatedProfile)
+                                if let env {
+                                    try await env.auth.saveBorrowerProfile(updatedProfile)
+                                }
+                                
                                 session.borrowerProfile = updatedProfile
                                 
                                 creditScoreLastChecked = .now
@@ -489,7 +533,7 @@ struct CreditCheckSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Cancel") { dismiss() }
+                    Button(action: { dismiss() }) { Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(.primary).padding(8).background(Color(uiColor: .systemGray5), in: Circle()) }
                 }
             }
         }
@@ -499,5 +543,189 @@ struct CreditCheckSheet: View {
     private func verifyPANAndFetchScore(pan: String) async throws -> Int {
         try await Task.sleep(for: .seconds(2.0)) // Simulating bureau fetch latency
         return Int.random(in: 710...820) // Return a high quality mock score
+    }
+}
+
+struct EmploymentDetailsSheet: View {
+    let env: AppEnvironment
+    var onSaved: () -> Void
+
+    @Environment(SessionStore.self) private var session
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var employmentType: EmploymentType = .salaried
+    @State private var monthlyIncomeText: String = ""
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                if let errorMessage {
+                    Section {
+                        Text(errorMessage)
+                            .foregroundStyle(Color.lmsDanger)
+                            .font(.subheadline)
+                    }
+                }
+
+                Section("Employment Type") {
+                    Picker("Type", selection: $employmentType) {
+                        ForEach(EmploymentType.allCases, id: \.self) { type in
+                            Text(type.rawValue.capitalized).tag(type)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+
+                Section("Monthly Income") {
+                    TextField("e.g. 50000", text: $monthlyIncomeText)
+                        .keyboardType(.numberPad)
+                }
+            }
+            .navigationTitle("Employment")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(action: { dismiss() }) { Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(.primary).padding(8).background(Color(uiColor: .systemGray5), in: Circle()) }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    if isSaving {
+                        ProgressView()
+                    } else {
+                        Button("Save") {
+                            save()
+                        }
+                        .disabled(monthlyIncomeText.isEmpty)
+                    }
+                }
+            }
+            .onAppear {
+                if let type = session.borrowerProfile?.employmentType {
+                    employmentType = type
+                }
+                if let income = session.borrowerProfile?.monthlyIncome {
+                    monthlyIncomeText = "\(income)"
+                }
+            }
+        }
+    }
+
+    private func save() {
+        guard let amount = Decimal(string: monthlyIncomeText) else {
+            errorMessage = "Please enter a valid monthly income."
+            return
+        }
+
+        Task {
+            isSaving = true
+            do {
+                var profile = session.borrowerProfile ?? BorrowerProfile(
+                    id: session.currentUser?.id ?? UUID(),
+                    dateOfBirth: Date()
+                )
+                profile.employmentType = employmentType
+                profile.monthlyIncome = amount
+
+                try await env.auth.saveBorrowerProfile(profile)
+                session.borrowerProfile = profile
+                
+                onSaved()
+                dismiss()
+            } catch {
+                errorMessage = error.localizedDescription
+                isSaving = false
+            }
+        }
+    }
+}
+
+struct KYCOptionsView: View {
+    @Environment(SessionStore.self) private var session
+    
+    var body: some View {
+        List {
+            if session.borrowerProfile?.kycStatus == .verified {
+                Section {
+                    VStack(alignment: .center, spacing: 12) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: 60))
+                            .foregroundStyle(.teal)
+                        Text("KYC Verified")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                        Text("Your identity has been successfully verified.")
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Spacing.m)
+                    .listRowBackground(Color.clear)
+                }
+            } else {
+                Section {
+                    VStack(alignment: .center, spacing: 12) {
+                        Image(systemName: session.borrowerProfile?.kycStatus == .rejected ? "xmark.seal.fill" : "person.text.rectangle.fill")
+                            .font(.system(size: 60))
+                            .foregroundStyle(session.borrowerProfile?.kycStatus == .rejected ? .red : .blue)
+                        Text(session.borrowerProfile?.kycStatus == .rejected ? "KYC Rejected" : "KYC Pending")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                        Text("Please complete your KYC to apply for loans.")
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Spacing.m)
+                    .listRowBackground(Color.clear)
+                }
+                
+                Section("Verification Options") {
+                    NavigationLink {
+                        AadhaarKYCView()
+                    } label: {
+                        HStack(spacing: 16) {
+                            Image(systemName: "shield.checkered")
+                                .font(.title2)
+                                .foregroundStyle(.teal)
+                                .frame(width: 32)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Official Aadhaar KYC")
+                                    .font(.body)
+                                    .fontWeight(.medium)
+                                Text("Verified via UIDAI (Recommended)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    
+                    NavigationLink {
+                        KYCView()
+                    } label: {
+                        HStack(spacing: 16) {
+                            Image(systemName: "testtube.2")
+                                .font(.title2)
+                                .foregroundStyle(.purple)
+                                .frame(width: 32)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Mock KYC Simulator")
+                                    .font(.body)
+                                    .fontWeight(.medium)
+                                Text("Testing purposes only")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+        }
+        .navigationTitle("KYC Status")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
