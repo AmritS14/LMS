@@ -1,34 +1,30 @@
 import SwiftUI
 
 struct OfficerTabView: View {
-    var body: some View {
-        TabView {
-            Tab("Dashboard", systemImage: "rectangle.grid.2x2.fill") {
-                OfficerNavigationStack { DashboardView() }
-            }
-            Tab("Recovery", systemImage: "arrow.counterclockwise.circle.fill") {
-                OfficerNavigationStack { RecoveryVerificationView() }
-            }
-        }
-    }
-}
-
-// Wraps each tab root in the shared loan-officer navigation path so every
-// screen resolves the same destination enum.
-struct OfficerNavigationStack<Root: View>: View {
     @Environment(AppViewModel.self) private var viewModel
-
-    
-    @ViewBuilder var root: () -> Root
 
     var body: some View {
         @Bindable var bindableViewModel = viewModel
 
-        NavigationStack(path: $bindableViewModel.navigationPath) {
-            root()
-                .navigationDestination(for: AppDestination.self) { destination in
-                    destinationView(for: destination)
+        TabView(selection: $bindableViewModel.selectedTab) {
+            Tab("Dashboard", systemImage: "rectangle.grid.2x2.fill", value: 0) {
+                NavigationStack(path: $bindableViewModel.navigationPath) {
+                    DashboardView()
+                        .navigationDestination(for: AppDestination.self) { destination in
+                            destinationView(for: destination)
+                        }
                 }
+            }
+            Tab("Recovery", systemImage: "arrow.counterclockwise.circle.fill", value: 1) {
+                NavigationStack {
+                    RecoveryVerificationView()
+                }
+            }
+            Tab("Messages", systemImage: "bubble.left.and.bubble.right.fill", value: 2) {
+                NavigationStack {
+                    CommunicationsMainView()
+                }
+            }
         }
     }
 

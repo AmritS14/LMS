@@ -2,6 +2,8 @@ import SwiftUI
 
 struct LoanOfficerProfileView: View {
     @Environment(AppViewModel.self) var viewModel
+    @Environment(\.appEnvironment) private var env
+    @Environment(SessionStore.self) private var session
     
     // Settings state
     @State private var enableNotifications = true
@@ -11,7 +13,11 @@ struct LoanOfficerProfileView: View {
     // Collapsible branch section state
     @State private var isBranchExpanded = false
     
-
+    // Interactive Signature Pad state
+    @State private var currentLine = [CGPoint]()
+    @State private var lines = [[CGPoint]]()
+    @State private var isSignatureSaved = false
+    @State private var showLogoutConfirmation = false
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 24) {
@@ -31,7 +37,28 @@ struct LoanOfficerProfileView: View {
                     syncOnCellular: $syncOnCellular
                 )
                 
-
+                // Premium Interactive Digital Signature Pad
+                SignaturePadSection(
+                    currentLine: $currentLine,
+                    lines: $lines,
+                    isSignatureSaved: $isSignatureSaved
+                )
+                
+                // Sign Out Button
+                Button(role: .destructive) {
+                    showLogoutConfirmation = true
+                } label: {
+                    HStack {
+                        Spacer()
+                        Text("Sign Out")
+                            .font(.headline)
+                        Spacer()
+                    }
+                    .padding()
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .cornerRadius(12)
+                }
+                .padding(.horizontal)
                 Spacer(minLength: 40)
             }
             .padding(.bottom, 20)
@@ -39,6 +66,18 @@ struct LoanOfficerProfileView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Officer Profile")
         .navigationBarTitleDisplayMode(.inline)
+        .alert("Sign Out?", isPresented: $showLogoutConfirmation) {
+            Button("Sign Out", role: .destructive) {
+                Task {
+                    try? await env?.auth.signOut()
+                    session.currentUser = nil
+                    session.staffProfile = nil
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Are you sure you want to sign out?")
+        }
     }
 }
 
@@ -310,6 +349,130 @@ struct SettingsSection: View {
             .cornerRadius(18)
             .padding(.horizontal, 20)
         }
+    }
+}
+
+// MARK: - Signature Pad Section
+struct SignaturePadSection: View {
+    @Binding var currentLine: [CGPoint]
+    @Binding var lines: [[CGPoint]]
+    @Binding var isSignatureSaved: Bool
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            LOSectionHeader(
+                title: "Digital Signature",
+                subtitle: "Used to sign sanction letters"
+            )
+            .padding(.horizontal, 20)
+            
+            VStack(spacing: 12) {
+                // Drawing Canvas
+                ZStack {
+                    Color(.systemBackground)
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color(.separator).opacity(0.4), lineWidth: 1)
+                        )
+                    
+                    // Guide Line
+                    Path { path in
+                        path.move(to: CGPoint(x: 20, y: 110))
+                        path.addLine(to: CGPoint(x: 320, y: 110))
+                    }
+                    .stroke(Color.secondary.opacity(0.2), style: StrokeStyle(lineWidth: 1, lineCap: .round, dash: [5]))
+                    
+                    // Existing lines
+                    ForEach(0..<lines.count, id: \.self) { index in
+                        DrawingLine(points: lines[index])
+                            .stroke(Color.primary, style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+                    }
+                    
+                    // Current drawing line
+                    DrawingLine(points: currentLine)
+                        .stroke(Color.primary, style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+                    
+                    if lines.isEmpty && currentLine.isEmpty {
+                        Text("Sign here on the screen")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.secondary.opacity(0.6))
+                    }
+                }
+                .frame(height: 150)
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            let newPoint = value.location
+                            // Limit drawing within canvas bounds
+                            if newPoint.y >= 0 && newPoint.y <= 150 {
+                                currentLine.append(newPoint)
+                            }
+                        }
+                        .onEnded { _ in
+                            if !currentLine.isEmpty {
+                                lines.append(currentLine)
+                                currentLine = []
+                            }
+                        }
+                )
+                
+                // Controls
+                HStack(spacing: 12) {
+                    Button(action: {
+                        lines.removeAll()
+                        currentLine.removeAll()
+                        isSignatureSaved = false
+                    }) {
+                        Label("Clear", systemImage: "arrow.counterclockwise")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.red)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 16)
+                            .background(Color.red.opacity(0.1))
+                            .cornerRadius(10)
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        if !lines.isEmpty {
+                            withAnimation {
+                                isSignatureSaved = true
+                            }
+                        }
+                    }) {
+                        Label(isSignatureSaved ? "Signature Saved" : "Save Signature", systemImage: isSignatureSaved ? "checkmark" : "square.and.arrow.down")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 16)
+                            .background(lines.isEmpty ? Color.gray : (isSignatureSaved ? Color.green : Color.blue))
+                            .cornerRadius(10)
+                    }
+                    .disabled(lines.isEmpty)
+                }
+            }
+            .padding(16)
+            .background(Color(.secondarySystemGroupedBackground))
+            .cornerRadius(18)
+            .padding(.horizontal, 20)
+        }
+    }
+}
+
+// Helper view to draw line path from points
+struct DrawingLine: Shape {
+    var points: [CGPoint]
+    
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        guard let firstPoint = points.first else { return path }
+        path.move(to: firstPoint)
+        for point in points.dropFirst() {
+            path.addLine(to: point)
+        }
+        return path
     }
 }
 

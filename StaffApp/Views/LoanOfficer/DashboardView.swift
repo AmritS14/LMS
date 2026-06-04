@@ -33,6 +33,7 @@ struct DashboardView: View {
                 toolbarPill
             }
         }
+        .task { await viewModel.refreshAll() }
     }
 
     private var subtitleRow: some View {

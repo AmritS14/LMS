@@ -420,13 +420,12 @@ extension RecoveryVerificationView {
 
             VStack(spacing: 8) {
                 HStack(spacing: 12) {
-                    // MARK: Message Button
                     Button {
                         if let conversation = viewModel.conversations.first(where: {
                             $0.borrowerName == borrower.borrowerName
                         }) {
                             viewModel.selectedConversation = conversation
-                            viewModel.navigationPath.append(AppDestination.communications)
+                            viewModel.selectedTab = 2
                         }
                     } label: {
                         HStack(spacing: 6) {
