@@ -18,4 +18,17 @@ extension Font {
     static let lmsMonoTimer: Font   = .title3.monospacedDigit().weight(.semibold)
     static let lmsHeroAmount: Font  = .system(.largeTitle, design: .rounded).weight(.bold)
     static let lmsHeroIcon: Font    = .system(size: 48)
+
+    // MARK: - Admin-specific Design Tokens
+    static let adminLargeTitle: Font  = .largeTitle.weight(.bold)
+    static let adminScreenTitle: Font = .title2.weight(.bold)
+    static let adminSectionHeader: Font = .footnote.weight(.semibold)
+    static let adminCardTitle: Font   = .subheadline.weight(.semibold)
+    static let adminBody: Font        = .body
+    static let adminSecondary: Font   = .subheadline
+    static let adminCaption: Font     = .caption
+    static let adminStatus: Font      = .footnote.weight(.semibold)
+    static let adminButton: Font      = .headline.weight(.bold)
+    static let adminFormLabel: Font   = .subheadline.weight(.semibold)
+    static let adminFormInput: Font   = .body
 }

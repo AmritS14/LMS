@@ -4,9 +4,16 @@ struct ManagerApplicationsView: View {
     @Environment(ManagerStore.self) private var store
     @State private var searchText = ""
     @State private var filter: Filter = .all
+    @State private var loanTypeFilter: LoanType? = nil
+    @State private var riskFilter: RiskLevel? = nil
+    @State private var sortByAmount = false
 
     // Allow pre-setting the filter from navigation
     var initialFilter: Filter? = nil
+
+    private var isFiltered: Bool {
+        loanTypeFilter != nil || riskFilter != nil || sortByAmount
+    }
 
     enum Filter: String, CaseIterable, Identifiable, Hashable {
         case all = "All"
@@ -37,19 +44,23 @@ struct ManagerApplicationsView: View {
 
     private var filteredApps: [ManagerApplication] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        return store.applications.filter { app in
+        var apps = store.applications.filter { app in
             guard filter.matches(app) else { return false }
+            if let lt = loanTypeFilter, app.loanType != lt { return false }
+            if let rl = riskFilter, app.riskLevel != rl { return false }
             guard !query.isEmpty else { return true }
             return app.borrowerName.localizedCaseInsensitiveContains(query)
                 || app.subtitle.localizedCaseInsensitiveContains(query)
                 || app.officerName.localizedCaseInsensitiveContains(query)
         }
+        if sortByAmount {
+            apps.sort { $0.base.loanAmount > $1.base.loanAmount }
+        }
+        return apps
     }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            filterChips
-
             LazyVStack(spacing: Spacing.m) {
                 if filteredApps.isEmpty {
                     ContentUnavailableView("No applications found",
@@ -68,36 +79,79 @@ struct ManagerApplicationsView: View {
         .background(Color.lmsBackground)
         .navigationTitle("Applications")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    // Loan Type
+                    Section("Loan Type") {
+                        Button {
+                            loanTypeFilter = nil
+                        } label: {
+                            Label("All Types", systemImage: loanTypeFilter == nil ? "checkmark" : "line.horizontal.3.decrease")
+                        }
+                        ForEach(LoanType.allCases, id: \.self) { type in
+                            Button {
+                                loanTypeFilter = loanTypeFilter == type ? nil : type
+                            } label: {
+                                Label(type.rawValue.capitalized,
+                                      systemImage: loanTypeFilter == type ? "checkmark" : "creditcard")
+                            }
+                        }
+                    }
+
+                    // Risk Level
+                    Section("Risk Level") {
+                        Button {
+                            riskFilter = nil
+                        } label: {
+                            Label("All Risks", systemImage: riskFilter == nil ? "checkmark" : "line.horizontal.3.decrease")
+                        }
+                        ForEach(RiskLevel.allCases, id: \.self) { risk in
+                            Button {
+                                riskFilter = riskFilter == risk ? nil : risk
+                            } label: {
+                                Label(risk.rawValue.capitalized,
+                                      systemImage: riskFilter == risk ? "checkmark" : "shield")
+                            }
+                        }
+                    }
+
+                    // Sort
+                    Section("Sort") {
+                        Toggle(isOn: $sortByAmount) {
+                            Label("Highest Amount First", systemImage: "indianrupeesign.arrow.trianglehead.counterclockwise.rotate.90")
+                        }
+                    }
+
+                    // Clear all
+                    if isFiltered {
+                        Divider()
+                        Button(role: .destructive) {
+                            loanTypeFilter = nil
+                            riskFilter = nil
+                            sortByAmount = false
+                        } label: {
+                            Label("Clear Filters", systemImage: "xmark.circle")
+                        }
+                    }
+                } label: {
+                    Image(systemName: isFiltered ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(isFiltered ? Color.lmsAccent : .primary)
+                }
+            }
+        }
         .searchable(text: $searchText, prompt: "Search applicant, ref, or officer")
+        .searchScopes($filter, activation: .automatic) {
+            ForEach(Filter.allCases) { scope in
+                Text(scope.rawValue).tag(scope)
+            }
+        }
         .refreshable { await store.refreshAll() }
         .onAppear {
             if let initialFilter, filter == .all {
                 filter = initialFilter
             }
-        }
-    }
-
-    // MARK: Filter chips
-
-    private var filterChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: Spacing.s) {
-                ForEach(Filter.allCases) { option in
-                    Button {
-                        filter = option
-                    } label: {
-                        Text(option.rawValue)
-                            .font(.subheadline.weight(.semibold))
-                            .padding(.horizontal, Spacing.sm)
-                            .padding(.vertical, Spacing.xs)
-                            .background(filter == option ? Color.lmsAccent : Color.lmsFill, in: Capsule())
-                            .foregroundStyle(filter == option ? .white : .primary)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, Spacing.m)
-            .padding(.vertical, Spacing.s)
         }
     }
 

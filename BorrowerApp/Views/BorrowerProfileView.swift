@@ -139,6 +139,7 @@ struct BorrowerProfileView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.large)
+        .refreshable { await loadData() }
         .task { await loadData() }
         .alert("Sign Out?", isPresented: $showSignOutConfirm) {
             Button("Sign Out", role: .destructive) { signOut() }

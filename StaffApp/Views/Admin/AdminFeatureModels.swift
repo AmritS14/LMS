@@ -107,6 +107,7 @@ struct AdminLoanProduct: Identifiable, Hashable, Codable, Sendable {
     var interestRate: Double
     var maxTenure: Int
     var tenureUnit: TenureUnit
+    var isActive: Bool = true
 
     static let sampleProducts: [LoanCategory: [AdminLoanProduct]] = [
         .personal: [
@@ -244,11 +245,7 @@ enum AdminSeedData {
         }
     )
 
-    static let auditEntries: [AuditEntry] = [
-        AuditEntry(actorID: adminID, actorRole: .admin, action: "Updated role", entityType: "User", entityID: officerID, metadata: ["role": "Loan Officer"], timestamp: .now.addingTimeInterval(-3600)),
-        AuditEntry(actorID: managerID, actorRole: .manager, action: "Reviewed application", entityType: "LoanApplication", entityID: MockOfficerData.assignedApplications()[0].id, metadata: ["result": "Recommended"], timestamp: .now.addingTimeInterval(-7200)),
-        AuditEntry(actorID: officerID, actorRole: .loanOfficer, action: "Verified document", entityType: "LoanDocument", entityID: UUID(), metadata: ["document": "PAN Card"], timestamp: .now.addingTimeInterval(-14_000))
-    ]
+
 }
 
 private func mapAppStatus(_ raw: String) -> ApplicationStatus {
@@ -290,7 +287,7 @@ final class DashboardViewModel {
         stats: DashboardStats(totalAmount: "—", totalUser: 0, activeLoans: 0, applications: 0),
         recentApplications: []
     )
-    var isAmountVisible: Bool = false
+    var recentAuditLogs: [AuditEntry] = []
     var rawTotalAmount: Decimal = 0
     var isLoading: Bool = false
     var error: String? = nil
@@ -385,6 +382,14 @@ final class DashboardViewModel {
             ),
             recentApplications: recent
         )
+
+        let admin = environment.admin
+        do {
+            let logs = try await admin.fetchAuditLogs()
+            self.recentAuditLogs = Array(logs.prefix(10))
+        } catch {
+            print("Failed to fetch dashboard audit logs: \(error)")
+        }
     }
 
     func subscribeToRealtimeChanges() {
@@ -399,7 +404,7 @@ final class DashboardViewModel {
                 table: "loan_applications"
             )
             do {
-                await channel.subscribe()
+                try await channel.subscribeWithError()
                 for await _ in changes {
                     try? await self.refreshDashboard()
                 }
@@ -558,10 +563,10 @@ final class AdminApplicationDetailViewModel {
                 AnyAction.self,
                 schema: "public",
                 table: "loan_applications",
-                filter: "id=eq.\(applicationID.uuidString)"
+                filter: .eq("id", value: applicationID.uuidString)
             )
             do {
-                await channel.subscribe()
+                try await channel.subscribeWithError()
                 for await _ in changes {
                     await self.loadDetails()
                 }
@@ -580,7 +585,7 @@ final class AdminApplicationDetailViewModel {
 @MainActor
 @Observable
 final class UserManagementViewModel {
-    enum Filter: Equatable {
+    enum Filter: Equatable, Hashable {
         case all
         case role(UserRole)
     }
@@ -880,7 +885,8 @@ final class LoanConfigViewModel {
                 maxAmount: NSDecimalNumber(decimal: p.maximumAmount).doubleValue,
                 interestRate: p.displayRate,
                 maxTenure: p.maximumTenureMonths,
-                tenureUnit: .months
+                tenureUnit: .months,
+                isActive: p.isActive
             )
             // Prefer description-stored category (set on create/update) over name heuristic
             let category: LoanCategory
@@ -995,7 +1001,7 @@ final class LoanConfigViewModel {
             maximumTenureMonths: maxMonths,
             minimumInterestRate: product.interestRate,
             maximumInterestRate: product.interestRate,
-            isActive: true
+            isActive: product.isActive
         )
         
         if let environment {

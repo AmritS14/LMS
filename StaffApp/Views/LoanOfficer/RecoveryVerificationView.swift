@@ -55,6 +55,8 @@ struct RecoveryVerificationView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Recovery")
         .navigationBarTitleDisplayMode(.inline)
+        .refreshable { await viewModel.refreshAll() }
+        .task { await viewModel.refreshAll() }
         .sheet(isPresented: $showCallLogSheet) {
             callLogSheetContent
         }

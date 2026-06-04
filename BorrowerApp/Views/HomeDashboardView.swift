@@ -82,14 +82,55 @@ struct HomeDashboardView: View {
                     systemImage: "exclamationmark.triangle",
                     description: Text(error)
                 )
-            } else if viewModel.activeLoans.isEmpty && viewModel.applications.isEmpty {
-                emptyState
-                    .padding(.horizontal, Spacing.m)
-                    .padding(.top, Spacing.m)
             } else {
-                contentSections
+                loanSummaryCard
+                
+                if viewModel.activeLoans.isEmpty && viewModel.applications.isEmpty {
+                    emptyState
+                        .padding(.horizontal, Spacing.m)
+                } else {
+                    contentSections
+                }
             }
         }
+    }
+
+    private var loanSummaryCard: some View {
+        HStack(spacing: Spacing.m) {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("Total Loans")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fontWeight(.semibold)
+                    .textCase(.uppercase)
+                Text("\(viewModel.applications.count)")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.primary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(Spacing.m)
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+            .shadow(color: Color.black.opacity(0.02), radius: 6, x: 0, y: 3)
+            
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("Active Loans")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fontWeight(.semibold)
+                    .textCase(.uppercase)
+                Text("\(viewModel.activeLoans.count)")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.primary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(Spacing.m)
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+            .shadow(color: Color.black.opacity(0.02), radius: 6, x: 0, y: 3)
+        }
+        .padding(.horizontal, Spacing.m)
+        .padding(.top, Spacing.m)
     }
 
     private func paySheet(emi: EMI) -> some View {

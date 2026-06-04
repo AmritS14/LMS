@@ -10,7 +10,9 @@ actor SupabaseAuthService: AuthService {
     
     func signIn(email: String, password: String) async throws -> User {
         let session = try await client.auth.signIn(email: email, password: password)
-        return try await mapSupabaseUserToLocalUser(session.user)
+        let user = try await mapSupabaseUserToLocalUser(session.user)
+        await SupabaseManager.shared.logAuditEvent(action: "User Login", entityType: "auth", entityID: user.id, metadata: [:])
+        return user
     }
     
     func signUp(email: String, password: String, fullName: String, phone: String, dob: Date) async throws {
@@ -39,7 +41,9 @@ actor SupabaseAuthService: AuthService {
             token: code,
             type: .signup
         )
-        return try await mapSupabaseUserToLocalUser(session.user)
+        let user = try await mapSupabaseUserToLocalUser(session.user)
+        await SupabaseManager.shared.logAuditEvent(action: "User Login", entityType: "auth", entityID: user.id, metadata: [:])
+        return user
     }
     
     func requestOTP(identifier: String) async throws {
@@ -58,6 +62,9 @@ actor SupabaseAuthService: AuthService {
     }
     
     func signOut() async throws {
+        if let user = await currentUser {
+            await SupabaseManager.shared.logAuditEvent(action: "User Logout", entityType: "auth", entityID: user.id, metadata: [:])
+        }
         try await client.auth.signOut()
     }
     

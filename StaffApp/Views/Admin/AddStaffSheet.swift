@@ -29,7 +29,7 @@ struct AddStaffSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Identity") {
+                Section {
                     TextField("Full Name", text: $fullName)
                         .textContentType(.name)
                     TextField("Work Email", text: $email)
@@ -37,9 +37,15 @@ struct AddStaffSheet: View {
                         .keyboardType(.emailAddress)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
+                } header: {
+                    Text("Identity")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
 
-                Section("Role & Employment") {
+                Section {
                     Picker("Role", selection: $role) {
                         ForEach(creatableRoles, id: \.self) { r in
                             Text(r.displayName).tag(r)
@@ -48,6 +54,12 @@ struct AddStaffSheet: View {
                     TextField("Employee ID (e.g. EMP-1002)", text: $employeeID)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.characters)
+                } header: {
+                    Text("Role & Employment")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
 
                 Section {
@@ -55,15 +67,20 @@ struct AddStaffSheet: View {
                         .textContentType(.newPassword)
                 } header: {
                     Text("Initial Credentials")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 } footer: {
                     Text("Minimum 8 characters. The staff member signs in with this and can change it later.")
+                        .font(.adminCaption)
                 }
 
                 if let errorMessage {
                     Section {
                         Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
                             .foregroundStyle(.red)
-                            .font(.footnote)
+                            .font(.adminStatus)
                     }
                 }
             }

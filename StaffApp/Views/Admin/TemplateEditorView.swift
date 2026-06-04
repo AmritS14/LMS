@@ -72,6 +72,10 @@ struct TemplateEditorView: View {
             }
         } header: {
             Text("Template Info")
+                .font(.adminSectionHeader)
+                .foregroundStyle(Color.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, 8)
         }
     }
 
@@ -97,6 +101,10 @@ struct TemplateEditorView: View {
             }
         } header: {
             Text("Delivery Channels")
+                .font(.adminSectionHeader)
+                .foregroundStyle(Color.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, 8)
         }
     }
 
@@ -114,6 +122,10 @@ struct TemplateEditorView: View {
             placeholderHint
         } header: {
             Text("Message Body")
+                .font(.adminSectionHeader)
+                .foregroundStyle(Color.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, 8)
         }
     }
 
@@ -124,16 +136,15 @@ struct TemplateEditorView: View {
                 // Simulated notification header
                 HStack(spacing: 10) {
                     Image(systemName: "bell.fill")
-                        .font(.title3)
+                        .font(.adminCardTitle)
                         .foregroundStyle(AdminColor.accent)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(viewModel.editingTitle)
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
+                            .font(.adminCardTitle)
 
                         Text("Just now")
-                            .font(.caption2)
+                            .font(.adminCaption)
                             .foregroundStyle(.tertiary)
                     }
                 }
@@ -142,13 +153,17 @@ struct TemplateEditorView: View {
 
                 // Resolved body text
                 Text(viewModel.previewBodyText)
-                    .font(.subheadline)
+                    .font(.adminBody)
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.vertical, 8)
         } header: {
             Text("Borrower Preview")
+                .font(.adminSectionHeader)
+                .foregroundStyle(Color.secondary)
+                .textCase(.uppercase)
+                .padding(.leading, 8)
         }
     }
 
@@ -161,7 +176,7 @@ struct TemplateEditorView: View {
                 }
             } label: {
                 Text("Save Template")
-                    .font(.headline)
+                    .font(.adminButton)
                     .frame(maxWidth: .infinity)
             }
             .disabled(!viewModel.hasUnsavedChanges)
@@ -187,7 +202,7 @@ struct TemplateEditorView: View {
             }
         } label: {
             Label("Available Placeholders", systemImage: "curlybraces")
-                .font(.caption)
+                .font(.adminCaption)
                 .foregroundStyle(.secondary)
         }
     }
@@ -196,11 +211,11 @@ struct TemplateEditorView: View {
     private func placeholderToken(_ token: String, description: String) -> some View {
         HStack {
             Text(token)
-                .font(.system(.caption, design: .monospaced))
+                .font(.adminCaption.monospacedDigit())
                 .foregroundStyle(AdminColor.accent)
             Spacer()
             Text(description)
-                .font(.caption2)
+                .font(.adminCaption)
                 .foregroundStyle(.tertiary)
         }
     }

@@ -112,7 +112,7 @@ struct UserListView: View {
                     showAddStaff = true
                 } label: {
                     Image(systemName: "person.badge.plus")
-                        .font(.title3)
+                        .font(.adminCardTitle)
                 }
                 .accessibilityLabel("Add staff user")
             }
@@ -121,6 +121,7 @@ struct UserListView: View {
             AddStaffSheet(viewModel: viewModel)
         }
     }
+
 
 }
 

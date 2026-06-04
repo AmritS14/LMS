@@ -47,6 +47,10 @@ struct AddLoanProductSheet: View {
                     TextField("Product Name (e.g. Standard Home Loan)", text: $name)
                 } header: {
                     Text("Product Name")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
 
                 // Section 3: Financial Limits
@@ -67,6 +71,10 @@ struct AddLoanProductSheet: View {
                     }
                 } header: {
                     Text("Configure Limits (₹)")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
 
                 // Section 4: Interest Rate
@@ -80,6 +88,10 @@ struct AddLoanProductSheet: View {
                     Slider(value: $interestRate, in: 1...30, step: 0.25)
                 } header: {
                     Text("Interest Rate")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
 
                 // Section 5: Tenure Constraints
@@ -100,6 +112,10 @@ struct AddLoanProductSheet: View {
                     .pickerStyle(.segmented)
                 } header: {
                     Text("Tenure Constraints")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
                 }
             }
             .navigationTitle("New Loan Product")

@@ -27,15 +27,13 @@ struct SystemSettingsView: View {
                 } label: {
                     settingsRow(title: "Loan Archives", subtitle: "Manage historical and closed loan records")
                 }
-                NavigationLink {
-                    AuditListView()
-                } label: {
-                    settingsRow(title: "Audit Trail", subtitle: "View system-wide compliance logs")
-                }
+
             } header: {
                 Text("Catalog")
-                    .font(.lmsTitle3)
-                    .textCase(nil)
+                    .font(.adminSectionHeader)
+                    .foregroundStyle(Color.secondary)
+                    .textCase(.uppercase)
+                    .padding(.leading, 8)
             }
         }
         .navigationTitle("Configure")

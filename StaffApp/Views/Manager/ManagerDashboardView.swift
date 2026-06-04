@@ -21,7 +21,7 @@ struct ManagerDashboardView: View {
                 .controlSize(.large)
                 .padding(.horizontal, Spacing.m)
 
-                branchPerformanceSection
+               
                 smartInsightsSection
             }
             .padding(.vertical, Spacing.m)
@@ -62,9 +62,6 @@ struct ManagerDashboardView: View {
     private var subtitleRow: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(store.greetingDateText)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
                 Text("Branch: \(store.branchName)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -180,33 +177,33 @@ struct ManagerDashboardView: View {
         .buttonStyle(ScaleButtonStyle())
     }
 
-    // MARK: Branch performance
-
-    private var branchPerformanceSection: some View {
-        SectionCard(title: "Branch Performance") {
-            HStack(spacing: Spacing.l) {
-                VStack(spacing: Spacing.s) {
-                    CircularProgress(progress: store.approvalRate, color: .lmsAccent, lineWidth: 7, size: 76)
-                    Text("Approval Rate")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    Text("Avg Decision Time")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(store.avgDecisionTime)
-                        .font(.system(.title2, design: .rounded).weight(.bold))
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(Spacing.m)
-                .background(Color.lmsBackground, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
-            }
-        }
-        .padding(.horizontal, Spacing.m)
-    }
+//    // MARK: Branch performance
+//
+//    private var branchPerformanceSection: some View {
+//        SectionCard(title: "Branch Performance") {
+//            HStack(spacing: Spacing.l) {
+//                VStack(spacing: Spacing.s) {
+//                    CircularProgress(progress: store.approvalRate, color: .lmsAccent, lineWidth: 7, size: 76)
+//                    Text("Approval Rate")
+//                        .font(.caption)
+//                        .foregroundStyle(.secondary)
+//                }
+//                .frame(maxWidth: .infinity)
+//
+//                VStack(alignment: .leading, spacing: Spacing.xs) {
+//                    Text("Avg Decision Time")
+//                        .font(.caption)
+//                        .foregroundStyle(.secondary)
+//                    Text(store.avgDecisionTime)
+//                        .font(.system(.title2, design: .rounded).weight(.bold))
+//                }
+//                .frame(maxWidth: .infinity, alignment: .leading)
+//                .padding(Spacing.m)
+//                .background(Color.lmsBackground, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+//            }
+//        }
+//        .padding(.horizontal, Spacing.m)
+//    }
 
     // MARK: Smart insight
 

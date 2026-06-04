@@ -43,19 +43,8 @@ struct RepaymentDashboardView: View {
         .listStyle(.insetGrouped)
         .navigationTitle(loan?.status == .settled ? "Loan History" : "Repayments")
         .navigationBarTitleDisplayMode(.large)
-        .task {
-            guard let env else { return }
-            if let providedLoan = loan {
-                await viewModel.loadRepaymentData(loanService: env.loans, loan: providedLoan)
-            } else if let userID = session.currentUser?.id {
-                do {
-                    let loans = try await env.loans.fetchActiveLoans(borrowerID: userID)
-                    if let first = loans.first(where: { $0.status == .active }) {
-                        await viewModel.loadRepaymentData(loanService: env.loans, loan: first)
-                    }
-                } catch {}
-            }
-        }
+        .refreshable { await loadData() }
+        .task { await loadData() }
         .sheet(item: $emiToPay) { emi in
             PayEMISheet(emi: emi, loan: viewModel.activeLoan) {
                 await viewModel.payEMI(emi)
@@ -85,6 +74,20 @@ struct RepaymentDashboardView: View {
         }
     }
     
+    private func loadData() async {
+        guard let env else { return }
+        if let providedLoan = loan {
+            await viewModel.loadRepaymentData(loanService: env.loans, loan: providedLoan)
+        } else if let userID = session.currentUser?.id {
+            do {
+                let loans = try await env.loans.fetchActiveLoans(borrowerID: userID)
+                if let first = loans.first(where: { $0.status == .active }) {
+                    await viewModel.loadRepaymentData(loanService: env.loans, loan: first)
+                }
+            } catch {}
+        }
+    }
+
     private var nextEMI: EMI? {
         viewModel.emiSchedule.filter { $0.status == .upcoming || $0.status == .overdue }.min(by: { $0.dueDate < $1.dueDate })
     }

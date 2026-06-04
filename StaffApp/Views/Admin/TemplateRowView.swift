@@ -23,17 +23,16 @@ struct TemplateRowView: View {
             // Content
             VStack(alignment: .leading, spacing: 4) {
                 Text(template.title)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
+                    .font(.adminCardTitle)
                     .lineLimit(1)
                     .foregroundStyle(.primary)
 
                 Text(template.triggerEvent.rawValue)
-                    .font(.caption)
+                    .font(.adminCaption)
                     .foregroundStyle(.secondary)
 
                 Text(template.bodyText)
-                    .font(.caption2)
+                    .font(.adminCaption)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
@@ -48,7 +47,7 @@ struct TemplateRowView: View {
     private var triggerIcon: some View {
         let color = triggerColor
         return Image(systemName: template.triggerEvent.systemImage)
-            .font(.title3)
+            .font(.adminCardTitle)
             .foregroundStyle(color)
             .frame(width: 36, height: 36)
             .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))

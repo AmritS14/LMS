@@ -30,8 +30,7 @@ struct TemplateListView: View {
                             isSelected: viewModel.selectedTemplate?.id == template.id
                         )
                         Image(systemName: "chevron.right")
-                            .font(.footnote)
-                            .fontWeight(.semibold)
+                            .font(.adminSecondary)
                             .foregroundStyle(.tertiary)
                     }
                 }

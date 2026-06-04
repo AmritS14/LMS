@@ -12,75 +12,71 @@ struct RiskAlertsView: View {
     }
 
     var body: some View {
-        List {
-            // Summary
-            if store.unreadRiskAlertCount > 0 {
-                Section {
-                    HStack(spacing: Spacing.sm) {
-                        Image(systemName: "exclamationmark.shield.fill")
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(Color.lmsDanger)
-                            .frame(width: 40, height: 40)
-                            .background(Color.lmsDanger.opacity(0.12),
-                                        in: RoundedRectangle(cornerRadius: CornerRadius.small))
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(store.unreadRiskAlertCount) unread alerts")
-                                .font(.headline)
-                            Text("Review and take action on high-risk items")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                    }
+        VStack(spacing: 0) {
+            // Filter Picker (Native segmented control)
+            Picker("Severity", selection: $filterSeverity) {
+                Text("All").tag(RiskAlertSeverity?.none)
+                ForEach(RiskAlertSeverity.allCases, id: \.self) { severity in
+                    Text(severity.rawValue).tag(RiskAlertSeverity?.some(severity))
                 }
             }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, Spacing.m)
+            .padding(.vertical, Spacing.s)
+            .background(Color.lmsBackground)
 
-            // Filter chips
-            Section {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: Spacing.s) {
-                        severityChip("All", isSelected: filterSeverity == nil) {
-                            filterSeverity = nil
-                        }
-                        ForEach(RiskAlertSeverity.allCases, id: \.self) { severity in
-                            severityChip(severity.rawValue, isSelected: filterSeverity == severity) {
-                                filterSeverity = severity
-                            }
-                        }
-                    }
-                }
-                .listRowInsets(EdgeInsets(top: Spacing.s, leading: Spacing.m, bottom: Spacing.s, trailing: Spacing.m))
-                .listRowBackground(Color.clear)
-            }
-
-            // Alerts
             if filteredAlerts.isEmpty {
-                Section {
-                    ContentUnavailableView("No alerts",
-                                           systemImage: "checkmark.shield",
-                                           description: Text("No risk alerts for the selected filter."))
-                }
+                ContentUnavailableView("No alerts",
+                                       systemImage: "checkmark.shield",
+                                       description: Text("No risk alerts for the selected filter."))
+                    .frame(maxHeight: .infinity)
             } else {
-                Section("Risk Alerts") {
-                    ForEach(filteredAlerts) { alert in
-                        alertRow(alert)
-                            .swipeActions(edge: .leading) {
-                                Button {
-                                    store.markRiskAlertRead(alert)
-                                } label: {
-                                    Label("Read", systemImage: "envelope.open")
+                List {
+                    // Summary
+                    if store.unreadRiskAlertCount > 0 {
+                        Section {
+                            HStack(spacing: Spacing.sm) {
+                                Image(systemName: "exclamationmark.shield.fill")
+                                    .font(.title3.weight(.semibold))
+                                    .foregroundStyle(Color.lmsDanger)
+                                    .frame(width: 40, height: 40)
+                                    .background(Color.lmsDanger.opacity(0.12),
+                                                in: RoundedRectangle(cornerRadius: CornerRadius.small))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("\(store.unreadRiskAlertCount) unread alerts")
+                                        .font(.headline)
+                                    Text("Review and take action on high-risk items")
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
                                 }
-                                .tint(.lmsInfo)
+                                Spacer()
                             }
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    store.dismissRiskAlert(alert)
-                                } label: {
-                                    Label("Dismiss", systemImage: "xmark.circle")
+                        }
+                    }
+
+                    // Alerts
+                    Section("Risk Alerts") {
+                        ForEach(filteredAlerts) { alert in
+                            alertRow(alert)
+                                .swipeActions(edge: .leading) {
+                                    Button {
+                                        store.markRiskAlertRead(alert)
+                                    } label: {
+                                        Label("Read", systemImage: "envelope.open")
+                                    }
+                                    .tint(.lmsInfo)
                                 }
-                            }
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    Button(role: .destructive) {
+                                        store.dismissRiskAlert(alert)
+                                    } label: {
+                                        Label("Dismiss", systemImage: "xmark.circle")
+                                    }
+                                }
+                        }
                     }
                 }
+                .listStyle(.insetGrouped)
             }
         }
         .listStyle(.insetGrouped)
@@ -139,19 +135,6 @@ struct RiskAlertsView: View {
         }
     }
 
-    // MARK: Severity Chip
-
-    private func severityChip(_ label: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(label)
-                .font(.subheadline.weight(.semibold))
-                .padding(.horizontal, Spacing.sm)
-                .padding(.vertical, Spacing.xs)
-                .background(isSelected ? Color.lmsAccent : Color.lmsFill, in: Capsule())
-                .foregroundStyle(isSelected ? .white : .primary)
-        }
-        .buttonStyle(.plain)
-    }
 
     private func severityColor(_ severity: RiskAlertSeverity) -> Color {
         switch severity {

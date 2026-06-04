@@ -50,7 +50,7 @@ struct EMISchedulerView: View {
                     VStack(alignment: .leading, spacing: Spacing.xs) {
                         HStack {
                             Text(schedule.name)
-                                .font(.lmsHeadline)
+                                .font(.adminCardTitle)
                                 .foregroundStyle(.primary)
                             Spacer()
                             Toggle("", isOn: $schedule.isActive)
@@ -58,7 +58,7 @@ struct EMISchedulerView: View {
                         }
                         
                         Text(schedule.timing)
-                            .font(.lmsSubheadline)
+                            .font(.adminSecondary)
                             .foregroundStyle(.secondary)
                             
                         HStack(spacing: 12) {
@@ -72,7 +72,7 @@ struct EMISchedulerView: View {
                                 Label("In-App", systemImage: "bell.fill")
                             }
                         }
-                        .font(.lmsCaption)
+                        .font(.adminCaption)
                         .foregroundStyle(schedule.isActive ? Color.lmsInfo : .secondary)
                         .padding(.top, 4)
                     }
@@ -101,7 +101,10 @@ struct EMISchedulerView: View {
                 }
             } header: {
                 Text("Configured Reminder Triggers")
-                    .textCase(nil)
+                    .font(.adminSectionHeader)
+                    .foregroundStyle(Color.secondary)
+                    .textCase(.uppercase)
+                    .padding(.leading, 8)
             }
         }
         .navigationTitle("EMI Reminders")

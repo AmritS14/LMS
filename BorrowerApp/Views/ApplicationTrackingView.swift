@@ -65,15 +65,17 @@ struct ApplicationTrackingView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("My Applications")
         .navigationBarTitleDisplayMode(.large)
-        .task {
-            if let env, let userID = session.currentUser?.id {
-                await viewModel.fetchDashboardData(
-                    loanService: env.loans,
-                    sanctionLetterService: env.sanctionLetters,
-                    borrowerID: userID
-                )
-            }
-        }
+        .refreshable { await loadData() }
+        .task { await loadData() }
+    }
+
+    private func loadData() async {
+        guard let env, let userID = session.currentUser?.id else { return }
+        await viewModel.fetchDashboardData(
+            loanService: env.loans,
+            sanctionLetterService: env.sanctionLetters,
+            borrowerID: userID
+        )
     }
 
     private func sanctionLetterPromptCard(for app: LoanApplication) -> some View {

@@ -33,6 +33,7 @@ struct DashboardView: View {
                 toolbarPill
             }
         }
+        .refreshable { await viewModel.refreshAll() }
         .task { await viewModel.refreshAll() }
     }
 

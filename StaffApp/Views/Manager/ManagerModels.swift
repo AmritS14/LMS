@@ -173,7 +173,7 @@ enum ManagerRoute: Hashable {
     case notifications
     case officerPerformance
     case officerDetail(String)          // officer name as identifier
-    case auditLogs
+
     case loanPolicies
     case riskAlerts
     case profile
