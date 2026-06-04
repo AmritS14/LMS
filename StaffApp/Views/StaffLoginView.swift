@@ -6,7 +6,6 @@ struct StaffLoginView: View {
 
     @State private var email: String = ""
     @State private var password: String = ""
-    @State private var rememberMe: Bool = false
     @State private var isBusy: Bool = false
     @State private var errorMessage: String?
     @FocusState private var focusedField: Field?
@@ -117,25 +116,7 @@ struct StaffLoginView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                             }
                             
-                            // Remember Me
-                            Button {
-                                withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
-                                    rememberMe.toggle()
-                                }
-                            } label: {
-                                HStack(spacing: 8) {
-                                    Image(systemName: rememberMe ? "checkmark.square.fill" : "square")
-                                        .font(.system(size: 18))
-                                        .foregroundStyle(rememberMe ? Color.blue : Color.secondary)
-                                    
-                                    Text("Remember Me")
-                                        .font(.subheadline)
-                                        .foregroundStyle(Color.secondary)
-                                }
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.top, 4)
-                            
+
                             // Error Message
                             if let errorMessage {
                                 HStack(spacing: 8) {
