@@ -18,6 +18,7 @@ struct OfficerTabView: View {
 struct OfficerNavigationStack<Root: View>: View {
     @Environment(AppViewModel.self) private var viewModel
 
+    
     @ViewBuilder var root: () -> Root
 
     var body: some View {
