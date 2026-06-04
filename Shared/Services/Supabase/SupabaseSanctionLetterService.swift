@@ -140,7 +140,10 @@ actor SupabaseSanctionLetterService: SanctionLetterService {
             fallbackLetters[applicationID] = letter
             return letter
         } catch {
-            print("Supabase fetchSanctionLetter failed, using fallback: \(error)")
+            let errorStr = String(describing: error)
+            if !errorStr.contains("PGRST116") {
+                print("Supabase fetchSanctionLetter failed, using fallback: \(error)")
+            }
             return fallbackLetters[applicationID]
         }
     }
