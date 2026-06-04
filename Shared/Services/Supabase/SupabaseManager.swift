@@ -46,20 +46,23 @@ public struct SupabaseManager: Sendable {
 
     func logAuditEvent(action: String, entityType: String, entityID: UUID, metadata: [String: AnyJSON]) async {
         do {
-            let insertData: [String: AnyJSON] = [
-                "actor_id": .string(try await client.auth.session.user.id.uuidString),
-                "actor_role": .string("admin"),
-                "action": .string(action),
-                "entity_type": .string(entityType),
-                "entity_id": .string(entityID.uuidString),
-                "metadata": .object(metadata)
-            ]
+            struct RPCArgs: Encodable {
+                let p_action: String
+                let p_entity_type: String
+                let p_entity_id: UUID
+                let p_metadata: [String: AnyJSON]
+            }
+            let args = RPCArgs(
+                p_action: action,
+                p_entity_type: entityType,
+                p_entity_id: entityID,
+                p_metadata: metadata
+            )
             _ = try await client
-                .from("audit_entries")
-                .insert(insertData)
+                .rpc("log_audit_event", params: args)
                 .execute()
         } catch {
-            print("Failed to log audit event: \(error)")
+            print("Failed to log audit event via RPC: \(error)")
         }
     }
 }

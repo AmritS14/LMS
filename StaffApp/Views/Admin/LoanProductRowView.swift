@@ -31,6 +31,9 @@ struct LoanProductRowView: View {
                         
                         Text("\(product.maxTenure) \(product.tenureUnit.rawValue.lowercased())")
                             .foregroundStyle(.secondary)
+                        
+                        Text("Foreclosure: \(product.foreclosurePenaltyRate, specifier: "%.2f")%")
+                            .foregroundStyle(.secondary)
                     }
                     .font(.adminSecondary)
                 }
@@ -134,6 +137,23 @@ struct LoanProductEditorSheet: View {
                     Slider(value: $draftProduct.interestRate, in: 1...30, step: 0.25)
                 } header: {
                     Text("Interest Rate")
+                        .font(.adminSectionHeader)
+                        .foregroundStyle(Color.secondary)
+                        .textCase(.uppercase)
+                        .padding(.leading, 8)
+                }
+
+                // Section: Foreclosure Settings
+                Section {
+                    HStack {
+                        Text("Foreclosure Penalty Rate")
+                        Spacer()
+                        Text("\(draftProduct.foreclosurePenaltyRate, specifier: "%.2f")%")
+                            .foregroundStyle(.secondary)
+                    }
+                    Slider(value: $draftProduct.foreclosurePenaltyRate, in: 0...10, step: 0.25)
+                } header: {
+                    Text("Foreclosure Settings")
                         .font(.adminSectionHeader)
                         .foregroundStyle(Color.secondary)
                         .textCase(.uppercase)

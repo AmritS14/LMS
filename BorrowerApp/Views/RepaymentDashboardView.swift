@@ -391,9 +391,9 @@ struct ForeclosureSheet: View {
             VStack(spacing: 0) {
                 breakdownRow("Current Outstanding Principal", Formatting.currency(details.outstandingBalance))
                 Divider().padding(.leading, Spacing.m)
-                breakdownRow("Early Foreclosure Penalty (2%)", Formatting.currency(details.penaltyAmount))
+                breakdownRow(String(format: "Early Foreclosure Charges (%.1f%%)", details.penaltyRate * 100), Formatting.currency(details.penaltyAmount))
                 Divider().padding(.leading, Spacing.m)
-                breakdownRow("GST on Penalty (18%)", Formatting.currency(details.gstAmount))
+                breakdownRow("GST on Charges (18%)", Formatting.currency(details.gstAmount))
             }
             .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
             .padding(.horizontal, Spacing.m)
@@ -402,7 +402,7 @@ struct ForeclosureSheet: View {
                 Label("Important Information", systemImage: "info.circle.fill")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.tint)
-                Text("Foreclosing your loan early will settle your entire outstanding liability and close the contract. Prepayment charges are calculated at 2.0% of the principal outstanding, plus standard GST (18%) on the penalty fee.")
+                Text(String(format: "Foreclosing your loan early will settle your entire outstanding liability and close the contract. Prepayment charges are calculated at %.1f%% of the principal outstanding, plus standard GST (18%) on the penalty fee.", details.penaltyRate * 100))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

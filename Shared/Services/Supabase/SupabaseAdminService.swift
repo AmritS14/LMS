@@ -161,13 +161,6 @@ actor SupabaseAdminService: AdminService {
             .update(["role": backendRole(role)])
             .eq("id", value: userID)
             .execute()
-            
-        await SupabaseManager.shared.logAuditEvent(
-            action: "Updated User Role to \(role.displayName)",
-            entityType: "user",
-            entityID: userID,
-            metadata: ["new_role": .string(backendRole(role))]
-        )
     }
     
     func updateUserStatus(userID: UUID, isActive: Bool) async throws {
@@ -176,13 +169,6 @@ actor SupabaseAdminService: AdminService {
             .update(["is_active": isActive])
             .eq("id", value: userID)
             .execute()
-            
-        await SupabaseManager.shared.logAuditEvent(
-            action: isActive ? "Activated User" : "Deactivated User",
-            entityType: "user",
-            entityID: userID,
-            metadata: ["is_active": .bool(isActive)]
-        )
     }
 
     func archiveLoan(id: UUID) async throws {
@@ -191,13 +177,6 @@ actor SupabaseAdminService: AdminService {
             .update(["status": "archived"])
             .eq("id", value: id)
             .execute()
-            
-        await SupabaseManager.shared.logAuditEvent(
-            action: "Archived Loan",
-            entityType: "loan",
-            entityID: id,
-            metadata: [:]
-        )
     }
 
     func restoreLoan(id: UUID) async throws {
@@ -206,13 +185,6 @@ actor SupabaseAdminService: AdminService {
             .update(["status": "active"])
             .eq("id", value: id)
             .execute()
-            
-        await SupabaseManager.shared.logAuditEvent(
-            action: "Restored Loan",
-            entityType: "loan",
-            entityID: id,
-            metadata: [:]
-        )
     }
     
     func fetchAuditLogs() async throws -> [AuditEntry] {

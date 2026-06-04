@@ -102,19 +102,6 @@ actor SupabaseSanctionLetterService: SanctionLetterService {
             .execute()
 
         // 5. Audit logging is best-effort and must not fail the generation flow.
-        do {
-            let auditData: [String: AnyJSON] = [
-                "actor_id": .string(borrowerID.uuidString),
-                "action": .string("Sanction Letter Generated"),
-                "entity_type": .string("loan_application"),
-                "entity_id": .string(applicationID.uuidString),
-                "metadata": .object(["ref": .string(referenceCode)])
-            ]
-            _ = try await client.from("audit_entries").insert(auditData).execute()
-        } catch {
-            print("Audit event logging failed: \(error)")
-        }
-
         return letter
     }
 
@@ -200,21 +187,6 @@ actor SupabaseSanctionLetterService: SanctionLetterService {
             letter = l
         }
 
-        // Log Audit Event
-        if let l = letter {
-            do {
-                let auditData: [String: AnyJSON] = [
-                    "actor_id": .string(l.borrowerID.uuidString),
-                    "action": .string("Sanction Letter Accepted"),
-                    "entity_type": .string("loan_application"),
-                    "entity_id": .string(applicationID.uuidString),
-                    "metadata": .object([:])
-                ]
-                _ = try await client.from("audit_entries").insert(auditData).execute()
-            } catch {
-                print("Audit event logging failed: \(error)")
-            }
-        }
     }
 
     func sendSanctionLetter(applicationID: UUID) async throws {
@@ -253,21 +225,6 @@ actor SupabaseSanctionLetterService: SanctionLetterService {
             letter = l
         }
 
-        // Log Audit Event
-        if let l = letter {
-            do {
-                let auditData: [String: AnyJSON] = [
-                    "actor_id": .string(l.borrowerID.uuidString),
-                    "action": .string("Sanction Letter Sent"),
-                    "entity_type": .string("loan_application"),
-                    "entity_id": .string(applicationID.uuidString),
-                    "metadata": .object([:])
-                ]
-                _ = try await client.from("audit_entries").insert(auditData).execute()
-            } catch {
-                print("Audit event logging failed: \(error)")
-            }
-        }
     }
 
     // MARK: - PDF Drawing

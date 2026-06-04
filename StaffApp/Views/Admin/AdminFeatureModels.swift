@@ -107,6 +107,7 @@ struct AdminLoanProduct: Identifiable, Hashable, Codable, Sendable {
     var interestRate: Double
     var maxTenure: Int
     var tenureUnit: TenureUnit
+    var foreclosurePenaltyRate: Double = 2.0
     var isActive: Bool = true
 
     static let sampleProducts: [LoanCategory: [AdminLoanProduct]] = [
@@ -985,6 +986,7 @@ final class LoanConfigViewModel {
                 interestRate: p.displayRate,
                 maxTenure: p.maximumTenureMonths,
                 tenureUnit: .months,
+                foreclosurePenaltyRate: p.foreclosurePenaltyRate,
                 isActive: p.isActive
             )
             // Prefer description-stored category (set on create/update) over name heuristic
@@ -1015,6 +1017,7 @@ final class LoanConfigViewModel {
             maximumTenureMonths: maxMonths,
             minimumInterestRate: product.interestRate,
             maximumInterestRate: product.interestRate,
+            foreclosurePenaltyRate: product.foreclosurePenaltyRate,
             isActive: true
         )
 
@@ -1029,7 +1032,8 @@ final class LoanConfigViewModel {
             maxAmount: NSDecimalNumber(decimal: created.maximumAmount).doubleValue,
             interestRate: created.displayRate,
             maxTenure: created.maximumTenureMonths,
-            tenureUnit: .months
+            tenureUnit: .months,
+            foreclosurePenaltyRate: created.foreclosurePenaltyRate
         )
         productsByCategory[category, default: []].append(adminProduct)
         showSaveAlert = true
@@ -1100,6 +1104,7 @@ final class LoanConfigViewModel {
             maximumTenureMonths: maxMonths,
             minimumInterestRate: product.interestRate,
             maximumInterestRate: product.interestRate,
+            foreclosurePenaltyRate: product.foreclosurePenaltyRate,
             isActive: product.isActive
         )
         

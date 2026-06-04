@@ -100,6 +100,7 @@ struct LoanProduct: Identifiable, Codable, Sendable, Hashable {
     var maximumTenureMonths: Int
     var minimumInterestRate: Double
     var maximumInterestRate: Double
+    var foreclosurePenaltyRate: Double = 2.0
     var isActive: Bool = true
 
     /// Best-guess LoanType derived from the product name
