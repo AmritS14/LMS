@@ -177,6 +177,7 @@ struct AuditListView: View {
         }
         .navigationTitle("Audit Activity")
         .navigationBarTitleDisplayMode(.inline)
+        .refreshable { await viewModel.loadLogs() }
         .searchable(
             text: $searchText,
             placement: .navigationBarDrawer(displayMode: .always),

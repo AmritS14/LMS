@@ -78,6 +78,7 @@ struct ReportsDashboardView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("Reports")
         .navigationBarTitleDisplayMode(.inline)
+        .refreshable { await viewModel.loadReportData() }
         .task {
             await viewModel.loadReportData()
         }

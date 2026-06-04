@@ -319,6 +319,8 @@ struct ArchiveListView: View {
         } message: {
             Text(errorText)
         }
+        .refreshable { await viewModel.load() }
+        .task { await viewModel.load() }
     }
     
     @ViewBuilder
