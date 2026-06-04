@@ -26,6 +26,7 @@ struct User: Identifiable, Codable, Sendable, Hashable {
     var role: UserRole
     var isActive: Bool = true
     var createdAt: Date = .now
+    var mustChangePassword: Bool = false
 
     var uniqueID: String {
         "USR-\(id.uuidString.prefix(8).uppercased())"

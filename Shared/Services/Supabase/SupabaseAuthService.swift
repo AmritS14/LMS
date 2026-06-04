@@ -97,6 +97,7 @@ actor SupabaseAuthService: AuthService {
         let full_name: String?
         let phone: String?
         let is_active: Bool?
+        let must_change_password: Bool?
     }
 
     private func mapRole(_ raw: String) -> UserRole {
@@ -134,11 +135,13 @@ actor SupabaseAuthService: AuthService {
         // Fall back to borrower if the profile row isn't available yet.
         var role: UserRole = .borrower
         var isActive = true
+        var mustChangePassword = false
         if let profile = try? await fetchUserProfile(id: sbUser.id) {
             role = mapRole(profile.role)
             if let n = profile.full_name, !n.isEmpty { name = n }
             if let p = profile.phone, !p.isEmpty, contactPhone.isEmpty { contactPhone = p }
             isActive = profile.is_active ?? true
+            mustChangePassword = profile.must_change_password ?? false
         }
 
         return User(
@@ -147,14 +150,15 @@ actor SupabaseAuthService: AuthService {
             email: sbUser.email ?? "",
             phone: contactPhone,
             role: role,
-            isActive: isActive
+            isActive: isActive,
+            mustChangePassword: mustChangePassword
         )
     }
 
     private func fetchUserProfile(id: UUID) async throws -> DBUserProfile {
         let response = try await client
             .from("users")
-            .select("id, email, role, full_name, phone, is_active")
+            .select("id, email, role, full_name, phone, is_active, must_change_password")
             .eq("id", value: id)
             .single()
             .execute()
