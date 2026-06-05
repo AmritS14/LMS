@@ -19,6 +19,7 @@ struct CountBadge: View {
                 .padding(.vertical, 2)
                 .frame(minWidth: 18, minHeight: 18)
                 .background(tint, in: Capsule())
+                .accessibilityLabel("\(count) items")
         }
     }
 }
@@ -54,5 +55,7 @@ struct CircularProgress: View {
                 .foregroundStyle(color)
         }
         .frame(width: size, height: size)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Progress \(Int(progress * 100)) percent")
     }
 }

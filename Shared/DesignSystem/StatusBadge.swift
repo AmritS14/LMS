@@ -34,6 +34,7 @@ struct StatusBadge: View {
         .padding(.vertical, size == .small ? Spacing.xxs : Spacing.xs)
         .background(background, in: Capsule())
         .foregroundStyle(foreground)
+        .accessibilityElement(children: .combine)
     }
 
     private var textFont: Font {
