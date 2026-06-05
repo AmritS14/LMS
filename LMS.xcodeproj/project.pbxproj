@@ -234,22 +234,16 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F040CAA22FC4292C00A9E2F9 /* Admin */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = Admin;
 			sourceTree = "<group>";
 		};
 		F040CD642FC44BF300A9E2F9 /* LoanOfficer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = LoanOfficer;
 			sourceTree = "<group>";
 		};
 		F07247BE2FC4010D001A13BD /* Manager */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = Manager;
 			sourceTree = "<group>";
 		};
@@ -759,7 +753,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = S2KH48KGMU;
+				DEVELOPMENT_TEAM = 7FVK5T4MV3;
 				INFOPLIST_KEY_CFBundleDisplayName = "LMS Staff";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -767,7 +761,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = infosys.team3.lms.staff;
+				PRODUCT_BUNDLE_IDENTIFIER = team3.lms.staff;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -778,7 +772,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = F325HT97T8;
+				DEVELOPMENT_TEAM = 7FVK5T4MV3;
 				INFOPLIST_KEY_CFBundleDisplayName = "LMS Borrower";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "We use Face ID to quickly and securely log you into your account.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -787,7 +781,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = infosys.team3.lms.borrower;
+				PRODUCT_BUNDLE_IDENTIFIER = team3.lms.borrower;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -927,7 +921,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = S2KH48KGMU;
+				DEVELOPMENT_TEAM = 7FVK5T4MV3;
 				INFOPLIST_KEY_CFBundleDisplayName = "LMS Staff";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -935,7 +929,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = infosys.team3.lms.staff;
+				PRODUCT_BUNDLE_IDENTIFIER = team3.lms.staff;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -946,7 +940,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = F325HT97T8;
+				DEVELOPMENT_TEAM = 7FVK5T4MV3;
 				INFOPLIST_KEY_CFBundleDisplayName = "LMS Borrower";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "We use Face ID to quickly and securely log you into your account.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -955,7 +949,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = infosys.team3.lms.borrower;
+				PRODUCT_BUNDLE_IDENTIFIER = team3.lms.borrower;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
