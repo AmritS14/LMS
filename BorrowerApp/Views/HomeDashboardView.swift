@@ -699,8 +699,8 @@ struct PayEMISheet: View {
             .navigationTitle(phase == .succeeded ? "Payment Successful" : "Pay EMI")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(role: .close) { dismiss() }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(role: .cancel) { dismiss() }
                 }
             }
         }

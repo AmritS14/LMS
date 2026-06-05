@@ -34,8 +34,8 @@ struct LOConversationView: View {
             .navigationTitle(application.borrowerName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(action: { dismiss() }) { Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(.primary).padding(8).background(Color(uiColor: .systemGray5), in: Circle()) }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(role: .cancel) { dismiss() }
                 }
             }
             .task { await load() }

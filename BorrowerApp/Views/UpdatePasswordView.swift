@@ -60,15 +60,8 @@ struct UpdatePasswordView: View {
             .navigationTitle("New Password")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: { dismiss() }) { 
-                        Image(systemName: "xmark")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(.primary)
-                            .padding(8)
-                            .background(Color(uiColor: .systemGray5), in: Circle()) 
-                    }
-                    .accessibilityLabel("Close")
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(role: .cancel) { dismiss() }
                 }
             }
             .alert("Password Updated", isPresented: $showSuccess) {

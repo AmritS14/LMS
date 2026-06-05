@@ -23,8 +23,8 @@ struct LoanAssistantView: View {
             .navigationTitle("AI Loan Officer")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Close") { dismiss() }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(role: .cancel) { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     if !viewModel.chatHistory.isEmpty {

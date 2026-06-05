@@ -1341,8 +1341,8 @@ extension LoanReviewView {
             .navigationTitle("Escalate Application")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(action: { viewModel.showEscalateSheet = false }) { Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(.primary).padding(8).background(Color(uiColor: .systemGray5), in: Circle()) }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(role: .cancel) { viewModel.showEscalateSheet = false }
                 }
             }
         }
@@ -1468,8 +1468,8 @@ extension LoanReviewView {
             .navigationTitle("Request Documents")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(action: { viewModel.showDocumentRequest = false }) { Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(.primary).padding(8).background(Color(uiColor: .systemGray5), in: Circle()) }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(role: .cancel) { viewModel.showDocumentRequest = false }
                 }
             }
         }

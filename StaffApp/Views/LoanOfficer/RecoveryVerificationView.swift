@@ -592,10 +592,8 @@ extension RecoveryVerificationView {
             .navigationTitle("Add Call Log")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(
-                    placement: .cancellationAction
-                ) {
-                    Button(action: { showCallLogSheet = false }) { Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(.primary).padding(8).background(Color(uiColor: .systemGray5), in: Circle()) }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(role: .cancel) { showCallLogSheet = false }
                 }
                 ToolbarItem(
                     placement: .confirmationAction
@@ -669,10 +667,8 @@ extension RecoveryVerificationView {
             .navigationTitle("Schedule Follow-up")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(
-                    placement: .cancellationAction
-                ) {
-                    Button(action: { showFollowUpSheet = false }) { Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(.primary).padding(8).background(Color(uiColor: .systemGray5), in: Circle()) }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(role: .cancel) { showFollowUpSheet = false }
                 }
                 ToolbarItem(
                     placement: .confirmationAction

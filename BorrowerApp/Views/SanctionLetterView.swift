@@ -283,8 +283,8 @@ struct SanctionLetterView: View {
             .navigationTitle("Sanction Letter PDF")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Close") {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(role: .cancel) {
                         showFullScreenPDF = false
                     }
                 }

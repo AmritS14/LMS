@@ -59,15 +59,10 @@ struct ProductComparisonView: View {
             }
             .background(Color.lmsBackground.ignoresSafeArea())
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(role: .cancel) {
                         dismiss()
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.plain)
                 }
             }
             .navigationTitle("Compare Products")
