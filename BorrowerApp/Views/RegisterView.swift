@@ -192,12 +192,15 @@ struct RequirementRow: View {
                 .font(.footnote)
                 .foregroundStyle(isMet ? AnyShapeStyle(Color.lmsSuccess) : AnyShapeStyle(HierarchicalShapeStyle.secondary))
                 .symbolEffectIfAvailable(value: isMet)
+                .accessibilityHidden(true)
 
             Text(text)
                 .font(.footnote)
                 .foregroundStyle(isMet ? .primary : .secondary)
         }
         .animation(.easeInOut(duration: 0.2), value: isMet)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(text), \(isMet ? "Met" : "Not met")")
     }
 }
 
