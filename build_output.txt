@@ -1,0 +1,429 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project LMS.xcodeproj -scheme StaffApp -destination "generic/platform=iOS Simulator" build
+
+2026-05-25 13:02:47.154 xcodebuild[10001:182428] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (1 target)
+    Target 'StaffApp' in project 'LMS' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/aadyatiwari/Desktop/Temp Merge/LMS/StaffApp/Resources/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: 935ae1c71b2f4fe7dc3740a70e32fa8e
+Build description path: /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/XCBuildData/935ae1c71b2f4fe7dc3740a70e32fa8e.xcbuilddata
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F73-6cfe768891a92b912361537c460fe42b.sdkstatcache
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/LMS.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -o /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F73-6cfe768891a92b912361537c460fe42b.sdkstatcache
+
+WriteAuxiliaryFile /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/arm64/StaffApp.SwiftConstValuesFileList (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    write-file /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/arm64/StaffApp.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/arm64/StaffApp.SwiftFileList (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    write-file /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/arm64/StaffApp.SwiftFileList
+
+WriteAuxiliaryFile /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp-DebugDylibInstallName-normal-x86_64.txt (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    write-file /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp-DebugDylibInstallName-normal-x86_64.txt
+
+WriteAuxiliaryFile /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/StaffApp.SwiftFileList (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    write-file /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/StaffApp.SwiftFileList
+
+WriteAuxiliaryFile /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp-DebugDylibPath-normal-x86_64.txt (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    write-file /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp-DebugDylibPath-normal-x86_64.txt
+
+WriteAuxiliaryFile /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/StaffApp.LinkFileList (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    write-file /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/StaffApp.LinkFileList
+
+WriteAuxiliaryFile /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/StaffApp.SwiftConstValuesFileList (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    write-file /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/StaffApp.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/StaffApp-OutputFileMap.json (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    write-file /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/StaffApp-OutputFileMap.json
+
+WriteAuxiliaryFile /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/StaffApp_const_extract_protocols.json (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    write-file /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/StaffApp_const_extract_protocols.json
+
+WriteAuxiliaryFile /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/arm64/StaffApp.LinkFileList (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    write-file /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/arm64/StaffApp.LinkFileList
+
+CompileAssetCatalogVariant thinned /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator/StaffApp.app /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Resources/Assets.xcassets (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    /Applications/Xcode.app/Contents/Developer/usr/bin/actool /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Resources/Assets.xcassets --compile /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/assetcatalog_output/thinned --output-format human-readable-text --notices --warnings --export-dependency-info /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/assetcatalog_dependencies_thinned --output-partial-info-plist /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/assetcatalog_generated_info.plist_thinned --app-icon AppIcon --compress-pngs --enable-on-demand-resources YES --development-region en --target-device iphone --target-device ipad --minimum-deployment-target 26.0 --platform iphonesimulator
+/* com.apple.actool.compilation-results */
+/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/assetcatalog_generated_info.plist_thinned
+
+
+Ld /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/Binary/__preview.dylib normal x86_64 (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target x86_64-apple-ios26.0-simulator -dynamiclib -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator -F/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator -install_name @rpath/StaffApp.debug.dylib -Xlinker -dead_strip -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/StaffApp_dependency_info.dat -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __entitlements -Xlinker /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp.app-Simulated.xcent -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __ents_der -Xlinker /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp.app-Simulated.xcent.der -Xlinker -no_adhoc_codesign -o /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/Binary/__preview.dylib
+
+Ld /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/arm64/Binary/__preview.dylib normal arm64 (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios26.0-simulator -dynamiclib -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator -F/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator -install_name @rpath/StaffApp.debug.dylib -Xlinker -dead_strip -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/arm64/StaffApp_dependency_info.dat -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __entitlements -Xlinker /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp.app-Simulated.xcent -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __ents_der -Xlinker /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp.app-Simulated.xcent.der -Xlinker -no_adhoc_codesign -o /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/arm64/Binary/__preview.dylib
+
+LinkAssetCatalog /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Resources/Assets.xcassets (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    builtin-linkAssetCatalog --thinned /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/assetcatalog_output/thinned --thinned-dependencies /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/assetcatalog_dependencies_thinned --thinned-info-plist-content /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/assetcatalog_generated_info.plist_thinned --unthinned /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/assetcatalog_output/unthinned --unthinned-dependencies /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/assetcatalog_dependencies_unthinned --unthinned-info-plist-content /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/assetcatalog_generated_info.plist_unthinned --output /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator/StaffApp.app --plist-output /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/assetcatalog_generated_info.plist
+
+ProcessInfoPlistFile /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator/StaffApp.app/Info.plist /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/empty-StaffApp.plist (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    builtin-infoPlistUtility /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/empty-StaffApp.plist -producttype com.apple.product-type.application -genpkginfo /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator/StaffApp.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/assetcatalog_generated_info.plist -o /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator/StaffApp.app/Info.plist
+
+SwiftDriver StaffApp normal x86_64 com.apple.xcode.tools.swift.compiler (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    builtin-SwiftDriver -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name StaffApp -Onone @/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/StaffApp.SwiftFileList -DDEBUG -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target x86_64-apple-ios26.0-simulator -g -module-cache-path /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 6 -I /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator -F /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F73-6cfe768891a92b912361537c460fe42b.sdkstatcache -output-file-map /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/StaffApp-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/StaffApp.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/StaffApp_const_extract_protocols.json -Xcc -iquote -Xcc /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp-generated-files.hmap -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp-own-target-headers.hmap -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp-all-target-headers.hmap -Xcc -iquote -Xcc /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp-project-headers.hmap -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/DerivedSources-normal/x86_64 -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/DerivedSources/x86_64 -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/StaffApp-Swift.h -working-directory /Users/aadyatiwari/Desktop/Temp\ Merge/LMS -experimental-emit-module-separately -disable-cmo
+
+SwiftDriver StaffApp normal arm64 com.apple.xcode.tools.swift.compiler (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    builtin-SwiftDriver -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name StaffApp -Onone @/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/arm64/StaffApp.SwiftFileList -DDEBUG -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios26.0-simulator -g -module-cache-path /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 6 -I /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator -F /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F73-6cfe768891a92b912361537c460fe42b.sdkstatcache -output-file-map /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/arm64/StaffApp-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/arm64/StaffApp.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/arm64/StaffApp_const_extract_protocols.json -Xcc -iquote -Xcc /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp-generated-files.hmap -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp-own-target-headers.hmap -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp-all-target-headers.hmap -Xcc -iquote -Xcc /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp-project-headers.hmap -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/DerivedSources-normal/arm64 -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/DerivedSources/arm64 -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/arm64/StaffApp-Swift.h -working-directory /Users/aadyatiwari/Desktop/Temp\ Merge/LMS -experimental-emit-module-separately -disable-cmo
+
+CreateUniversalBinary /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator/StaffApp.app/__preview.dylib normal arm64\ x86_64 (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/lipo -create /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/arm64/Binary/__preview.dylib /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/Binary/__preview.dylib -output /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator/StaffApp.app/__preview.dylib
+
+SwiftCompile normal x86_64 Compiling\ RecoveryVerificationView.swift,\ ApprovalsQueueView.swift,\ AuditTrailView.swift,\ PremiumCard.swift,\ AuthService.swift,\ Colors.swift,\ DocumentService.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/RecoveryVerificationView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/ApprovalsQueueView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/AuditTrailView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/PremiumCard.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/AuthService.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/Colors.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/DocumentService.swift (in target 'StaffApp' from project 'LMS')
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/RecoveryVerificationView.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/ApprovalsQueueView.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/AuditTrailView.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/PremiumCard.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/AuthService.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/Colors.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/DocumentService.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 Compiling\ APIClient.swift,\ AdminService.swift,\ AppEnvironment.swift,\ FloatingActionButton.swift,\ AllApplicationsView.swift,\ ChatView.swift,\ CommunicationsMainView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Networking/APIClient.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/AdminService.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/AppEnvironment.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/FloatingActionButton.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/AllApplicationsView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/ChatView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/CommunicationsMainView.swift (in target 'StaffApp' from project 'LMS')
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Networking/APIClient.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/AdminService.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/AppEnvironment.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/FloatingActionButton.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/AllApplicationsView.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/ChatView.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/CommunicationsMainView.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 Compiling\ ContentView.swift,\ DashboardView.swift,\ DocumentReviewSheet.swift,\ DocumentsView.swift,\ LoanOfficerModels.swift,\ LoanOfficerStore.swift,\ LoanReviewView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/ContentView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/DashboardView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/DocumentReviewSheet.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/DocumentsView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/LoanOfficerModels.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/LoanOfficerStore.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/LoanReviewView.swift (in target 'StaffApp' from project 'LMS')
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/ContentView.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/DashboardView.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/DocumentReviewSheet.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/DocumentsView.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/LoanOfficerModels.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/LoanOfficerStore.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/LoanReviewView.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 Compiling\ LMSTextFieldStyle.swift,\ StaffProfileView.swift,\ AppViewModel.swift,\ SampleData.swift,\ StatusBadge.swift,\ StaffRootView.swift,\ SystemSettingsView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/LMSTextFieldStyle.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/StaffProfileView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/View\ Model/AppViewModel.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/View\ Model/SampleData.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/StatusBadge.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/App/StaffRootView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/SystemSettingsView.swift (in target 'StaffApp' from project 'LMS')
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/LMSTextFieldStyle.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/StaffProfileView.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/View\ Model/AppViewModel.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/View\ Model/SampleData.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/StatusBadge.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/App/StaffRootView.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/SystemSettingsView.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 Compiling\ Typography.swift,\ UserManagementView.swift,\ Validators.swift,\ MockAuthService.swift,\ MockLoanService.swift,\ MockSupportServices.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/Typography.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/UserManagementView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Utilities/Validators.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/Mocks/MockAuthService.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/Mocks/MockLoanService.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/Mocks/MockSupportServices.swift (in target 'StaffApp' from project 'LMS')
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/Typography.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/UserManagementView.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Utilities/Validators.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/Mocks/MockAuthService.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/Mocks/MockLoanService.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/Mocks/MockSupportServices.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftEmitModule normal x86_64 Emitting\ module\ for\ StaffApp (in target 'StaffApp' from project 'LMS')
+
+EmitSwiftModule normal x86_64 (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 Compiling\ NotificationService.swift,\ PersistenceController.swift,\ GlassCardModifier.swift,\ GradientCard.swift,\ PortfolioDashboardView.swift,\ PrimaryButton.swift,\ ProductConfigView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/NotificationService.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Utilities/PersistenceController.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/GlassCardModifier.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/GradientCard.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/PortfolioDashboardView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/PrimaryButton.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/ProductConfigView.swift (in target 'StaffApp' from project 'LMS')
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/NotificationService.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Utilities/PersistenceController.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/GlassCardModifier.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/GradientCard.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/PortfolioDashboardView.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/PrimaryButton.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/ProductConfigView.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 Compiling\ EMICalculator.swift,\ Endpoints.swift,\ Formatting.swift,\ KeychainService.swift,\ LoanService.swift,\ MessagingService.swift,\ Models.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Utilities/EMICalculator.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Networking/Endpoints.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Utilities/Formatting.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/KeychainService.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/LoanService.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/MessagingService.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Models.swift (in target 'StaffApp' from project 'LMS')
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Utilities/EMICalculator.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Networking/Endpoints.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Utilities/Formatting.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/KeychainService.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/LoanService.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/MessagingService.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Models.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ StaffApp (in target 'StaffApp' from project 'LMS')
+
+EmitSwiftModule normal arm64 (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 Compiling\ CircularProgress.swift,\ AvatarView.swift,\ SectionHeader.swift,\ DetailRow.swift,\ CountBadge.swift,\ GeneratedAssetSymbols.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/CircularProgress.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/AvatarView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/SectionHeader.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/DetailRow.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/CountBadge.swift /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'StaffApp' from project 'LMS')
+Failed frontend command:
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-frontend -frontend -c /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Networking/APIClient.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/AdminService.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/AppEnvironment.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/FloatingActionButton.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/AllApplicationsView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/ChatView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/CommunicationsMainView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/ContentView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/DashboardView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/DocumentReviewSheet.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/DocumentsView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/LoanOfficerModels.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/LoanOfficerStore.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/LoanReviewView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/LOAppViewModel.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/LOModels.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/LOSharedComponents.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/MockOfficerData.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/NotificationsTabView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/ProfileView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/RecoveryManagementMainView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/RecoveryVerificationView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/ApprovalsQueueView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/AuditTrailView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/PremiumCard.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/AuthService.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/Colors.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/DocumentService.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Utilities/EMICalculator.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Networking/Endpoints.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Utilities/Formatting.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/KeychainService.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/LoanService.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/MessagingService.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Models.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/NotificationService.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Utilities/PersistenceController.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/GlassCardModifier.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/GradientCard.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/PortfolioDashboardView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/PrimaryButton.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/ProductConfigView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/ReportsView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/RoleTabViews.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/SectionCard.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/SessionStore.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/Spacing.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/App/StaffApp.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/StaffLoginView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/LMSTextFieldStyle.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/StaffProfileView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/View\ Model/AppViewModel.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/View\ Model/SampleData.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/StatusBadge.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/App/StaffRootView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/SystemSettingsView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/Typography.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/UserManagementView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Utilities/Validators.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/Mocks/MockAuthService.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/Mocks/MockLoanService.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/Services/Mocks/MockSupportServices.swift -primary-file /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/CircularProgress.swift -primary-file /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/AvatarView.swift -primary-file /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/SectionHeader.swift -primary-file /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/DetailRow.swift -primary-file /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/CountBadge.swift -primary-file /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/DerivedSources/GeneratedAssetSymbols.swift -supplementary-output-file-map /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/supplementaryOutputs-15 -target x86_64-apple-ios26.0-simulator -module-can-import-version DeveloperToolsSupport 23.40.26 23.40.26 -module-can-import-version UIKit 9126.5.5.2 9126.5.5 -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libFoundationMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#FoundationMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libObservationMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#ObservationMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libPreviewsMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#PreviewsMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libSwiftMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#SwiftMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libSwiftUIMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#SwiftUIMacros -disable-implicit-swift-modules -Xcc -fno-implicit-modules -Xcc -fno-implicit-module-maps -explicit-swift-module-map-file /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/StaffApp-dependencies-1.json -debug-module-path /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/StaffApp.swiftmodule -enable-objc-interop -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -I /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator -F /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator -no-color-diagnostics -Xcc -fno-color-diagnostics -enable-testing -g -debug-info-format\=dwarf -dwarf-version\=5 -module-cache-path /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -swift-version 6 -Onone -D DEBUG -serialize-debugging-options -const-gather-protocols-file /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/StaffApp_const_extract_protocols.json -enable-experimental-feature DebugDescriptionMacro -empty-abi-descriptor -validate-clang-modules-once -clang-build-session-file /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -working-directory -Xcc /Users/aadyatiwari/Desktop/Temp\ Merge/LMS -enable-anonymous-context-mangled-names -file-compilation-dir /Users/aadyatiwari/Desktop/Temp\ Merge/LMS -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -Xcc -ivfsstatcache -Xcc /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F73-6cfe768891a92b912361537c460fe42b.sdkstatcache -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/swift-overrides.hmap -Xcc -iquote -Xcc /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp-generated-files.hmap -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp-own-target-headers.hmap -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp-all-target-headers.hmap -Xcc -iquote -Xcc /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/StaffApp-project-headers.hmap -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/DerivedSources-normal/x86_64 -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/DerivedSources/x86_64 -Xcc -I/Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/DerivedSources -Xcc -DDEBUG\=1 -no-auto-bridging-header-chaining -module-name StaffApp -frontend-parseable-output -disable-clang-spi -clang-target x86_64-apple-ios26.5-simulator -target-sdk-version 26.5 -target-sdk-name iphonesimulator26.5 -in-process-plugin-server-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/libSwiftInProcPluginServer.dylib -o /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/CircularProgress.o -o /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/AvatarView.o -o /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/SectionHeader.o -o /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/DetailRow.o -o /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/CountBadge.o -o /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/GeneratedAssetSymbols.o -index-unit-output-path /LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/CircularProgress.o -index-unit-output-path /LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/AvatarView.o -index-unit-output-path /LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/SectionHeader.o -index-unit-output-path /LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/DetailRow.o -index-unit-output-path /LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/CountBadge.o -index-unit-output-path /LMS.build/Debug-iphonesimulator/StaffApp.build/Objects-normal/x86_64/GeneratedAssetSymbols.o -index-store-path /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Index.noindex/DataStore -index-system-modules
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/CircularProgress.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+/Users/aadyatiwari/Desktop/Temp Merge/LMS/Shared/DesignSystem/CircularProgress.swift:4:16: error: cannot find type 'Color' in scope
+    let color: Color
+               ^~~~~
+/Users/aadyatiwari/Desktop/Temp Merge/LMS/Shared/DesignSystem/CircularProgress.swift:5:20: error: cannot find type 'CGFloat' in scope
+    var lineWidth: CGFloat = 6
+                   ^~~~~~~
+/Users/aadyatiwari/Desktop/Temp Merge/LMS/Shared/DesignSystem/CircularProgress.swift:6:15: error: cannot find type 'CGFloat' in scope
+    var size: CGFloat = 44
+              ^~~~~~~
+/Users/aadyatiwari/Desktop/Temp Merge/LMS/Shared/DesignSystem/CircularProgress.swift:8:20: error: cannot find type 'View' in scope
+    var body: some View {
+                   ^~~~
+/Users/aadyatiwari/Desktop/Temp Merge/LMS/Shared/DesignSystem/CircularProgress.swift:2:26: error: cannot find type 'View' in scope
+struct CircularProgress: View {
+                         ^~~~
+/Users/aadyatiwari/Desktop/Temp Merge/LMS/Shared/DesignSystem/CircularProgress.swift:2:8: error: invalid redeclaration of 'CircularProgress'
+struct CircularProgress: View {
+       ^
+/Users/aadyatiwari/Desktop/Temp Merge/LMS/Shared/DesignSystem/CountBadge.swift:27:8: note: 'CircularProgress' previously declared here
+struct CircularProgress: View {
+       ^
+/Users/aadyatiwari/Desktop/Temp Merge/LMS/Shared/DesignSystem/CountBadge.swift:27:8: note: 'CircularProgress' previously declared here
+struct CircularProgress: View {
+       ^
+/Users/aadyatiwari/Desktop/Temp Merge/LMS/Shared/DesignSystem/CircularProgress.swift:9:9: error: cannot find 'ZStack' in scope
+        ZStack {
+        ^~~~~~
+/Users/aadyatiwari/Desktop/Temp Merge/LMS/Shared/DesignSystem/CircularProgress.swift:10:13: error: cannot find 'Circle' in scope
+            Circle()
+            ^~~~~~
+/Users/aadyatiwari/Desktop/Temp Merge/LMS/Shared/DesignSystem/CircularProgress.swift:12:13: error: cannot find 'Circle' in scope
+            Circle()
+            ^~~~~~
+/Users/aadyatiwari/Desktop/Temp Merge/LMS/Shared/DesignSystem/CircularProgress.swift:14:39: error: cannot find 'StrokeStyle' in scope
+                .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                                      ^~~~~~~~~~~
+/Users/aadyatiwari/Desktop/Temp Merge/LMS/Shared/DesignSystem/CircularProgress.swift:16:13: error: cannot find 'Text' in scope
+            Text("\(Int(progress * 100))%")
+            ^~~~
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/AvatarView.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/SectionHeader.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/DetailRow.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+/Users/aadyatiwari/Desktop/Temp Merge/LMS/Shared/DesignSystem/DetailRow.swift:5:8: error: invalid redeclaration of 'DetailRow'
+struct DetailRow: View {
+       ^
+/Users/aadyatiwari/Desktop/Temp Merge/LMS/Shared/DesignSystem/FloatingActionButton.swift:81:8: note: 'DetailRow' previously declared here
+struct DetailRow: View {
+       ^
+/Users/aadyatiwari/Desktop/Temp Merge/LMS/Shared/DesignSystem/FloatingActionButton.swift:81:8: note: 'DetailRow' previously declared here
+struct DetailRow: View {
+       ^
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/CountBadge.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+/Users/aadyatiwari/Desktop/Temp Merge/LMS/Shared/DesignSystem/CountBadge.swift:4:8: error: invalid redeclaration of 'CountBadge'
+struct CountBadge: View {
+       ^
+/Users/aadyatiwari/Desktop/Temp Merge/LMS/Shared/DesignSystem/FloatingActionButton.swift:106:8: note: 'CountBadge' previously declared here
+struct CountBadge: View {
+       ^
+/Users/aadyatiwari/Desktop/Temp Merge/LMS/Shared/DesignSystem/FloatingActionButton.swift:106:8: note: 'CountBadge' previously declared here
+struct CountBadge: View {
+       ^
+
+SwiftCompile normal x86_64 /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'StaffApp' from project 'LMS')
+    cd /Users/aadyatiwari/Desktop/Temp\ Merge/LMS
+    
+
+SwiftCompile normal arm64 Compiling\ LOAppViewModel.swift,\ LOModels.swift,\ LOSharedComponents.swift,\ MockOfficerData.swift,\ NotificationsTabView.swift,\ ProfileView.swift,\ RecoveryManagementMainView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/LOAppViewModel.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/LOModels.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/LOSharedComponents.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/MockOfficerData.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/NotificationsTabView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/ProfileView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/StaffApp/Views/LoanOfficer/RecoveryManagementMainView.swift (in target 'StaffApp' from project 'LMS')
+
+** BUILD FAILED **
+
+
+The following build commands failed:
+	SwiftCompile normal x86_64 Compiling\ CircularProgress.swift,\ AvatarView.swift,\ SectionHeader.swift,\ DetailRow.swift,\ CountBadge.swift,\ GeneratedAssetSymbols.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/CircularProgress.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/AvatarView.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/SectionHeader.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/DetailRow.swift /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/CountBadge.swift /Users/aadyatiwari/Library/Developer/Xcode/DerivedData/LMS-fqbcnyjhqavvamdcsloeksaxegfo/Build/Intermediates.noindex/LMS.build/Debug-iphonesimulator/StaffApp.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'StaffApp' from project 'LMS')
+	SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/CircularProgress.swift (in target 'StaffApp' from project 'LMS')
+	SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/DetailRow.swift (in target 'StaffApp' from project 'LMS')
+	SwiftCompile normal x86_64 /Users/aadyatiwari/Desktop/Temp\ Merge/LMS/Shared/DesignSystem/CountBadge.swift (in target 'StaffApp' from project 'LMS')
+	Building project LMS with scheme StaffApp
+(5 failures)

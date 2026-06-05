@@ -7,6 +7,15 @@ enum UserRole: String, Codable, Sendable, CaseIterable {
     case loanOfficer
     case manager
     case admin
+
+    var displayName: String {
+        switch self {
+        case .borrower: return "Borrower"
+        case .loanOfficer: return "Loan Officer"
+        case .manager: return "Manager"
+        case .admin: return "Admin"
+        }
+    }
 }
 
 struct User: Identifiable, Codable, Sendable, Hashable {
@@ -15,7 +24,13 @@ struct User: Identifiable, Codable, Sendable, Hashable {
     var email: String
     var phone: String
     var role: UserRole
+    var isActive: Bool = true
     var createdAt: Date = .now
+    var mustChangePassword: Bool = false
+
+    var uniqueID: String {
+        "USR-\(id.uuidString.prefix(8).uppercased())"
+    }
 }
 
 // MARK: - Borrower-only profile (KYC, credit, personal details)
@@ -57,6 +72,16 @@ struct StaffProfile: Identifiable, Codable, Sendable, Hashable {
     var branchID: UUID?
     var department: String?
     var reportsToID: UUID?
+    var permissions: Set<Permission> = []
+}
+
+enum Permission: String, Codable, Sendable, CaseIterable, Identifiable {
+    case viewUsers = "View Users"
+    case editUsers = "Edit Users"
+    case viewAudit = "View Audit"
+    case manageSettings = "Manage Settings"
+
+    var id: String { rawValue }
 }
 
 // MARK: - Loan Application
@@ -66,10 +91,51 @@ enum LoanType: String, Codable, Sendable, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+struct LoanProduct: Identifiable, Codable, Sendable, Hashable {
+    var id: UUID = UUID()
+    var name: String
+    var description: String?
+    var minimumAmount: Decimal
+    var maximumAmount: Decimal
+    var minimumTenureMonths: Int
+    var maximumTenureMonths: Int
+    var minimumInterestRate: Double
+    var maximumInterestRate: Double
+    var foreclosurePenaltyRate: Double = 2.0
+    var isActive: Bool = true
+
+    /// Best-guess LoanType derived from the product name
+    var loanType: LoanType {
+        let lower = name.lowercased()
+        if lower.contains("home") { return .home }
+        if lower.contains("vehicle") || lower.contains("auto") { return .vehicle }
+        if lower.contains("education") { return .education }
+        if lower.contains("business") { return .business }
+        return .personal
+    }
+
+    /// Icon for the product
+    var icon: String {
+        switch loanType {
+        case .home: return "house.fill"
+        case .personal: return "person.fill"
+        case .vehicle: return "car.fill"
+        case .business: return "briefcase.fill"
+        case .education: return "book.closed.fill"
+        }
+    }
+
+    /// Midpoint interest rate for display
+    var displayRate: Double {
+        (minimumInterestRate + maximumInterestRate) / 2.0
+    }
+}
+
 enum ApplicationStatus: String, Codable, Sendable {
     case draft
     case submitted
     case underReview
+    case escalated
     case additionalInfoRequired
     case recommended
     case approved
@@ -78,10 +144,54 @@ enum ApplicationStatus: String, Codable, Sendable {
     case closed
 }
 
+extension ApplicationStatus {
+    var displayLabel: String {
+        switch self {
+        case .draft: "Draft"
+        case .submitted: "Submitted"
+        case .underReview: "Under Review"
+        case .escalated: "Escalated"
+        case .additionalInfoRequired: "Info Needed"
+        case .recommended: "Recommended"
+        case .approved: "Approved"
+        case .rejected: "Rejected"
+        case .disbursed: "Disbursed"
+        case .closed: "Closed"
+        }
+    }
+
+    var tone: StatusBadge.Tone {
+        switch self {
+        case .draft: .neutral
+        case .submitted, .underReview: .info
+        case .escalated, .additionalInfoRequired: .warning
+        case .recommended, .approved, .disbursed: .success
+        case .rejected: .danger
+        case .closed: .neutral
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .draft: "doc.text"
+        case .submitted: "tray.and.arrow.up"
+        case .underReview: "magnifyingglass"
+        case .escalated: "arrow.up.right.circle.fill"
+        case .additionalInfoRequired: "exclamationmark.bubble"
+        case .recommended: "hand.thumbsup"
+        case .approved: "checkmark.seal.fill"
+        case .rejected: "xmark.octagon.fill"
+        case .disbursed: "banknote.fill"
+        case .closed: "lock.fill"
+        }
+    }
+}
+
 struct LoanApplication: Identifiable, Codable, Sendable, Hashable {
     var id: UUID = UUID()
     var borrowerID: UUID
     var assignedOfficerID: UUID?
+    var assignedOfficerName: String? = nil
     var loanType: LoanType
     var requestedAmount: Decimal
     var tenureMonths: Int
@@ -90,12 +200,37 @@ struct LoanApplication: Identifiable, Codable, Sendable, Hashable {
     var documentIDs: [UUID] = []
     var createdAt: Date = .now
     var updatedAt: Date = .now
+
+    // Optional enriched fields populated by the backend's joined responses.
+    var borrowerName: String? = nil
+    var borrowerEmail: String? = nil
+    var borrowerPhone: String? = nil
+    var productName: String? = nil
+    var sanctionLetter: SanctionLetter? = nil
+}
+
+struct ApplicationEvent: Identifiable, Codable, Sendable {
+    var id: UUID = UUID()
+    var applicationID: UUID
+    var actorID: UUID?
+    var eventType: String
+    var remark: String?
+    var fromStatus: String?
+    var toStatus: String?
+    var createdAt: Date = .now
 }
 
 // MARK: - Loan & EMI
 
 enum EMIStatus: String, Codable, Sendable {
     case upcoming, paid, overdue
+}
+
+struct EMIOrder: Sendable {
+    let orderId: String
+    let amount: Int      // in paise (rupees × 100)
+    let currency: String
+    let keyId: String
 }
 
 struct EMI: Identifiable, Codable, Sendable, Hashable {
@@ -109,16 +244,41 @@ struct EMI: Identifiable, Codable, Sendable, Hashable {
     var paidAt: Date?
 }
 
+enum LoanStatus: String, Codable, Sendable {
+    case active, settled, defaulted, foreclosed
+}
+
+struct RecoveryLog: Identifiable, Codable, Sendable, Hashable {
+    var id: UUID = UUID()
+    var borrowerID: UUID
+    var officerID: UUID
+    var actionType: String
+    var outcome: String
+    var notes: String?
+    var scheduledDate: Date?
+    var createdAt: Date = .now
+}
+
+struct ForeclosureDetails: Codable, Sendable, Hashable {
+    var outstandingBalance: Decimal
+    var penaltyRate: Double // e.g. 0.02 (2% penalty)
+    var penaltyAmount: Decimal
+    var gstAmount: Decimal // 18% GST on penalty amount
+    var totalPayoffAmount: Decimal
+}
+
 struct Loan: Identifiable, Codable, Sendable, Hashable {
     var id: UUID = UUID()
     var applicationID: UUID
     var borrowerID: UUID
+    var loanType: LoanType = .personal
     var principal: Decimal
     var interestRate: Double
     var tenureMonths: Int
     var disbursementDate: Date
     var outstandingBalance: Decimal
     var emiSchedule: [EMI] = []
+    var status: LoanStatus = .active
 }
 
 // MARK: - Documents
@@ -181,11 +341,11 @@ struct AuditEntry: Identifiable, Codable, Sendable, Hashable {
 
 // MARK: - Reporting
 
-enum ReportKind: String, Sendable {
+enum ReportKind: String, Codable, Sendable {
     case daily, weekly, monthly, npa, collectionEfficiency
 }
 
-enum ReportFormat: String, Sendable {
+enum ReportFormat: String, Codable, Sendable {
     case pdf, csv
 }
 
@@ -195,6 +355,46 @@ struct PortfolioSummary: Codable, Sendable, Hashable {
     var collectionEfficiency: Double
     var npaRatio: Double
     var activeLoans: Int
+}
+
+// MARK: - Aadhaar KYC Verification
+
+enum HashMatchResult: String, Codable, Sendable {
+    case match, mismatch, no_profile_value
+}
+
+enum AadhaarAutoDecision: String, Codable, Sendable {
+    case auto_verified, needs_review, auto_rejected
+}
+
+struct AadhaarSignerCert: Codable, Sendable {
+    var subject: String
+    var signingTime: String
+}
+
+struct AadhaarDemographics: Codable, Sendable {
+    var name: String?
+    var dob: String?
+    var gender: String?
+    var careOf: String?
+    var address: [String: String]?
+}
+
+struct AadhaarVerificationReport: Codable, Sendable, Identifiable {
+    var documentId: String
+    var signatureValid: Bool
+    var signerCert: AadhaarSignerCert?
+    var mobileHashMatch: HashMatchResult
+    var emailHashMatch: HashMatchResult
+    var referenceId: String
+    var xmlGeneratedAt: String
+    var xmlAgeDays: Int
+    var demographics: AadhaarDemographics
+    var photoUrl: String?
+    var autoDecision: AadhaarAutoDecision
+    var rejectionReason: String?
+
+    var id: String { documentId }
 }
 
 // MARK: - Notifications
@@ -210,4 +410,18 @@ struct PushNotification: Identifiable, Codable, Sendable, Hashable {
     var body: String
     var deepLink: URL?
     var receivedAt: Date = .now
+}
+
+// MARK: - Sanction Letters
+
+struct SanctionLetter: Identifiable, Codable, Sendable, Hashable {
+    var id: UUID = UUID()
+    var loanApplicationID: UUID
+    var borrowerID: UUID
+    var pdfPath: String
+    var generatedDate: Date = .now
+    var version: Int = 1
+    var status: String = "generated" // 'generated', 'accepted'
+    var isAccepted: Bool = false
+    var acceptedAt: Date? = nil
 }

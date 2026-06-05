@@ -1,0 +1,123 @@
+//
+//  CommunicationsMainView.swift
+//  loan officer
+//
+//  Created by Aadya Tiwari on 21/05/26.
+//
+
+
+import SwiftUI
+
+struct CommunicationsMainView: View {
+
+    @Environment(AppViewModel.self) var viewModel
+
+    var body: some View {
+        @Bindable var bindableViewModel = viewModel
+        ScrollView(.vertical, showsIndicators: false) {
+
+            VStack(spacing: 20) {
+
+                // MARK: Conversations
+
+                VStack(spacing: 14) {
+
+                    ForEach(viewModel.conversations) { conversation in
+
+                        Button {
+
+                            viewModel.selectedConversation = conversation
+
+                        } label: {
+
+                            HStack(spacing: 14) {
+
+                                LOAvatarView(
+                                    initials: conversation.borrowerInitials,
+                                    size: 52,
+                                    showOnlineIndicator: true,
+                                    isOnline: conversation.isOnline
+                                )
+
+                                VStack(alignment: .leading, spacing: 4) {
+
+                                    HStack {
+
+                                        Text(conversation.borrowerName)
+                                            .font(
+                                                .system(
+                                                    size: 16,
+                                                    weight: .semibold
+                                                )
+                                            )
+                                            .foregroundStyle(.primary)
+
+                                        Spacer()
+
+                                        Text(
+                                            AppFormatters.timeAgo(
+                                                conversation.lastMessageTime
+                                            )
+                                        )
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(.secondary)
+                                    }
+
+                                    Text(conversation.lastMessage)
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+
+                                    if conversation.unreadCount > 0 {
+
+                                        HStack {
+
+                                            Spacer()
+
+                                            LOCountBadge(
+                                                count: conversation.unreadCount
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 18)
+                                    .fill(
+                                        Color(
+                                            .secondarySystemGroupedBackground
+                                        )
+                                    )
+                            )
+                            .padding(.horizontal, 20)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.top, 16)
+
+                Spacer(minLength: 40)
+            }
+            .padding(.bottom, 20)
+        }
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Messages")
+        .toolbarTitleDisplayMode(.large)
+        .refreshable { await viewModel.refreshAll() }
+        .sheet(item: $bindableViewModel.selectedConversation) { conversation in
+
+            ChatView(conversation: conversation)
+                .environment(viewModel)
+        }
+    }
+}
+
+#Preview {
+
+    NavigationStack {
+
+        CommunicationsMainView()
+            .environment(AppViewModel())
+    }
+}

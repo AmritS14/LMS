@@ -6,4 +6,5 @@ protocol NotificationService: Sendable {
     func subscribe(to topic: NotificationTopic) async throws
     func unsubscribe(from topic: NotificationTopic) async throws
     func fetchHistory(limit: Int) async throws -> [PushNotification]
+    func sendNotification(topic: NotificationTopic, title: String, body: String) async throws
 }

@@ -1,24 +1,951 @@
 import SwiftUI
 
 struct HomeDashboardView: View {
+    @Environment(SessionStore.self) private var session
+    @Environment(\.appEnvironment) private var env
+
+    @State private var viewModel = DashboardViewModel()
+    @State private var repaymentViewModel = RepaymentViewModel()
+    @State private var selectedLoanID: UUID?
+    @State private var emiToPay: EMI?
+    @State private var showSupportSheet = false
+    @State private var selectedPendingAppID: UUID?
+    @State private var docUploadApp: LoanApplication?
+    @State private var hasLoadedOnce = false
+    
+    @State private var dismissedIDs: Set<UUID> = []
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some View {
-        NavigationStack {
+        ZStack(alignment: .top) {
             ScrollView {
-                VStack(spacing: Spacing.m) {
-                    SectionCard(title: "Quick Actions") {
-                        NavigationLink("Apply for Loan") { NewLoanApplicationView() }
-                        NavigationLink("EMI Calculator") { EMICalculatorView() }
-                        NavigationLink("Complete KYC") { KYCView() }
-                    }
-                    SectionCard(title: "My Applications") {
-                        NavigationLink("View All") { ApplicationTrackingView() }
+                mainContent
+                    .padding(.top, isAnyAlertVisible ? 160 : 0)
+                    .padding(.bottom, 100)
+            }
+            .scrollIndicators(.hidden)
+            .scrollBounceBehavior(.basedOnSize)
+            .refreshable { await loadData() }
+            
+            // Floating Alerts Overlay at the top of the whole screen
+            floatingAlertsSection
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.lmsBackground.ignoresSafeArea())
+        .navigationTitle("Dashboard")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink(destination: BorrowerProfileView().toolbar(.hidden, for: .tabBar)) {
+                    Image(systemName: "person.crop.circle")
+                        .font(.title3)
+                }
+                .accessibilityLabel("Profile")
+            }
+        }
+        .task {
+            if !hasLoadedOnce {
+                await loadData()
+                hasLoadedOnce = true
+            }
+        }
+        .onAppear {
+            // Re-fetch when returning to the Home tab so officer-side status
+            // changes (e.g. documents requested) surface without a manual pull.
+            if hasLoadedOnce {
+                Task { await loadData() }
+            }
+        }
+        .onChange(of: selectedLoanID) { _, newID in
+            guard let newID,
+                  let env,
+                  let loan = viewModel.activeLoans.first(where: { $0.id == newID }) else { return }
+            Task { await repaymentViewModel.loadRepaymentData(loanService: env.loans, loan: loan) }
+        }
+        .sheet(item: $docUploadApp) { app in
+            UploadRequestedDocumentsView(
+                application: app,
+                requestNote: viewModel.requestNotes[app.id]
+            ) {
+                await loadData()
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $emiToPay, content: paySheet)
+        .sheet(isPresented: $showSupportSheet) {
+            NavigationStack { BorrowerMessagingView() }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background || phase == .inactive {
+                dismissAllCurrentAlerts()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var mainContent: some View {
+        VStack(spacing: Spacing.ml) {
+            if viewModel.isLoading {
+                ProgressView().progressViewStyle(.circular)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, Spacing.xl)
+            } else if let error = viewModel.errorMessage {
+                ContentUnavailableView(
+                    "Couldn't Load Dashboard",
+                    systemImage: "exclamationmark.triangle",
+                    description: Text(error)
+                )
+            } else {
+                
+                if viewModel.activeLoans.isEmpty && viewModel.applications.isEmpty {
+                    emptyState
+                        .padding(.horizontal, Spacing.m)
+                } else {
+                    contentSections
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var loanSummaryCard: some View {
+        HStack(spacing: Spacing.m) {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("Total Loans")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fontWeight(.semibold)
+                    .textCase(.uppercase)
+                Text("\(viewModel.applications.count)")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.primary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(Spacing.m)
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+            .shadow(color: Color.black.opacity(0.02), radius: 6, x: 0, y: 3)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Total Loans: \(viewModel.applications.count)")
+            
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("Active Loans")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fontWeight(.semibold)
+                    .textCase(.uppercase)
+                Text("\(viewModel.activeLoans.count)")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.primary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(Spacing.m)
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+            .shadow(color: Color.black.opacity(0.02), radius: 6, x: 0, y: 3)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Active Loans: \(viewModel.activeLoans.count)")
+        }
+        .padding(.horizontal, Spacing.m)
+        .padding(.top, Spacing.m)
+    }
+
+    @ViewBuilder
+    private func paySheet(emi: EMI) -> some View {
+        if let env {
+            let loan = viewModel.activeLoans.first(where: { $0.id == selectedLoanID })
+            PayEMISheet(emi: emi, loan: loan, loanService: env.loans) {
+                await loadData()
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
+    }
+
+    // MARK: - Sections
+
+    @ViewBuilder
+    private var contentSections: some View {
+        // Alert cards have been moved to the floating top banner overlay (floatingAlertsSection)
+
+        let pendingApps = viewModel.applications.filter { $0.status != .disbursed && $0.status != .closed }
+        if !pendingApps.isEmpty {
+            VStack(alignment: .leading, spacing: Spacing.s) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Pending Applications")
+                        .font(.title3.bold())
+                        .accessibilityAddTraits(.isHeader)
+                    Spacer()
+                    if pendingApps.count > 1 {
+                        Text("\(pendingAppIndex(in: pendingApps) + 1) of \(pendingApps.count)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
-                .padding(Spacing.m)
+                .padding(.horizontal, Spacing.m)
+
+                if pendingApps.count > 1 {
+                    TabView(selection: $selectedPendingAppID) {
+                        ForEach(pendingApps) { app in
+                            NavigationLink(destination: ApplicationTrackingView()) {
+                                statusTrackerCard(app)
+                                    .padding(.horizontal, Spacing.m)
+                                    .padding(.bottom, 25)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .tag(app.id as UUID?)
+                        }
+                    }
+                    .tabViewStyle(.page(indexDisplayMode: .always))
+                    .indexViewStyle(.page(backgroundDisplayMode: .never))
+                    .frame(height: 180)
+                } else if let app = pendingApps.first {
+                    NavigationLink(destination: ApplicationTrackingView()) {
+                        statusTrackerCard(app)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.horizontal, Spacing.m)
+                }
             }
-            .navigationTitle("Home")
+            .padding(.top, Spacing.m)
+        }
+
+        if !viewModel.activeLoans.isEmpty {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Active Loans")
+                    .font(.title3.bold())
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+                if viewModel.activeLoans.count > 1 {
+                    Text("\(activeLoanIndex + 1) of \(viewModel.activeLoans.count)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, Spacing.m)
+            .padding(.top, Spacing.s)
+
+            if viewModel.activeLoans.count > 1 {
+                TabView(selection: $selectedLoanID) {
+                    ForEach(viewModel.activeLoans) { loan in
+                        NavigationLink(destination: RepaymentDashboardView(loan: loan)) {
+                            loanHeroCard(loan)
+                                .padding(.horizontal, Spacing.m)
+                                .padding(.bottom, 25)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .tag(loan.id as UUID?)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .always))
+                .indexViewStyle(.page(backgroundDisplayMode: .never))
+                .frame(height: 350)
+            } else if let loan = viewModel.activeLoans.first {
+                NavigationLink(destination: RepaymentDashboardView(loan: loan)) {
+                    loanHeroCard(loan)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .padding(.horizontal, Spacing.m)
+                .padding(.top, Spacing.s)
+                .padding(.bottom, Spacing.xs)
+            }
+
+        }
+    }
+
+    private var activeLoanIndex: Int {
+        guard let id = selectedLoanID,
+              let idx = viewModel.activeLoans.firstIndex(where: { $0.id == id }) else { return 0 }
+        return idx
+    }
+
+    private func pendingAppIndex(in apps: [LoanApplication]) -> Int {
+        guard let id = selectedPendingAppID,
+              let idx = apps.firstIndex(where: { $0.id == id }) else { return 0 }
+        return idx
+    }
+
+    // MARK: - Loan Hero Card
+    private func loanHeroCard(_ loan: Loan) -> some View {
+        let outstanding = loan.outstandingBalance
+        let paidCount = loan.emiSchedule.filter { $0.status == .paid }.count
+        let total = loan.tenureMonths
+        let progress = total > 0 ? Double(paidCount) / Double(total) : 0
+        let emiAmount = EMICalculator.calculate(
+            principal: loan.principal,
+            annualInterestRate: loan.interestRate,
+            tenureMonths: loan.tenureMonths,
+            startDate: loan.disbursementDate
+        ).monthlyInstallment
+        _ = nextUpcomingEMI(for: loan)
+
+        return VStack(alignment: .leading, spacing: Spacing.l) {
+            HStack {
+                Label("\(loan.loanType.rawValue.capitalized) Loan", systemImage: icon(for: loan.loanType))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.tint)
+                Spacer()
+                StatusBadge(ApplicationStatus.disbursed.rawValue.capitalized, tone: .success)
+            }
+
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("Outstanding Balance")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text(Formatting.currency(outstanding))
+                    .font(.lmsHeroAmount)
+                    .contentTransition(.numericText())
+            }
+
+            VStack(alignment: .leading, spacing: Spacing.xs_s) {
+                ProgressView(value: progress)
+                    .tint(.accentColor)
+                HStack {
+                    Text("\(paidCount) of \(total) EMIs paid")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("\(Int(progress * 100))% complete")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tint)
+                }
+            }
+
+            Divider()
+
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+                stat(title: "Monthly EMI", value: Formatting.currency(emiAmount))
+                Spacer(minLength: 0)
+                Divider().frame(height: 32)
+                Spacer(minLength: 0)
+                stat(title: "Rate", value: Formatting.percent(loan.interestRate / 100.0))
+                Spacer(minLength: 0)
+                Divider().frame(height: 32)
+                Spacer(minLength: 0)
+                stat(title: "Tenure", value: "\(loan.tenureMonths) mo")
+                Spacer(minLength: 0)
+            }
+
+
+        }
+        .padding(Spacing.l)
+        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+    }
+
+    private func nextUpcomingEMI(for loan: Loan) -> EMI? {
+        let schedule = (selectedLoanID == loan.id && !repaymentViewModel.emiSchedule.isEmpty)
+            ? repaymentViewModel.emiSchedule
+            : loan.emiSchedule
+        return schedule
+            .filter { $0.status == .upcoming || $0.status == .overdue }
+            .sorted { $0.dueDate < $1.dueDate }
+            .first
+    }
+
+    // MARK: - Action Required (documents requested)
+    private func actionRequiredCard(_ app: LoanApplication) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .foregroundStyle(Color.lmsWarning)
+                    .font(.title3)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Action Needed")
+                        .font(.subheadline.weight(.semibold))
+                    Text("\(app.loanType.rawValue.capitalized) Loan • \(Formatting.currency(app.requestedAmount))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                
+                Button {
+                    withAnimation {
+                        dismissedIDs.insert(app.id)
+                        AlertSettings.dismissAlert(id: app.id)
+                    }
+                } label: {
+                    Image(systemName: "xmark")
+                        .foregroundStyle(.secondary)
+                        .padding(Spacing.xs)
+                }
+            }
+
+            if let note = viewModel.requestNotes[app.id], !note.isEmpty {
+                Text(note)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(Spacing.sm)
+                    .background(Color.lmsBackground, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+            } else {
+                Text("Your loan officer has requested additional documents.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            Button {
+                docUploadApp = app
+            } label: {
+                Label("Upload Documents", systemImage: "arrow.up.doc.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Spacing.s)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Color.lmsWarning)
+        }
+        .padding(Spacing.m)
+        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+        .background(Color.lmsWarning.opacity(0.08), in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                .stroke(Color.lmsWarning.opacity(0.3), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
+    }
+
+    // MARK: - Sanction Letter Ready Card
+    private func sanctionLetterReadyCard(_ app: LoanApplication) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(spacing: Spacing.sm) {
+                ZStack {
+                    Circle()
+                        .fill(Color.accentColor.opacity(0.12))
+                        .frame(width: 38, height: 38)
+                    Image(systemName: "doc.badge.checkmark.fill")
+                        .foregroundStyle(Color.accentColor)
+                        .font(.system(size: 17))
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Sanction Letter Ready")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text("\(app.loanType.rawValue.capitalized) Loan • \(Formatting.currency(app.requestedAmount))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                
+                Button {
+                    withAnimation {
+                        dismissedIDs.insert(app.id)
+                        AlertSettings.dismissAlert(id: app.id)
+                    }
+                } label: {
+                    Image(systemName: "xmark")
+                        .foregroundStyle(.secondary)
+                        .padding(Spacing.xs)
+                }
+            }
+
+            Text("Your official loan sanction letter has been issued. Review and accept the terms to proceed to disbursement.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+
+            NavigationLink(destination: SanctionLetterView(application: app).toolbar(.hidden, for: .tabBar)) {
+                Label("View & Accept Letter", systemImage: "arrow.down.doc.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Spacing.s)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.accentColor)
+        }
+        .padding(Spacing.m)
+        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+        .background(Color.accentColor.opacity(0.06), in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                .stroke(Color.accentColor.opacity(0.25), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
+    }
+
+    // MARK: - Status Tracker
+    private func statusTrackerCard(_ app: LoanApplication) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.m) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text("\(app.loanType.rawValue.capitalized) Loan Application")
+                        .font(.subheadline.weight(.semibold))
+                    Text(Formatting.currency(app.requestedAmount))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: icon(for: app.loanType))
+                    .foregroundStyle(.tint)
+                    .font(.title2)
+            }
+
+            if app.status == .rejected {
+                Label("Application Rejected", systemImage: "xmark.circle.fill")
+                    .foregroundStyle(Color.lmsDanger)
+                    .font(.subheadline.weight(.semibold))
+            } else {
+                HStack(spacing: 0) {
+                    let order: [ApplicationStatus] = [.draft, .submitted, .underReview, .approved, .disbursed]
+                    ForEach(Array(order.enumerated()), id: \.offset) { idx, step in
+                        let isDone = isStepDone(current: app.status, step: step, order: order)
+                        let isCurrent = app.status == step
+
+                        VStack(spacing: Spacing.xs) {
+                            ZStack {
+                                Circle()
+                                    .fill(isDone || isCurrent ? Color.accentColor : Color.lmsFill)
+                                    .frame(width: 26, height: 26)
+                                if isDone {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundStyle(.white)
+                                } else if isCurrent {
+                                    Circle().fill(.white).frame(width: 9, height: 9)
+                                }
+                            }
+                            Text(step.rawValue.capitalized)
+                                .font(.caption2.weight(isCurrent ? .semibold : .regular))
+                                .foregroundStyle(isCurrent ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                                .multilineTextAlignment(.center)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                                .frame(width: 60)
+                        }
+
+                        if idx < order.count - 1 {
+                            Rectangle()
+                                .fill(isDone ? Color.accentColor : Color.lmsFill)
+                                .frame(height: 2)
+                                .frame(maxWidth: .infinity)
+                                .offset(y: -10)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(Spacing.m)
+        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+    }
+
+    // MARK: - EMI List
+    private func emiListSection(for loan: Loan) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack {
+                Text("Upcoming EMIs")
+                    .font(.lmsHeadline)
+                Spacer()
+                NavigationLink("View All") {
+                    RepaymentDashboardView(loan: loan)
+                }
+                .font(.subheadline)
+            }
+
+            let scheduleToUse = (selectedLoanID == loan.id) ? repaymentViewModel.emiSchedule : loan.emiSchedule
+            let pendingEMIs = scheduleToUse.filter { $0.status == .upcoming || $0.status == .overdue }.prefix(3)
+
+            if pendingEMIs.isEmpty {
+                Text("No upcoming payments.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(Spacing.m)
+                    .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+            } else {
+                VStack(spacing: Spacing.s) {
+                    ForEach(pendingEMIs) { emi in
+                        EMIRow(emi: emi) {
+                            emiToPay = emi
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Empty State
+    private var emptyState: some View {
+        ContentUnavailableView {
+            Label("No Active Loans", systemImage: "doc.text.magnifyingglass")
+        } description: {
+            Text("Go to the Apply tab to calculate and submit a loan application.")
+        }
+        .frame(maxWidth: .infinity)
+        .padding(Spacing.l)
+        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+    }
+
+    // MARK: - Helpers
+    private func stat(title: String, value: String) -> some View {
+        VStack(spacing: Spacing.xxs) {
+            Text(value).font(.subheadline.weight(.semibold))
+            Text(title).font(.caption2).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func isStepDone(current: ApplicationStatus, step: ApplicationStatus, order: [ApplicationStatus]) -> Bool {
+        guard let ci = order.firstIndex(of: current),
+              let si = order.firstIndex(of: step) else { return false }
+        return si < ci
+    }
+
+    private func icon(for type: LoanType) -> String {
+        switch type {
+        case .personal:  return "person.fill"
+        case .home:      return "house.fill"
+        case .vehicle:   return "car.fill"
+        case .education: return "graduationcap.fill"
+        case .business:  return "briefcase.fill"
+        }
+    }
+
+    private func loadData() async {
+        guard let env, let userID = session.currentUser?.id else { return }
+        await viewModel.fetchDashboardData(
+            loanService: env.loans,
+            sanctionLetterService: env.sanctionLetters,
+            borrowerID: userID
+        )
+        // Auto-select first pending application for the swipeable card view
+        let pendingApps = viewModel.applications.filter { $0.status != .disbursed && $0.status != .closed }
+        if let first = pendingApps.first {
+            selectedPendingAppID = first.id
+        }
+        if let first = viewModel.activeLoans.first {
+            selectedLoanID = first.id
+            await repaymentViewModel.loadRepaymentData(loanService: env.loans, loan: first)
         }
     }
 }
 
-#Preview { HomeDashboardView() }
+// MARK: - EMI Row Card
+struct EMIRow: View {
+    let emi: EMI
+    let onPay: () -> Void
+
+    var body: some View {
+        Button(action: onPay) {
+            HStack(spacing: Spacing.sm) {
+                ZStack {
+                    Circle()
+                        .fill(statusColor.opacity(0.15))
+                        .frame(width: 40, height: 40)
+                    Text("\(emi.installmentNumber)")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(statusColor)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(Formatting.currency(emi.totalAmount))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text("Due \(Formatting.date(emi.dueDate))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                switch emi.status {
+                case .paid:
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(Color.lmsSuccess)
+                        .font(.title3)
+                case .overdue:
+                    StatusBadge("Overdue", tone: .danger)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                case .upcoming:
+                    StatusBadge("Upcoming", tone: .info)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .padding(Spacing.sm)
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(emi.status == .paid)
+    }
+
+    private var statusColor: Color {
+        switch emi.status {
+        case .paid:     return .lmsSuccess
+        case .overdue:  return .lmsDanger
+        case .upcoming: return .accentColor
+        }
+    }
+}
+
+// MARK: - Pay EMI Sheet
+struct PayEMISheet: View {
+    let emi: EMI
+    let loan: Loan?
+    let loanService: any LoanService
+    let onSuccess: () async -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var phase: Phase = .ready
+    @State private var pendingOrder: EMIOrder?
+    @State private var errorText: String?
+
+    private enum Phase { case ready, ordering, verifying, succeeded }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                if phase == .succeeded {
+                    successContent
+                } else {
+                    paymentContent
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.lmsBackground.ignoresSafeArea())
+            .navigationTitle(phase == .succeeded ? "Payment Successful" : "Pay EMI")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(role: .cancel) { dismiss() }
+                }
+            }
+        }
+    }
+
+    private var paymentContent: some View {
+        VStack(spacing: Spacing.l) {
+            VStack(spacing: Spacing.xs) {
+                Text("Amount Due")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text(Formatting.currency(emi.totalAmount))
+                    .font(.lmsHeroAmount)
+                Text("Installment #\(emi.installmentNumber) • Due \(Formatting.date(emi.dueDate))")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.top, Spacing.l)
+
+            VStack(spacing: 0) {
+                breakdownRow("Principal", Formatting.currency(emi.principalComponent))
+                Divider().padding(.leading, Spacing.m)
+                breakdownRow("Interest", Formatting.currency(emi.interestComponent))
+                if let loan {
+                    Divider().padding(.leading, Spacing.m)
+                    breakdownRow("Loan", "\(loan.loanType.rawValue.capitalized) Loan")
+                }
+            }
+            .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
+            .padding(.horizontal, Spacing.m)
+
+            if let errorText {
+                Label(errorText, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(Color.lmsDanger)
+                    .padding(.horizontal, Spacing.m)
+            }
+
+            HStack(spacing: Spacing.s) {
+                Image(systemName: "lock.shield.fill")
+                    .foregroundStyle(.secondary)
+                Text("Secured by Razorpay")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            PrimaryButton(
+                "Pay \(Formatting.currency(emi.totalAmount))",
+                isLoading: phase == .ordering || phase == .verifying
+            ) {
+                Task { await startPayment() }
+            }
+            .padding(.horizontal, Spacing.m)
+            .padding(.bottom, Spacing.m)
+        }
+    }
+
+    private var successContent: some View {
+        VStack(spacing: Spacing.l) {
+            Spacer()
+            ZStack {
+                Circle()
+                    .fill(Color.lmsSuccess.opacity(0.15))
+                    .frame(width: 96, height: 96)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 44, weight: .bold))
+                    .foregroundStyle(Color.lmsSuccess)
+            }
+            VStack(spacing: Spacing.xs) {
+                Text("Payment Successful")
+                    .font(.title2.weight(.semibold))
+                Text("\(Formatting.currency(emi.totalAmount)) paid towards installment #\(emi.installmentNumber)")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, Spacing.l)
+            }
+            Spacer()
+            PrimaryButton("Done") { dismiss() }
+                .padding(.horizontal, Spacing.m)
+                .padding(.bottom, Spacing.m)
+        }
+    }
+
+    private func breakdownRow(_ label: String, _ value: String) -> some View {
+        HStack {
+            Text(label).foregroundStyle(.secondary)
+            Spacer()
+            Text(value).fontWeight(.medium)
+        }
+        .font(.subheadline)
+        .padding(Spacing.m)
+    }
+
+    private func startPayment() async {
+        phase = .ordering
+        errorText = nil
+        do {
+            let order = try await loanService.createEMIOrder(emiID: emi.id)
+            pendingOrder = order
+            RazorpayCheckoutManager.shared.startPayment(order: order) { paymentId, orderId, sig in
+                Task { await verify(paymentId: paymentId, orderId: orderId, signature: sig) }
+            } onError: { description in
+                errorText = description
+                phase = .ready
+            }
+        } catch {
+            errorText = error.localizedDescription
+            phase = .ready
+        }
+    }
+
+    private func verify(paymentId: String, orderId: String, signature: String) async {
+        phase = .verifying
+        do {
+            _ = try await loanService.verifyEMIPayment(
+                emiID: emi.id,
+                orderId: orderId,
+                paymentId: paymentId,
+                signature: signature
+            )
+            withAnimation(.easeInOut) { phase = .succeeded }
+            await onSuccess()
+        } catch {
+            errorText = error.localizedDescription
+            phase = .ready
+        }
+    }
+}
+
+#Preview {
+    NavigationStack { HomeDashboardView() }
+        .environment(SessionStore(
+            currentUser: MockAuthService.seedBorrower,
+            borrowerProfile: MockAuthService.seedBorrowerProfile
+        ))
+        .environment(\.appEnvironment, AppEnvironment(
+            auth: MockAuthService(),
+            loans: MockLoanService(),
+            documents: MockDocumentService(),
+            notifications: MockNotificationService(),
+            messaging: MockMessagingService(),
+            keychain: MockKeychainService()
+        ))
+}
+
+// MARK: - Alert Settings & Helpers
+struct AlertSettings {
+    static func dismissAlert(id: UUID) {
+        var dismissed = fetchDismissedAlerts()
+        if !dismissed.contains(id.uuidString) {
+            dismissed.append(id.uuidString)
+            UserDefaults.standard.set(dismissed, forKey: "dismissed_alerts")
+        }
+    }
+    
+    static func isAlertDismissed(id: UUID) -> Bool {
+        let dismissed = fetchDismissedAlerts()
+        return dismissed.contains(id.uuidString)
+    }
+    
+    private static func fetchDismissedAlerts() -> [String] {
+        UserDefaults.standard.stringArray(forKey: "dismissed_alerts") ?? []
+    }
+}
+
+extension HomeDashboardView {
+    private var isAnyAlertVisible: Bool {
+        let docPendingApps = viewModel.applications.filter {
+            $0.status == .additionalInfoRequired
+            && !AlertSettings.isAlertDismissed(id: $0.id)
+            && !dismissedIDs.contains($0.id)
+        }
+        let slApps = viewModel.applications.filter { app in
+            (viewModel.sanctionLetterPDFPaths[app.id] != nil || (app.status == .approved && (app.sanctionLetter?.status == "sent" || app.sanctionLetter?.status == "accepted")))
+            && !AlertSettings.isAlertDismissed(id: app.id)
+            && !dismissedIDs.contains(app.id)
+        }
+        return !docPendingApps.isEmpty || !slApps.isEmpty
+    }
+
+    @ViewBuilder
+    private var floatingAlertsSection: some View {
+        let docPendingApps = viewModel.applications.filter {
+            $0.status == .additionalInfoRequired
+            && !AlertSettings.isAlertDismissed(id: $0.id)
+            && !dismissedIDs.contains($0.id)
+        }
+        let slApps = viewModel.applications.filter { app in
+            (viewModel.sanctionLetterPDFPaths[app.id] != nil || (app.status == .approved && (app.sanctionLetter?.status == "sent" || app.sanctionLetter?.status == "accepted")))
+            && !AlertSettings.isAlertDismissed(id: app.id)
+            && !dismissedIDs.contains(app.id)
+        }
+        
+        let allAlerts = docPendingApps + slApps
+        
+        if !allAlerts.isEmpty {
+            VStack(spacing: Spacing.s) {
+                ForEach(allAlerts) { app in
+                    if app.status == .additionalInfoRequired {
+                        actionRequiredCard(app)
+                    } else {
+                        sanctionLetterReadyCard(app)
+                    }
+                }
+            }
+            .padding(.horizontal, Spacing.m)
+            .padding(.top, Spacing.s)
+            .transition(.move(edge: .top).combined(with: .opacity))
+            .animation(.spring(), value: allAlerts)
+        }
+    }
+    
+    private func dismissAllCurrentAlerts() {
+        let docPendingApps = viewModel.applications.filter {
+            $0.status == .additionalInfoRequired
+            && !AlertSettings.isAlertDismissed(id: $0.id)
+            && !dismissedIDs.contains($0.id)
+        }
+        let slApps = viewModel.applications.filter { app in
+            (viewModel.sanctionLetterPDFPaths[app.id] != nil || (app.status == .approved && (app.sanctionLetter?.status == "sent" || app.sanctionLetter?.status == "accepted")))
+            && !AlertSettings.isAlertDismissed(id: app.id)
+            && !dismissedIDs.contains(app.id)
+        }
+        
+        for app in docPendingApps {
+            AlertSettings.dismissAlert(id: app.id)
+        }
+        for app in slApps {
+            AlertSettings.dismissAlert(id: app.id)
+        }
+    }
+}
