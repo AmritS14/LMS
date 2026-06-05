@@ -34,6 +34,7 @@ struct AvatarView: View {
                     Text(initials)
                         .font(.system(size: size * 0.4, weight: .semibold, design: .rounded))
                         .foregroundStyle(.white)
+                        .accessibilityHidden(true)
                 )
 
             if showOnlineIndicator {
@@ -46,5 +47,7 @@ struct AvatarView: View {
                     .offset(x: 2, y: 2)
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(isOnline ? "Profile picture, online" : "Profile picture")
     }
 }
