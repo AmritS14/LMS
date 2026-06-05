@@ -52,7 +52,7 @@ struct ReportsDashboardView: View {
             } else {
                 if viewModel.isLoading {
                     Section {
-                        ProgressView()
+                        ProgressView().progressViewStyle(.circular)
                             .frame(maxWidth: .infinity, alignment: .center)
                             .padding()
                     }
@@ -87,7 +87,7 @@ struct ReportsDashboardView: View {
                 ZStack {
                     Color.black.opacity(0.3).ignoresSafeArea()
                     VStack(spacing: 16) {
-                        ProgressView()
+                        ProgressView().progressViewStyle(.circular)
                         Text("Generating Export...")
                             .font(.headline)
                     }

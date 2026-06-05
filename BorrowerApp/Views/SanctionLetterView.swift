@@ -12,7 +12,7 @@ struct SanctionLetterView: View {
         VStack(spacing: 0) {
             if viewModel.isLoading {
                 Spacer()
-                ProgressView("Loading Sanction Letter…")
+                ProgressView("Loading Sanction Letter…").progressViewStyle(.circular)
                     .controlSize(.large)
                 Spacer()
             } else if let error = viewModel.errorMessage {
@@ -44,6 +44,7 @@ struct SanctionLetterView: View {
                 Spacer()
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.lmsBackground.ignoresSafeArea())
         .navigationTitle("Sanction Letter")
         .navigationBarTitleDisplayMode(.inline)
@@ -122,7 +123,7 @@ struct SanctionLetterView: View {
                     RoundedRectangle(cornerRadius: CornerRadius.medium)
                         .fill(Color.lmsBackground)
                         .frame(height: 200)
-                    ProgressView()
+                    ProgressView().progressViewStyle(.circular)
                 }
                 
                 // Tap Overlay
@@ -200,7 +201,7 @@ struct SanctionLetterView: View {
                 }
             } label: {
                 if viewModel.isAccepting {
-                    ProgressView()
+                    ProgressView().progressViewStyle(.circular)
                         .tint(.white)
                 } else {
                     Text("Accept Sanction Letter")
@@ -277,7 +278,7 @@ struct SanctionLetterView: View {
                 if let pdfURL = viewModel.pdfURL, let data = try? Data(contentsOf: pdfURL) {
                     PDFKitView(pdfData: data)
                 } else {
-                    ProgressView()
+                    ProgressView().progressViewStyle(.circular)
                 }
             }
             .navigationTitle("Sanction Letter PDF")

@@ -13,6 +13,7 @@
 		0C86C6E40082DD97799567C8 /* SupabaseSanctionLetterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270490250B9B50EEBA7C5DC9 /* SupabaseSanctionLetterService.swift */; };
 		10763574BC09806E93C4652B /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E3BA31DFDF4BBB9114F3C4 /* SessionStore.swift */; };
 		11E257368809C6692698BD2B /* SupabaseDocumentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19A749024376B4E1C30F4B83 /* SupabaseDocumentService.swift */; };
+		1406192D7C4D56F960376316 /* cash_register.wav in Resources */ = {isa = PBXBuildFile; fileRef = 7269C1694B9B87AAB405EB1E /* cash_register.wav */; };
 		14709A63F344F7FD1D8264FF /* MockSupportServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77E37F22B749EB4CF963D0B3 /* MockSupportServices.swift */; };
 		1498870D378AA154011348C5 /* RepaymentDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FF7914A86ED65B6282042EF /* RepaymentDashboardView.swift */; };
 		14B4C4BFA67DB593B9D9F96A /* MockSanctionLetterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F20006481418E877E1641CB /* MockSanctionLetterService.swift */; };
@@ -41,6 +42,7 @@
 		52450F643B5688BA2198ADC1 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = B07AD9174280E67995096E93 /* Typography.swift */; };
 		52A1AF31A8FA35B4273EF2C0 /* SecureKeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7030245C7B6F750C833D33EA /* SecureKeychainService.swift */; };
 		53E0B0085D579CAB67CFB806 /* MockLoanService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 211DE72674707B85B3C3C40A /* MockLoanService.swift */; };
+		57DD30B0C3A118D347808051 /* SoundManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 222CF8DF547150E541869360 /* SoundManager.swift */; };
 		5AAD19A5CCD179034CEA8C1D /* KYCView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0D234D5F91C703EA095E10 /* KYCView.swift */; };
 		5B7824982BD4DC6AD0E87D54 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93417E4CF1AF5336D0BDA3F7 /* AuthService.swift */; };
 		5B900C06FEC98C16A1BCC79D /* SupabaseAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C310B8B938438DAE6F4F90E0 /* SupabaseAuthService.swift */; };
@@ -88,6 +90,8 @@
 		AA00KYC000000002FF02 /* SupabaseAadhaarKYCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00KYC000000002FF01 /* SupabaseAadhaarKYCService.swift */; };
 		AA00KYC000000002FF03 /* SupabaseAadhaarKYCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00KYC000000002FF01 /* SupabaseAadhaarKYCService.swift */; };
 		AA00KYC000000003FF02 /* AadhaarKYCView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00KYC000000003FF01 /* AadhaarKYCView.swift */; };
+		AA00UMS000000001FF02 /* UnreadMessageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00UMS000000001FF01 /* UnreadMessageStore.swift */; };
+		AA00UMS000000001FF03 /* UnreadMessageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00UMS000000001FF01 /* UnreadMessageStore.swift */; };
 		AAFC609E76A4CEC4B45C1C19 /* ProductComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ECA8C941966C60EAD82892 /* ProductComparisonView.swift */; };
 		AEC46A6B6FC8863AC7B09AEE /* LoanApplicationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67CE1BB7A83A622F16249215 /* LoanApplicationViewModel.swift */; };
 		AF6096782C4A1998ACE43AED /* ApplicationTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378FE18EBDE8ED6EAC15B43F /* ApplicationTrackingView.swift */; };
@@ -98,13 +102,12 @@
 		BDA45FEA7B090FD0D0C4187B /* SanctionLetterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DA929AF844ADA35BA5AD73B /* SanctionLetterView.swift */; };
 		BE28FEE792EA8A0F91A8089C /* Endpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16751F7EF73D594F9FAEA39E /* Endpoints.swift */; };
 		C7EC73AA5008E5C5A111E157 /* MessagingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D006F72DB84815CA65BE6A7 /* MessagingService.swift */; };
-		AA00UMS000000001FF02 /* UnreadMessageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00UMS000000001FF01 /* UnreadMessageStore.swift */; };
-		AA00UMS000000001FF03 /* UnreadMessageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00UMS000000001FF01 /* UnreadMessageStore.swift */; };
 		C91CFCBE3339A03C9B9CA822 /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E9312F55475E7E88D99F512 /* Formatting.swift */; };
 		D0F0B59BB72652B77FC50780 /* SectionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B906761D8C52A50034E4A58 /* SectionCard.swift */; };
 		D1A96A5D5B9276150793483D /* SupabaseLoanService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 914A1BB4F51D4F5C31806EFD /* SupabaseLoanService.swift */; };
 		D1DBD5936B431DF44761FDC8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2A32E7C11923D89775024488 /* Assets.xcassets */; };
 		D2D6C63EFF04325EA8367D94 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 31E5097AB0790F850016BE59 /* Assets.xcassets */; };
+		D3EBD792FE8D272ECD5442F6 /* StartupAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 005EEDB5609FB5F96734309B /* StartupAnimationView.swift */; };
 		D608CC78349C27602C839627 /* UploadRequestedDocumentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 738ED94CFD4ADB3CC414BC29 /* UploadRequestedDocumentsView.swift */; };
 		D6B196110A20A011B5023784 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7285B003EE43FD1BF2656C0E /* RootView.swift */; };
 		DDD8561F79EEFCD1BB8A2718 /* LoanService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A661E2C59635EFD0C144B906 /* LoanService.swift */; };
@@ -133,6 +136,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		005EEDB5609FB5F96734309B /* StartupAnimationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StartupAnimationView.swift; sourceTree = "<group>"; };
 		0AEE002BB359BE5F83A4C94E /* RoleTabViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoleTabViews.swift; sourceTree = "<group>"; };
 		0B906761D8C52A50034E4A58 /* SectionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionCard.swift; sourceTree = "<group>"; };
 		106AFA5E311F8E8EB97A16CA /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
@@ -144,6 +148,7 @@
 		1FF7914A86ED65B6282042EF /* RepaymentDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepaymentDashboardView.swift; sourceTree = "<group>"; };
 		211DE72674707B85B3C3C40A /* MockLoanService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockLoanService.swift; sourceTree = "<group>"; };
 		21BD57C4D8DB9DBFBAA0A3F9 /* Spacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spacing.swift; sourceTree = "<group>"; };
+		222CF8DF547150E541869360 /* SoundManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoundManager.swift; sourceTree = "<group>"; };
 		27038F63F2EF2681647BFD33 /* AdminService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminService.swift; sourceTree = "<group>"; };
 		270490250B9B50EEBA7C5DC9 /* SupabaseSanctionLetterService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseSanctionLetterService.swift; path = Supabase/SupabaseSanctionLetterService.swift; sourceTree = "<group>"; };
 		2A32E7C11923D89775024488 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -152,7 +157,6 @@
 		31E5097AB0790F850016BE59 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		378FE18EBDE8ED6EAC15B43F /* ApplicationTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationTrackingView.swift; sourceTree = "<group>"; };
 		38E3BA31DFDF4BBB9114F3C4 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
-		AA00UMS000000001FF01 /* UnreadMessageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnreadMessageStore.swift; sourceTree = "<group>"; };
 		3D006F72DB84815CA65BE6A7 /* MessagingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagingService.swift; sourceTree = "<group>"; };
 		51E121B25741BC258047859E /* PrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrimaryButton.swift; sourceTree = "<group>"; };
 		5311FB36A8266E69CFD93D54 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
@@ -165,6 +169,7 @@
 		67CE1BB7A83A622F16249215 /* LoanApplicationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoanApplicationViewModel.swift; sourceTree = "<group>"; };
 		6B2DF36291A371E5F3DBBB78 /* DashboardViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
 		7030245C7B6F750C833D33EA /* SecureKeychainService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SecureKeychainService.swift; sourceTree = "<group>"; };
+		7269C1694B9B87AAB405EB1E /* cash_register.wav */ = {isa = PBXFileReference; includeInIndex = 1; path = cash_register.wav; sourceTree = "<group>"; };
 		7285B003EE43FD1BF2656C0E /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		738ED94CFD4ADB3CC414BC29 /* UploadRequestedDocumentsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UploadRequestedDocumentsView.swift; sourceTree = "<group>"; };
 		75ECA8C941966C60EAD82892 /* ProductComparisonView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductComparisonView.swift; sourceTree = "<group>"; };
@@ -193,6 +198,7 @@
 		AA00KYC000000001FF01 /* AadhaarKYCService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AadhaarKYCService.swift; sourceTree = "<group>"; };
 		AA00KYC000000002FF01 /* SupabaseAadhaarKYCService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SupabaseAadhaarKYCService.swift; path = Supabase/SupabaseAadhaarKYCService.swift; sourceTree = "<group>"; };
 		AA00KYC000000003FF01 /* AadhaarKYCView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AadhaarKYCView.swift; sourceTree = "<group>"; };
+		AA00UMS000000001FF01 /* UnreadMessageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnreadMessageStore.swift; sourceTree = "<group>"; };
 		B07AD9174280E67995096E93 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		B1F43612DC9CA160255FFC33 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
 		BB001122334455667788BB00 /* ForgotPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordView.swift; sourceTree = "<group>"; };
@@ -217,16 +223,22 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F040CAA22FC4292C00A9E2F9 /* Admin */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = Admin;
 			sourceTree = "<group>";
 		};
 		F040CD642FC44BF300A9E2F9 /* LoanOfficer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = LoanOfficer;
 			sourceTree = "<group>";
 		};
 		F07247BE2FC4010D001A13BD /* Manager */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = Manager;
 			sourceTree = "<group>";
 		};
@@ -328,6 +340,7 @@
 				75ECA8C941966C60EAD82892 /* ProductComparisonView.swift */,
 				738ED94CFD4ADB3CC414BC29 /* UploadRequestedDocumentsView.swift */,
 				9DA929AF844ADA35BA5AD73B /* SanctionLetterView.swift */,
+				005EEDB5609FB5F96734309B /* StartupAnimationView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -376,6 +389,7 @@
 			isa = PBXGroup;
 			children = (
 				2A32E7C11923D89775024488 /* Assets.xcassets */,
+				7269C1694B9B87AAB405EB1E /* cash_register.wav */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -472,6 +486,7 @@
 			children = (
 				184B7DA69FBEA8EB6C17F07D /* BorrowerApp.swift */,
 				7285B003EE43FD1BF2656C0E /* RootView.swift */,
+				222CF8DF547150E541869360 /* SoundManager.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -570,6 +585,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D1DBD5936B431DF44761FDC8 /* Assets.xcassets in Resources */,
+				1406192D7C4D56F960376316 /* cash_register.wav in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -649,6 +665,8 @@
 				14B4C4BFA67DB593B9D9F96A /* MockSanctionLetterService.swift in Sources */,
 				9A8FACA3910355027CE7B926 /* SanctionLetterViewModel.swift in Sources */,
 				BDA45FEA7B090FD0D0C4187B /* SanctionLetterView.swift in Sources */,
+				57DD30B0C3A118D347808051 /* SoundManager.swift in Sources */,
+				D3EBD792FE8D272ECD5442F6 /* StartupAnimationView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

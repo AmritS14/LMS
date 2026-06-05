@@ -11,7 +11,7 @@ struct BorrowerMessagingView: View {
     var body: some View {
         Group {
             if viewModel.isLoading && viewModel.threads.isEmpty {
-                ProgressView()
+                ProgressView().progressViewStyle(.circular)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color.lmsBackground.ignoresSafeArea())
             } else if viewModel.threads.isEmpty {
@@ -236,7 +236,7 @@ struct ChatDetailView: View {
         VStack(spacing: 0) {
             if viewModel.isLoading && viewModel.activeThreadMessages.isEmpty {
                 Spacer()
-                ProgressView()
+                ProgressView().progressViewStyle(.circular)
                 Spacer()
             } else {
                 messageThread

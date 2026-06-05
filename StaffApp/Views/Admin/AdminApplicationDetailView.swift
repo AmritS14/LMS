@@ -52,7 +52,7 @@ struct AdminApplicationDetailView: View {
 
     private var loadingView: some View {
         VStack(spacing: 20) {
-            ProgressView()
+            ProgressView().progressViewStyle(.circular)
                 .scaleEffect(1.2)
             Text("Loading application details...")
                 .font(.subheadline)

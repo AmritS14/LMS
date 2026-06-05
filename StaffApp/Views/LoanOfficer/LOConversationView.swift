@@ -20,7 +20,7 @@ struct LOConversationView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 if isLoading {
-                    Spacer(); ProgressView(); Spacer()
+                    Spacer(); ProgressView().progressViewStyle(.circular); Spacer()
                 } else if let errorMessage {
                     Spacer()
                     ContentUnavailableView("Couldn't Load Chat", systemImage: "exclamationmark.bubble", description: Text(errorMessage))

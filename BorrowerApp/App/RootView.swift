@@ -6,11 +6,15 @@ struct RootView: View {
     @Environment(UnreadMessageStore.self) private var unreadStore
 
     @State private var showUpdatePassword = false
+    @State private var showStartupAnimation = true
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         Group {
-            if session.isAuthenticated {
+            if showStartupAnimation {
+                StartupAnimationView(isPresented: $showStartupAnimation)
+                    .transition(.opacity)
+            } else if session.isAuthenticated {
                 BorrowerTabView()
                     .task {
                         if let env {
@@ -26,6 +30,7 @@ struct RootView: View {
                     .transition(.opacity)
             }
         }
+        .animation(.easeInOut(duration: 0.3), value: showStartupAnimation)
         .animation(.easeInOut(duration: 0.3), value: session.isAuthenticated)
         // Start / stop badge polling based on auth state
         .onChange(of: session.isAuthenticated) { _, isAuthenticated in

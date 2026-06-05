@@ -86,7 +86,7 @@ struct RejectModalView: View {
                         }
                     } label: {
                         if isSubmitting {
-                            ProgressView().tint(.white)
+                            ProgressView().progressViewStyle(.circular).tint(.white)
                         } else {
                             Text("Reject Application")
                                 .font(.headline)

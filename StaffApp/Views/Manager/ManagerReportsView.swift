@@ -159,7 +159,7 @@ struct ManagerReportsView: View {
 
                     HStack(spacing: 4) {
                         if report.status == .generating {
-                            ProgressView()
+                            ProgressView().progressViewStyle(.circular)
                                 .controlSize(.mini)
                             Text("Generating...")
                                 .font(.caption)

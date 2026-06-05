@@ -137,7 +137,7 @@ struct AuditListView: View {
     var body: some View {
         List {
             if viewModel.isLoading {
-                ProgressView()
+                ProgressView().progressViewStyle(.circular)
                     .frame(maxWidth: .infinity, alignment: .center)
             } else if let error = viewModel.error {
                 ContentUnavailableView("Failed to Load Logs", systemImage: "exclamationmark.triangle", description: Text(error))

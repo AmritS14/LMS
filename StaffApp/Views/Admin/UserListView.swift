@@ -19,7 +19,7 @@ struct UserListView: View {
         List {
             // User list section
             if viewModel.isLoading {
-                ProgressView()
+                ProgressView().progressViewStyle(.circular)
                     .frame(maxWidth: .infinity)
                     .padding(.top, 40)
                     .listRowBackground(Color.clear)
