@@ -34,6 +34,7 @@ struct PrimaryButton: View {
         .buttonBorderShape(.roundedRectangle(radius: CornerRadius.button))
         .controlSize(.large)
         .disabled(isLoading)
+        .accessibilityLabel(isLoading ? "Loading" : title)
     }
 }
 

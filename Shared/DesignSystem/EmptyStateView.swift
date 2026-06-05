@@ -12,6 +12,7 @@ struct EmptyStateView: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 68, height: 68)
                 .background(Color.lmsTertiarySurface, in: Circle())
+                .accessibilityHidden(true)
 
             VStack(spacing: Spacing.xs) {
                 Text(title)
@@ -26,5 +27,6 @@ struct EmptyStateView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, Spacing.xl)
         .padding(.horizontal, Spacing.l)
+        .accessibilityElement(children: .combine)
     }
 }
