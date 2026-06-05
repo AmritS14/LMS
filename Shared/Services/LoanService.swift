@@ -35,6 +35,7 @@ protocol LoanService: Sendable {
 
     // Recovery Actions
     func logRecoveryAction(borrowerID: UUID, officerID: UUID, actionType: String, outcome: String, notes: String?, scheduledDate: Date?) async throws
+    func fetchRecoveryLogs(borrowerID: UUID) async throws -> [RecoveryLog]
 
     // Sanction letter issued event — stores a special application event so the
     // borrower's dashboard can show a "Download Sanction Letter" card.

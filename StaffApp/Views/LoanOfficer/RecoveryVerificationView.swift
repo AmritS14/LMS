@@ -20,6 +20,7 @@ struct RecoveryVerificationView: View {
 
     @State private var showCallLogSheet = false
     @State private var showFollowUpSheet = false
+    @State private var showLogsSheet = false
 
     @State private var selectedBorrower: OverdueBorrower? = nil
 
@@ -56,6 +57,11 @@ struct RecoveryVerificationView: View {
         }
         .sheet(isPresented: $showFollowUpSheet) {
             followUpSheetContent
+        }
+        .sheet(isPresented: $showLogsSheet) {
+            if let borrower = selectedBorrower, let borrowerID = borrower.borrowerID {
+                RecoveryLogsSheetView(borrowerID: borrowerID, borrowerName: borrower.borrowerName)
+            }
         }
     }
 }
@@ -502,6 +508,24 @@ extension RecoveryVerificationView {
                     }
                     .buttonStyle(.plain)
                 }
+                
+                // MARK: View Logs Button
+                Button {
+                    selectedBorrower = borrower
+                    showLogsSheet = true
+                } label: {
+                    Label("View Recovery Logs", systemImage: "clock.arrow.circlepath")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.blue)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                                .background(Color.blue.opacity(0.05))
+                        )
+                }
+                .buttonStyle(.plain)
             }
         }
     }

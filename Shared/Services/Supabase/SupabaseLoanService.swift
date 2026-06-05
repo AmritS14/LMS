@@ -809,4 +809,39 @@ actor SupabaseLoanService: LoanService {
             .insert(insertData)
             .execute()
     }
+    
+    private struct DBRecoveryLog: Decodable {
+        let id: UUID
+        let borrower_id: UUID
+        let officer_id: UUID
+        let action_type: String
+        let outcome: String
+        let notes: String?
+        let scheduled_date: Date?
+        let created_at: Date
+    }
+
+    func fetchRecoveryLogs(borrowerID: UUID) async throws -> [RecoveryLog] {
+        let response = try await client
+            .from("recovery_logs")
+            .select()
+            .eq("borrower_id", value: borrowerID)
+            .order("created_at", ascending: false)
+            .execute()
+            
+        let dbLogs = try SupabaseManager.shared.decoder.decode([DBRecoveryLog].self, from: response.data)
+        
+        return dbLogs.map { dbLog in
+            RecoveryLog(
+                id: dbLog.id,
+                borrowerID: dbLog.borrower_id,
+                officerID: dbLog.officer_id,
+                actionType: dbLog.action_type,
+                outcome: dbLog.outcome,
+                notes: dbLog.notes,
+                scheduledDate: dbLog.scheduled_date,
+                createdAt: dbLog.created_at
+            )
+        }
+    }
 }

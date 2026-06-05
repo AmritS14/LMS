@@ -248,6 +248,17 @@ enum LoanStatus: String, Codable, Sendable {
     case active, settled, defaulted, foreclosed
 }
 
+struct RecoveryLog: Identifiable, Codable, Sendable, Hashable {
+    var id: UUID = UUID()
+    var borrowerID: UUID
+    var officerID: UUID
+    var actionType: String
+    var outcome: String
+    var notes: String?
+    var scheduledDate: Date?
+    var createdAt: Date = .now
+}
+
 struct ForeclosureDetails: Codable, Sendable, Hashable {
     var outstandingBalance: Decimal
     var penaltyRate: Double // e.g. 0.02 (2% penalty)

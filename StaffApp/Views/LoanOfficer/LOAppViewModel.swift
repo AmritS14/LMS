@@ -189,9 +189,11 @@ private extension Array {
             
             // Fetch Overdue Borrowers
             var overdue: [OverdueBorrower] = []
+            var hasFetchError = false
             for app in rows where app.status == .disbursed || app.status == .approved {
                 if let sourceID = app.sourceApplicationID, let borrowerID = app.borrowerID {
-                    if let loans = try? await environment.loans.fetchActiveLoans(borrowerID: borrowerID) {
+                    do {
+                        let loans = try await environment.loans.fetchActiveLoans(borrowerID: borrowerID)
                         if let loan = loans.first(where: { $0.applicationID == sourceID }) {
                             let overdueEMIs = loan.emiSchedule.filter { $0.status == .overdue }
                             if !overdueEMIs.isEmpty {
@@ -214,10 +216,15 @@ private extension Array {
                                 ))
                             }
                         }
+                    } catch {
+                        print("[LOAppViewModel] Failed to fetch active loans for borrower \(borrowerID): \(error)")
+                        hasFetchError = true
                     }
                 }
             }
-            self.overdueBorrowers = overdue
+            if !hasFetchError || (self.overdueBorrowers.isEmpty && !overdue.isEmpty) {
+                self.overdueBorrowers = overdue
+            }
 
             // Fetch User/Profile & Conversations
             if let user = await environment.auth.currentUser {
@@ -1187,29 +1194,36 @@ private extension Array {
         }
     }
 
+    // MARK: - Recovery Logs
+
     func logRecoveryAction(for borrower: OverdueBorrower, actionType: String, outcome: String, notes: String?, scheduledDate: Date?) {
-        // Update local state
+        guard let environment else { return }
+        
         if let index = overdueBorrowers.firstIndex(where: { $0.id == borrower.id }) {
             overdueBorrowers[index].lastContactDate = Date()
             overdueBorrowers[index].contactAttempts += 1
         }
         
-        // Log to backend
-        guard let environment, let borrowerID = borrower.borrowerID, let officerID = officerID else { return }
         Task {
             do {
                 try await environment.loans.logRecoveryAction(
-                    borrowerID: borrowerID,
-                    officerID: officerID,
+                    borrowerID: borrower.borrowerID!,
+                    officerID: officerID ?? MockOfficerData.officerUserID,
                     actionType: actionType,
                     outcome: outcome,
                     notes: notes,
                     scheduledDate: scheduledDate
                 )
+                print("[LOAppViewModel] Successfully logged recovery action")
             } catch {
-                print("Failed to log recovery action: \(error)")
+                print("[LOAppViewModel] Failed to log recovery action: \(error)")
             }
         }
+    }
+
+    func fetchRecoveryLogs(for borrowerID: UUID) async throws -> [RecoveryLog] {
+        guard let environment else { return [] }
+        return try await environment.loans.fetchRecoveryLogs(borrowerID: borrowerID)
     }
 
     // Greeting

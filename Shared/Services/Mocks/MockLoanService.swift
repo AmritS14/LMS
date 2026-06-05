@@ -371,6 +371,11 @@ actor MockLoanService: LoanService {
     }
 
     func logRecoveryAction(borrowerID: UUID, officerID: UUID, actionType: String, outcome: String, notes: String?, scheduledDate: Date?) async throws {
-        // No-op in mock
+        try await Task.sleep(nanoseconds: 500_000_000)
+    }
+
+    func fetchRecoveryLogs(borrowerID: UUID) async throws -> [RecoveryLog] {
+        try await Task.sleep(nanoseconds: 500_000_000)
+        return []
     }
 }
