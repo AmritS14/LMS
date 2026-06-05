@@ -264,7 +264,7 @@ actor SupabaseSanctionLetterService: SanctionLetterService {
                 .paragraphStyle: alignCenter()
             ])
 
-            "BKC CAPITAL".draw(in: CGRect(x: margin + 75, y: y + 8, width: contentWidth - 75, height: 24), withAttributes: [
+            "LoanVista".draw(in: CGRect(x: margin + 75, y: y + 8, width: contentWidth - 75, height: 24), withAttributes: [
                 .font: UIFont.systemFont(ofSize: 18, weight: .bold),
                 .foregroundColor: UIColor.darkGray
             ])
@@ -309,7 +309,7 @@ actor SupabaseSanctionLetterService: SanctionLetterService {
             ])
             y += 22
 
-            let intro = "With reference to your loan application, we are pleased to inform you that BKC Capital has sanctioned your loan application. The key terms and conditions of this sanction are summarized below:"
+            let intro = "With reference to your loan application, we are pleased to inform you that LoanVista has sanctioned your loan application. The key terms and conditions of this sanction are summarized below:"
             intro.draw(in: CGRect(x: margin, y: y, width: contentWidth, height: 50), withAttributes: [
                 .font: UIFont.systemFont(ofSize: 11),
                 .foregroundColor: UIColor.darkGray
@@ -403,7 +403,7 @@ actor SupabaseSanctionLetterService: SanctionLetterService {
 
             y += 25
 
-            "For BKC Capital Limited".draw(in: CGRect(x: margin, y: y, width: contentWidth / 2, height: 16), withAttributes: [
+            "For LoanVista Limited".draw(in: CGRect(x: margin, y: y, width: contentWidth / 2, height: 16), withAttributes: [
                 .font: UIFont.systemFont(ofSize: 10, weight: .bold),
                 .foregroundColor: UIColor.black
             ])
