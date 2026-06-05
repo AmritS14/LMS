@@ -114,6 +114,8 @@ struct HomeDashboardView: View {
             .padding(Spacing.m)
             .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
             .shadow(color: Color.black.opacity(0.02), radius: 6, x: 0, y: 3)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Total Loans: \(viewModel.applications.count)")
             
             VStack(alignment: .leading, spacing: Spacing.xs) {
                 Text("Active Loans")
@@ -130,6 +132,8 @@ struct HomeDashboardView: View {
             .padding(Spacing.m)
             .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
             .shadow(color: Color.black.opacity(0.02), radius: 6, x: 0, y: 3)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Active Loans: \(viewModel.activeLoans.count)")
         }
         .padding(.horizontal, Spacing.m)
         .padding(.top, Spacing.m)
@@ -183,6 +187,7 @@ struct HomeDashboardView: View {
                 HStack(alignment: .firstTextBaseline) {
                     Text("Pending Applications")
                         .font(.title3.bold())
+                        .accessibilityAddTraits(.isHeader)
                     Spacer()
                     if pendingApps.count > 1 {
                         Text("\(pendingAppIndex(in: pendingApps) + 1) of \(pendingApps.count)")
@@ -222,6 +227,7 @@ struct HomeDashboardView: View {
             HStack(alignment: .firstTextBaseline) {
                 Text("Active Loans")
                     .font(.title3.bold())
+                    .accessibilityAddTraits(.isHeader)
                 Spacer()
                 if viewModel.activeLoans.count > 1 {
                     Text("\(activeLoanIndex + 1) of \(viewModel.activeLoans.count)")
