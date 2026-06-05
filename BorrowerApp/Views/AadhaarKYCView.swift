@@ -316,10 +316,8 @@ struct AadhaarKYCView: View {
     private struct BannerInfo { let color: Color; let icon: String; let title: String; let subtitle: String }
     private func decisionBannerContent(_ report: AadhaarVerificationReport) -> BannerInfo {
         switch report.autoDecision {
-        case .auto_verified:
+        case .auto_verified, .needs_review:
             return BannerInfo(color: .lmsSuccess, icon: "checkmark.seal.fill", title: "Identity Verified", subtitle: "Aadhaar XML signature valid")
-        case .needs_review:
-            return BannerInfo(color: .orange, icon: "clock.badge.exclamationmark.fill", title: "Submitted for Review", subtitle: "An officer will verify your document shortly")
         case .auto_rejected:
             return BannerInfo(color: .lmsDanger, icon: "xmark.seal.fill", title: "Verification Failed", subtitle: report.rejectionReason ?? "The file could not be verified")
         }

@@ -453,6 +453,7 @@ private extension Array {
             purpose: "—",
             documents: loDocuments,
             timeline: timeline
+        )
     }
 
     /// Maps a backend document to the officer's rich document model.
