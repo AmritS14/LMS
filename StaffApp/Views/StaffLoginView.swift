@@ -38,6 +38,7 @@ struct StaffLoginView: View {
                             .fill(Color.blue.opacity(0.03))
                             .frame(width: 250, height: 250)
                             .offset(x: 100, y: -50)
+                            .accessibilityHidden(true)
                     }
                     Spacer()
                 }
@@ -57,12 +58,14 @@ struct StaffLoginView: View {
                                 .frame(width: 90, height: 90)
                                 .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                                 .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+                                .accessibilityHidden(true)
                             
                             VStack(spacing: 6) {
                                 Text("Welcome Back")
                                     .font(.title2)
                                     .fontWeight(.bold)
                                     .foregroundStyle(Color(.label))
+                                    .accessibilityAddTraits(.isHeader)
                                 
                                 Text("Sign in to access your dashboard")
                                     .font(.subheadline)

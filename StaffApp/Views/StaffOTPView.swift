@@ -14,6 +14,7 @@ struct StaffOTPView: View {
         VStack(spacing: 24) {
             Text("Enter OTP")
                 .font(.title2).bold()
+                .accessibilityAddTraits(.isHeader)
             
             Text("We sent a verification code to \(email)")
                 .font(.subheadline)
@@ -23,6 +24,7 @@ struct StaffOTPView: View {
             TextField("000000", text: $otp)
                 .keyboardType(.numberPad)
                 .textContentType(.oneTimeCode)
+                .accessibilityLabel("One Time Password")
                 .font(.title).bold()
                 .multilineTextAlignment(.center)
                 .focused($isFocused)
