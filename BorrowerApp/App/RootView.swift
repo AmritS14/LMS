@@ -7,12 +7,16 @@ struct RootView: View {
     @Environment(UnreadMessageStore.self) private var unreadStore
 
     @State private var showUpdatePassword = false
+    @State private var showStartupAnimation = true
     @Environment(\.scenePhase) private var scenePhase
     @State private var isAuthenticatingBiometrics = true
 
     var body: some View {
         Group {
-            if isAuthenticatingBiometrics {
+            if showStartupAnimation {
+                StartupAnimationView(isPresented: $showStartupAnimation)
+                    .transition(.opacity)
+            } else if isAuthenticatingBiometrics {
                 ProgressView("Securing your session...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color.lmsBackground)
@@ -32,6 +36,7 @@ struct RootView: View {
                     .transition(.opacity)
             }
         }
+        .animation(.easeInOut(duration: 0.3), value: showStartupAnimation)
         .animation(.easeInOut(duration: 0.3), value: session.isAuthenticated)
         // Start / stop badge polling based on auth state
         .onChange(of: session.isAuthenticated) { _, isAuthenticated in

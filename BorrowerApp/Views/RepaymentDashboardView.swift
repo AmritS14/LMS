@@ -6,13 +6,14 @@ struct RepaymentDashboardView: View {
 
     var loan: Loan?
     @State private var viewModel = RepaymentViewModel()
+    @State private var sanctionViewModel = SanctionLetterViewModel()
     @State private var emiToPay: EMI?
     @State private var showForeclosureSheet = false
 
     var body: some View {
         List {
             if viewModel.isLoading {
-                HStack { Spacer(); ProgressView(); Spacer() }
+                HStack { Spacer(); ProgressView().progressViewStyle(.circular); Spacer() }
                     .listRowBackground(Color.clear)
             } else if let error = viewModel.errorMessage {
                 Label(error, systemImage: "exclamationmark.triangle.fill")
@@ -89,6 +90,35 @@ struct RepaymentDashboardView: View {
                 }
             } catch {}
         }
+        
+        // Fetch Sanction Letter for the active loan
+        if let activeLoan = viewModel.activeLoan, let userID = session.currentUser?.id {
+            var matchingApp: LoanApplication? = nil
+            do {
+                let applications = try await env.loans.fetchApplications(for: userID)
+                matchingApp = applications.first(where: { $0.id == activeLoan.applicationID })
+            } catch {
+                print("Failed to fetch applications: \(error)")
+            }
+            
+            let appToUse = matchingApp ?? LoanApplication(
+                id: activeLoan.applicationID,
+                borrowerID: activeLoan.borrowerID,
+                loanType: activeLoan.loanType,
+                requestedAmount: activeLoan.principal,
+                tenureMonths: activeLoan.tenureMonths,
+                interestRate: activeLoan.interestRate,
+                status: .disbursed,
+                createdAt: activeLoan.disbursementDate,
+                updatedAt: activeLoan.disbursementDate,
+                borrowerName: session.currentUser?.fullName
+            )
+            
+            await sanctionViewModel.loadSanctionLetter(
+                sanctionLettersService: env.sanctionLetters,
+                application: appToUse
+            )
+        }
     }
 
     private var nextEMI: EMI? {
@@ -153,6 +183,22 @@ struct RepaymentDashboardView: View {
                 emiToPay = emi
             })) {
                 Text("View Full Schedule")
+            }
+            
+            if let pdfURL = sanctionViewModel.pdfURL {
+                ShareLink(
+                    item: pdfURL,
+                    preview: SharePreview("Sanction Letter", image: Image(systemName: "doc.text.fill"))
+                ) {
+                    Label("Download Sanction Letter", systemImage: "arrow.down.doc.fill")
+                }
+            } else if sanctionViewModel.isLoading {
+                HStack {
+                    Label("Sanction Letter", systemImage: "doc.text")
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    ProgressView().progressViewStyle(.circular)
+                }
             }
             
             if activeLoan.status == .active {
@@ -320,7 +366,7 @@ struct ForeclosureSheet: View {
         NavigationStack {
             VStack {
                 if isLoading {
-                    ProgressView("Calculating Payoff Amount...")
+                    ProgressView("Calculating Payoff Amount...").progressViewStyle(.circular)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let error = errorMessage {
                     ContentUnavailableView("Calculation Failed", systemImage: "exclamationmark.triangle", description: Text(error))

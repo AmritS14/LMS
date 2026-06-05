@@ -37,7 +37,7 @@ struct ChatView: View {
             // MARK: Messages
             if isLoading {
                 Spacer()
-                ProgressView()
+                ProgressView().progressViewStyle(.circular)
                 Spacer()
             } else {
                 ScrollView {

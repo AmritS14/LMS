@@ -12,15 +12,25 @@ struct HomeDashboardView: View {
     @State private var selectedPendingAppID: UUID?
     @State private var docUploadApp: LoanApplication?
     @State private var hasLoadedOnce = false
+    
+    @State private var dismissedIDs: Set<UUID> = []
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        ScrollView {
-            mainContent
-                .padding(.bottom, 100)
+        ZStack(alignment: .top) {
+            ScrollView {
+                mainContent
+                    .padding(.top, isAnyAlertVisible ? 160 : 0)
+                    .padding(.bottom, 100)
+            }
+            .scrollIndicators(.hidden)
+            .scrollBounceBehavior(.basedOnSize)
+            .refreshable { await loadData() }
+            
+            // Floating Alerts Overlay at the top of the whole screen
+            floatingAlertsSection
         }
-        .scrollIndicators(.hidden)
-        .scrollBounceBehavior(.basedOnSize)
-        .refreshable { await loadData() }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.lmsBackground.ignoresSafeArea())
         .navigationTitle("Dashboard")
         .navigationBarTitleDisplayMode(.large)
@@ -68,13 +78,18 @@ struct HomeDashboardView: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background || phase == .inactive {
+                dismissAllCurrentAlerts()
+            }
+        }
     }
 
     @ViewBuilder
     private var mainContent: some View {
         VStack(spacing: Spacing.ml) {
             if viewModel.isLoading {
-                ProgressView()
+                ProgressView().progressViewStyle(.circular)
                     .frame(maxWidth: .infinity)
                     .padding(.top, Spacing.xl)
             } else if let error = viewModel.errorMessage {
@@ -84,7 +99,6 @@ struct HomeDashboardView: View {
                     description: Text(error)
                 )
             } else {
-                loanSummaryCard
                 
                 if viewModel.activeLoans.isEmpty && viewModel.applications.isEmpty {
                     emptyState
@@ -155,31 +169,7 @@ struct HomeDashboardView: View {
 
     @ViewBuilder
     private var contentSections: some View {
-        let docPendingApps = viewModel.applications.filter { $0.status == .additionalInfoRequired }
-        if !docPendingApps.isEmpty {
-            VStack(spacing: Spacing.s) {
-                ForEach(docPendingApps) { app in
-                    actionRequiredCard(app)
-                }
-            }
-            .padding(.horizontal, Spacing.m)
-            .padding(.top, Spacing.m)
-        }
-
-        // Sanction letter ready cards — shown when an officer has issued the letter
-        let slApps = viewModel.applications.filter { app in
-            viewModel.sanctionLetterPDFPaths[app.id] != nil
-                || (app.status == .approved && (app.sanctionLetter?.status == "sent" || app.sanctionLetter?.status == "accepted"))
-        }
-        if !slApps.isEmpty {
-            VStack(spacing: Spacing.s) {
-                ForEach(slApps) { app in
-                    sanctionLetterReadyCard(app)
-                }
-            }
-            .padding(.horizontal, Spacing.m)
-            .padding(.top, docPendingApps.isEmpty ? Spacing.m : Spacing.s)
-        }
+        // Alert cards have been moved to the floating top banner overlay (floatingAlertsSection)
 
         let pendingApps = viewModel.applications.filter { $0.status != .disbursed && $0.status != .closed }
         if !pendingApps.isEmpty {
@@ -332,7 +322,7 @@ struct HomeDashboardView: View {
                 Spacer(minLength: 0)
                 Divider().frame(height: 32)
                 Spacer(minLength: 0)
-                stat(title: "Rate", value: Formatting.percent(loan.interestRate))
+                stat(title: "Rate", value: Formatting.percent(loan.interestRate / 100.0))
                 Spacer(minLength: 0)
                 Divider().frame(height: 32)
                 Spacer(minLength: 0)
@@ -371,6 +361,17 @@ struct HomeDashboardView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
+                
+                Button {
+                    withAnimation {
+                        dismissedIDs.insert(app.id)
+                        AlertSettings.dismissAlert(id: app.id)
+                    }
+                } label: {
+                    Image(systemName: "xmark")
+                        .foregroundStyle(.secondary)
+                        .padding(Spacing.xs)
+                }
             }
 
             if let note = viewModel.requestNotes[app.id], !note.isEmpty {
@@ -399,11 +400,13 @@ struct HomeDashboardView: View {
             .tint(Color.lmsWarning)
         }
         .padding(Spacing.m)
+        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
         .background(Color.lmsWarning.opacity(0.08), in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
                 .stroke(Color.lmsWarning.opacity(0.3), lineWidth: 1)
         )
+        .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
     }
 
     // MARK: - Sanction Letter Ready Card
@@ -427,9 +430,17 @@ struct HomeDashboardView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                
+                Button {
+                    withAnimation {
+                        dismissedIDs.insert(app.id)
+                        AlertSettings.dismissAlert(id: app.id)
+                    }
+                } label: {
+                    Image(systemName: "xmark")
+                        .foregroundStyle(.secondary)
+                        .padding(Spacing.xs)
+                }
             }
 
             Text("Your official loan sanction letter has been issued. Review and accept the terms to proceed to disbursement.")
@@ -447,11 +458,13 @@ struct HomeDashboardView: View {
             .tint(.accentColor)
         }
         .padding(Spacing.m)
+        .background(Color.lmsSurface, in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
         .background(Color.accentColor.opacity(0.06), in: RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
                 .stroke(Color.accentColor.opacity(0.25), lineWidth: 1)
         )
+        .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
     }
 
     // MARK: - Status Tracker
@@ -847,4 +860,92 @@ struct PayEMISheet: View {
             messaging: MockMessagingService(),
             keychain: MockKeychainService()
         ))
+}
+
+// MARK: - Alert Settings & Helpers
+struct AlertSettings {
+    static func dismissAlert(id: UUID) {
+        var dismissed = fetchDismissedAlerts()
+        if !dismissed.contains(id.uuidString) {
+            dismissed.append(id.uuidString)
+            UserDefaults.standard.set(dismissed, forKey: "dismissed_alerts")
+        }
+    }
+    
+    static func isAlertDismissed(id: UUID) -> Bool {
+        let dismissed = fetchDismissedAlerts()
+        return dismissed.contains(id.uuidString)
+    }
+    
+    private static func fetchDismissedAlerts() -> [String] {
+        UserDefaults.standard.stringArray(forKey: "dismissed_alerts") ?? []
+    }
+}
+
+extension HomeDashboardView {
+    private var isAnyAlertVisible: Bool {
+        let docPendingApps = viewModel.applications.filter {
+            $0.status == .additionalInfoRequired
+            && !AlertSettings.isAlertDismissed(id: $0.id)
+            && !dismissedIDs.contains($0.id)
+        }
+        let slApps = viewModel.applications.filter { app in
+            (viewModel.sanctionLetterPDFPaths[app.id] != nil || (app.status == .approved && (app.sanctionLetter?.status == "sent" || app.sanctionLetter?.status == "accepted")))
+            && !AlertSettings.isAlertDismissed(id: app.id)
+            && !dismissedIDs.contains(app.id)
+        }
+        return !docPendingApps.isEmpty || !slApps.isEmpty
+    }
+
+    @ViewBuilder
+    private var floatingAlertsSection: some View {
+        let docPendingApps = viewModel.applications.filter {
+            $0.status == .additionalInfoRequired
+            && !AlertSettings.isAlertDismissed(id: $0.id)
+            && !dismissedIDs.contains($0.id)
+        }
+        let slApps = viewModel.applications.filter { app in
+            (viewModel.sanctionLetterPDFPaths[app.id] != nil || (app.status == .approved && (app.sanctionLetter?.status == "sent" || app.sanctionLetter?.status == "accepted")))
+            && !AlertSettings.isAlertDismissed(id: app.id)
+            && !dismissedIDs.contains(app.id)
+        }
+        
+        let allAlerts = docPendingApps + slApps
+        
+        if !allAlerts.isEmpty {
+            VStack(spacing: Spacing.s) {
+                ForEach(allAlerts) { app in
+                    if app.status == .additionalInfoRequired {
+                        actionRequiredCard(app)
+                    } else {
+                        sanctionLetterReadyCard(app)
+                    }
+                }
+            }
+            .padding(.horizontal, Spacing.m)
+            .padding(.top, Spacing.s)
+            .transition(.move(edge: .top).combined(with: .opacity))
+            .animation(.spring(), value: allAlerts)
+        }
+    }
+    
+    private func dismissAllCurrentAlerts() {
+        let docPendingApps = viewModel.applications.filter {
+            $0.status == .additionalInfoRequired
+            && !AlertSettings.isAlertDismissed(id: $0.id)
+            && !dismissedIDs.contains($0.id)
+        }
+        let slApps = viewModel.applications.filter { app in
+            (viewModel.sanctionLetterPDFPaths[app.id] != nil || (app.status == .approved && (app.sanctionLetter?.status == "sent" || app.sanctionLetter?.status == "accepted")))
+            && !AlertSettings.isAlertDismissed(id: app.id)
+            && !dismissedIDs.contains(app.id)
+        }
+        
+        for app in docPendingApps {
+            AlertSettings.dismissAlert(id: app.id)
+        }
+        for app in slApps {
+            AlertSettings.dismissAlert(id: app.id)
+        }
+    }
 }

@@ -108,7 +108,7 @@ struct DocumentReviewSheet: View {
             Group {
                 if isLoadingReport {
                     HStack(spacing: 10) {
-                        ProgressView().scaleEffect(0.8)
+                        ProgressView().progressViewStyle(.circular).scaleEffect(0.8)
                         Text("Loading verification report…")
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
@@ -121,7 +121,7 @@ struct DocumentReviewSheet: View {
                     VStack(spacing: 16) {
                         if isLoadingURL {
                             HStack(spacing: 10) {
-                                ProgressView().scaleEffect(0.8)
+                                ProgressView().progressViewStyle(.circular).scaleEffect(0.8)
                                 Text("Loading document…")
                                     .font(.system(size: 13))
                                     .foregroundColor(.secondary)
@@ -135,7 +135,7 @@ struct DocumentReviewSheet: View {
                                     AsyncImage(url: url) { phase in
                                         switch phase {
                                         case .empty:
-                                            ProgressView()
+                                            ProgressView().progressViewStyle(.circular)
                                                 .frame(height: 200)
                                         case .success(let image):
                                             image

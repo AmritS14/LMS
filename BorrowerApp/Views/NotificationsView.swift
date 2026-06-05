@@ -11,7 +11,7 @@ struct NotificationsView: View {
         List {
             if isLoading && notifications.isEmpty {
                 Section {
-                    HStack { Spacer(); ProgressView(); Spacer() }
+                    HStack { Spacer(); ProgressView().progressViewStyle(.circular); Spacer() }
                         .listRowBackground(Color.clear)
                 }
             } else if let errorMessage {

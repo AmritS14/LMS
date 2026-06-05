@@ -279,7 +279,7 @@ struct UserDetailsView: View {
                     }
                     Spacer()
                     if isResetting {
-                        ProgressView()
+                        ProgressView().progressViewStyle(.circular)
                             .controlSize(.small)
                     } else {
                         Button(viewModel.usersPendingReset.contains(currentUser.id) ? "Reset Again" : "Reset") {

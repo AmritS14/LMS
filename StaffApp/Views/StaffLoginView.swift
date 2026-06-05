@@ -139,7 +139,7 @@ struct StaffLoginView: View {
                                 HStack {
                                     Spacer()
                                     if isBusy {
-                                        ProgressView()
+                                        ProgressView().progressViewStyle(.circular)
                                             .tint(.white)
                                     } else {
                                         Text("Sign In")

@@ -59,6 +59,7 @@ struct NewLoanApplicationView: View {
                 completionView
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.lmsBackground.ignoresSafeArea())
         .navigationTitle(flowStep == .form ? "New Application" : flowStep == .uploadDocuments ? "Upload Documents" : "Success")
         .navigationBarTitleDisplayMode(.large)
@@ -185,6 +186,7 @@ struct NewLoanApplicationView: View {
             }
             .padding(.horizontal, Spacing.m)
             .padding(.bottom, Spacing.xl)
+            .frame(maxWidth: .infinity)
         }
         .scrollIndicators(.hidden)
         .scrollDismissesKeyboard(.interactively)

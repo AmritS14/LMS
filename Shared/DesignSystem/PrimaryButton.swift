@@ -25,7 +25,7 @@ struct PrimaryButton: View {
                     .font(.headline)
                     .opacity(isLoading ? 0 : 1)
                 if isLoading {
-                    ProgressView().tint(.white)
+                    ProgressView().progressViewStyle(.circular).tint(.white)
                 }
             }
             .frame(maxWidth: .infinity, minHeight: 28)

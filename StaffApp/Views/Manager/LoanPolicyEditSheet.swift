@@ -99,7 +99,7 @@ struct LoanPolicyEditSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if isSaving {
-                        ProgressView()
+                        ProgressView().progressViewStyle(.circular)
                     } else {
                         Button("Save") {
                             showConfirmation = true

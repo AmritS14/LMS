@@ -58,7 +58,7 @@ struct ApproveModalView: View {
                         }
                     } label: {
                         if isSubmitting {
-                            ProgressView().tint(.white)
+                            ProgressView().progressViewStyle(.circular).tint(.white)
                         } else {
                             Text("Confirm Approval")
                                 .font(.headline)

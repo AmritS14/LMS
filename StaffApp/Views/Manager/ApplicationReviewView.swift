@@ -451,7 +451,7 @@ struct ApplicationReviewView: View {
                     }
                 } label: {
                     if isDisbursing {
-                        ProgressView().tint(.white)
+                        ProgressView().progressViewStyle(.circular).tint(.white)
                     } else {
                         Label("Disburse Loan", systemImage: "banknote.fill")
                             .frame(maxWidth: .infinity)

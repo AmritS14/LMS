@@ -29,7 +29,7 @@ struct StaffProfileView: View {
                     } label: {
                         if isSigningOut {
                             HStack {
-                                ProgressView().tint(.red)
+                                ProgressView().progressViewStyle(.circular).tint(.red)
                                 Text("Signing out…")
                             }
                         } else {

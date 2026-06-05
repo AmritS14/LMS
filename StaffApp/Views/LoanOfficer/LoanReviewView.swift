@@ -596,7 +596,7 @@ extension LoanReviewView {
                         
                         if viewModel.generatingSanctionLetterAppID == appID {
                             HStack(spacing: 12) {
-                                ProgressView()
+                                ProgressView().progressViewStyle(.circular)
                                     .scaleEffect(1.0)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("Generating Sanction Letter...")
@@ -610,7 +610,7 @@ extension LoanReviewView {
                             .padding(.vertical, 8)
                         } else if viewModel.sendingSanctionLetterAppID == appID {
                             HStack(spacing: 12) {
-                                ProgressView()
+                                ProgressView().progressViewStyle(.circular)
                                     .scaleEffect(1.0)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("Sending to Borrower...")

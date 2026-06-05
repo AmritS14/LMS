@@ -94,7 +94,7 @@ struct AddStaffSheet: View {
                     Button {
                         submit()
                     } label: {
-                        if isSaving { ProgressView() } else { Text("Create").fontWeight(.bold) }
+                        if isSaving { ProgressView().progressViewStyle(.circular) } else { Text("Create").fontWeight(.bold) }
                     }
                     .disabled(!canSubmit)
                 }

@@ -10,7 +10,7 @@ struct ApplicationTrackingView: View {
         List {
             if viewModel.isLoading {
                 Section {
-                    HStack { Spacer(); ProgressView(); Spacer() }
+                    HStack { Spacer(); ProgressView().progressViewStyle(.circular); Spacer() }
                         .listRowBackground(Color.clear)
                 }
             } else if let error = viewModel.errorMessage {

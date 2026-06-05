@@ -98,7 +98,7 @@ struct UploadRequestedDocumentsView: View {
             .overlay {
                 if isUploadingDoc || isSubmitting {
                     VStack(spacing: Spacing.s) {
-                        ProgressView()
+                        ProgressView().progressViewStyle(.circular)
                         Text(isSubmitting ? "Submitting…" : "Uploading…").font(.subheadline)
                     }
                     .padding(Spacing.l)

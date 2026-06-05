@@ -204,7 +204,7 @@ struct ArchiveListView: View {
             if isLoading {
                 VStack {
                     Spacer()
-                    ProgressView("Loading Archives...")
+                    ProgressView("Loading Archives...").progressViewStyle(.circular)
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

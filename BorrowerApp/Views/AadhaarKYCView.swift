@@ -61,7 +61,7 @@ struct AadhaarKYCView: View {
             .overlay {
                 if isSubmitting {
                     VStack(spacing: Spacing.s) {
-                        ProgressView()
+                        ProgressView().progressViewStyle(.circular)
                         Text("Verifying with UIDAI…").font(.subheadline)
                     }
                     .padding(Spacing.l)

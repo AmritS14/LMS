@@ -85,7 +85,7 @@ struct SendBackModalView: View {
                         }
                     } label: {
                         if isSubmitting {
-                            ProgressView().tint(.white)
+                            ProgressView().progressViewStyle(.circular).tint(.white)
                         } else {
                             Label("Send Back to Officer", systemImage: "paperplane.fill")
                                 .font(.headline)

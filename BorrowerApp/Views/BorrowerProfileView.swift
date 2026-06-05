@@ -54,10 +54,7 @@ struct BorrowerProfileView: View {
                                 .foregroundStyle(.primary)
                             if let type = session.borrowerProfile?.employmentType,
                                let income = session.borrowerProfile?.monthlyIncome {
-                                Text(type.rawValue.capitalized)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Text(Formatting.currency(income))
+                                Text("\(type.rawValue.capitalized) • \(Formatting.currency(income))")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -592,7 +589,7 @@ struct EmploymentDetailsSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if isSaving {
-                        ProgressView()
+                        ProgressView().progressViewStyle(.circular)
                     } else {
                         Button("Save") {
                             save()
