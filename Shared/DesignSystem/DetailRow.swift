@@ -28,10 +28,12 @@ struct DetailRow: View {
                 .foregroundStyle(iconTint)
                 .frame(width: 28, height: 28)
                 .background(iconTint.opacity(0.12), in: RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous))
+                .accessibilityHidden(true)
 
             Text(title)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 
             Spacer()
 
@@ -39,7 +41,9 @@ struct DetailRow: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(valueColor)
                 .multilineTextAlignment(.trailing)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.vertical, Spacing.xs)
+        .accessibilityElement(children: .combine)
     }
 }
