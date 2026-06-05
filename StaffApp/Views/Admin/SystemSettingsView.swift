@@ -8,19 +8,9 @@ struct SystemSettingsView: View {
         Form {
             Section {
                 NavigationLink {
-                    TemplateListView(viewModel: templateViewModel)
-                } label: {
-                    settingsRow(title: "Notification Templates", subtitle: "Edit borrower-facing message content")
-                }
-                NavigationLink {
                     LoanConfigFormView(viewModel: loanConfigViewModel)
                 } label: {
                     settingsRow(title: "Loan Configurations", subtitle: "Adjust products and repayment terms")
-                }
-                NavigationLink {
-                    EMISchedulerView()
-                } label: {
-                    settingsRow(title: "EMI Reminder Schedules", subtitle: "Manage timing and templates for reminders")
                 }
                 NavigationLink {
                     ArchiveListView()

@@ -791,6 +791,16 @@ final class UserManagementViewModel {
         loanHistory[borrowerID] ?? []
     }
 
+    func loadLoanHistory(for borrowerID: UUID) async {
+        guard let environment else { return }
+        do {
+            let loans = try await environment.loans.fetchActiveLoans(borrowerID: borrowerID)
+            loanHistory[borrowerID] = loans
+        } catch {
+            print("Failed to load loans for \(borrowerID): \(error)")
+        }
+    }
+
     func getBorrowers(for officerID: UUID) -> [User] {
         users.filter { $0.role == .borrower && borrowerAssignments[$0.id] == officerID }
     }

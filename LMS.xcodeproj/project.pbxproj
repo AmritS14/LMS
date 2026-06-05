@@ -180,7 +180,7 @@
 		67CE1BB7A83A622F16249215 /* LoanApplicationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoanApplicationViewModel.swift; sourceTree = "<group>"; };
 		6B2DF36291A371E5F3DBBB78 /* DashboardViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
 		7030245C7B6F750C833D33EA /* SecureKeychainService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SecureKeychainService.swift; sourceTree = "<group>"; };
-		7269C1694B9B87AAB405EB1E /* cash_register.wav */ = {isa = PBXFileReference; includeInIndex = 1; path = cash_register.wav; sourceTree = "<group>"; };
+		7269C1694B9B87AAB405EB1E /* cash_register.wav */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.wav; path = cash_register.wav; sourceTree = "<group>"; };
 		7285B003EE43FD1BF2656C0E /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		738ED94CFD4ADB3CC414BC29 /* UploadRequestedDocumentsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UploadRequestedDocumentsView.swift; sourceTree = "<group>"; };
 		75ECA8C941966C60EAD82892 /* ProductComparisonView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductComparisonView.swift; sourceTree = "<group>"; };
@@ -240,22 +240,16 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F040CAA22FC4292C00A9E2F9 /* Admin */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = Admin;
 			sourceTree = "<group>";
 		};
 		F040CD642FC44BF300A9E2F9 /* LoanOfficer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = LoanOfficer;
 			sourceTree = "<group>";
 		};
 		F07247BE2FC4010D001A13BD /* Manager */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = Manager;
 			sourceTree = "<group>";
 		};

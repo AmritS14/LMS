@@ -166,8 +166,9 @@ private extension Array {
                         
                         let events = await eventsReq
                         let docs = await docsReq
+                        let finalDocs = docs
                         
-                        return (app, events, docs, profile)
+                        return (app, events, finalDocs, profile)
                     }
                 }
                 for await (app, events, docs, profile) in group {
@@ -452,9 +453,7 @@ private extension Array {
             purpose: "—",
             documents: loDocuments,
             timeline: timeline
-        )
     }
-
 
     /// Maps a backend document to the officer's rich document model.
     private static func makeOfficerDocument(_ doc: LoanDocument) -> LOLoanDocument {

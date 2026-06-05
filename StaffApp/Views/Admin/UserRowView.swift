@@ -148,6 +148,11 @@ struct UserDetailsView: View {
                 adminSections
             }
         }
+        .task {
+            if currentUser.role == .borrower {
+                await viewModel.loadLoanHistory(for: currentUser.id)
+            }
+        }
         .listStyle(.insetGrouped)
         .navigationTitle(currentUser.fullName)
         .navigationBarTitleDisplayMode(.inline)

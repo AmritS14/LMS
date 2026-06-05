@@ -823,14 +823,17 @@ extension LoanReviewView {
 
             LOPremiumCard {
                 if currentApplication.documents.isEmpty {
-                    HStack {
-                        Spacer()
-                        Text("No documents uploaded yet.")
-                            .font(.system(size: 14))
+                    VStack(spacing: 8) {
+                        Text("Documents are password locked or unavailable.")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.primary)
+                        Text("Please request the documents again using the Request Document action.")
+                            .font(.system(size: 12))
                             .foregroundStyle(.secondary)
-                            .padding(.vertical, 8)
-                        Spacer()
+                            .multilineTextAlignment(.center)
                     }
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity)
                 } else {
                     VStack(spacing: 10) {
                         ForEach(currentApplication.documents) { document in
